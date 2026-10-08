@@ -13,3 +13,7 @@ func IsStateModifyingMethod(method string) bool {
 		return false
 	}
 }
+
+func GetName(handler any) string {
+	return "TODO"
+}
