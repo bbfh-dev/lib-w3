@@ -14,6 +14,7 @@ import (
 const abortCursor uint = math.MaxUint
 
 // ErrorHandler is responsible for handling/reporting the error to the client.
+// (e.g. render a proper HTML error page rather than plain text error)
 type ErrorHandler func(ctx *Context, err w3errs.HttpError)
 
 // Context represents the current request.

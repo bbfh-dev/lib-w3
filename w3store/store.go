@@ -14,3 +14,7 @@ func AllocateContextStoreHolder[T any]() Holder[T] {
 	contextStoreHolders++
 	return Holder[T](value)
 }
+
+func ContextStoreHolders() uint {
+	return contextStoreHolders
+}

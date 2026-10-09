@@ -1,6 +1,14 @@
 package libw3
 
-import "os"
+import (
+	"errors"
+	"net/http"
+	"os"
+
+	"codeberg.org/bbfh/lib-w3/internal"
+	"codeberg.org/bbfh/lib-w3/w3errs"
+	"github.com/julienschmidt/httprouter"
+)
 
 // Refer to [NewBuilder].
 type Builder struct {
@@ -32,8 +40,32 @@ func (builder *Builder) Use(middleware Middleware) *Builder {
 	return builder
 }
 
+// Get the configured [Engine].
+// Use [Builder.MustBuild] to exit on error instead of handling it manually.
 func (builder *Builder) Build() (*Engine, error) {
-	return nil, nil
+	if len(builder.errs) != 0 {
+		return nil, errors.Join(builder.errs...)
+	}
+	engine := &Engine{
+		router:       httprouter.New(),
+		pool:         nil,
+		middleware:   builder.middleware,
+		errorHandler: defaultErrorHandler,
+	}
+	engine.pool = internal.NewPool(builder.maxConcurrentRequests, engine.newContext)
+	engine.router.NotFound = engine.wrapErrorHandler(func(ctx *Context) w3errs.HttpError {
+		return w3errs.NewPublic(
+			http.StatusNotFound,
+			"Page Not Found: "+ctx.Request.URL.String(),
+		)
+	})
+	engine.router.MethodNotAllowed = engine.wrapErrorHandler(func(ctx *Context) w3errs.HttpError {
+		return w3errs.NewPublic(
+			http.StatusNotFound,
+			"Method Not Allowed: "+ctx.Request.Method,
+		)
+	})
+	return engine, nil
 }
 
 // MustBuild calls [Builder.Build] and calls [os.Exit] on error.
@@ -44,4 +76,16 @@ func (builder *Builder) MustBuild() *Engine {
 		os.Exit(1)
 	}
 	return engine
+}
+
+func defaultErrorHandler(ctx *Context, err w3errs.HttpError) {
+	if err.StatusCode >= 500 {
+		Logger.Error(
+			"%s %q → %s",
+			ctx.Request.Method,
+			ctx.Request.URL,
+			err.InternalText,
+		)
+	}
+	ctx.SendText(err.StatusCode, err.PublicText)
 }
