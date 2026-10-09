@@ -1,5 +1,7 @@
 package libw3
 
+import "math"
+
 // Handler is responsible for handling the request. It can be transit (the [Middleware]) or close the chain (the endpoint).
 type Handler func(ctx *Context)
 
@@ -14,6 +16,14 @@ type Optional interface {
 	// Whether the middleware should be injected in the specific [MiddlewareChain].
 	ShouldInject(method, path string) bool
 }
+
+const (
+	PrioRecovery int8 = math.MaxInt8
+	PrioTiming   int8 = PrioRecovery - 1
+	PrioAuth     int8 = 1
+	PrioValidate int8 = -1
+	PrioFinal    int8 = math.MinInt8
+)
 
 // Ordered middleware that forces itself to be before/after other middleware based on priority.
 type Ordered interface {

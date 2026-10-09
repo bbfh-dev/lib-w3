@@ -1,3 +1,4 @@
 package libw3
 
-type Engine struct{}
+type Engine struct {
+}

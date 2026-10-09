@@ -1,6 +1,11 @@
 package w3utils
 
-import "net/http"
+import (
+	"net/http"
+	"reflect"
+	"runtime"
+	"strings"
+)
 
 func IsStateModifyingMethod(method string) bool {
 	switch method {
@@ -15,5 +20,18 @@ func IsStateModifyingMethod(method string) bool {
 }
 
 func GetName(handler any) string {
-	return "TODO"
+	r_value := reflect.ValueOf(handler)
+	switch reflect.TypeOf(handler).Kind() {
+
+	case reflect.Func:
+		name := runtime.FuncForPC(r_value.Pointer()).Name()
+		_, after, ok := strings.CutLast(name, "/")
+		if !ok {
+			return name
+		}
+		return after
+
+	default:
+		return r_value.String()
+	}
 }
