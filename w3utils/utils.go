@@ -19,19 +19,50 @@ func IsStateModifyingMethod(method string) bool {
 	}
 }
 
+// GetName attemps to get a human-readable name of the datatype using reflection.
 func GetName(handler any) string {
 	r_value := reflect.ValueOf(handler)
-	switch reflect.TypeOf(handler).Kind() {
+	r_type := reflect.TypeOf(handler)
+	switch r_type.Kind() {
 
 	case reflect.Func:
-		name := runtime.FuncForPC(r_value.Pointer()).Name()
-		_, after, ok := strings.CutLast(name, "/")
-		if !ok {
-			return name
+		return GetFuncName(handler)
+
+	case reflect.Struct:
+		return GetStructName(r_type)
+
+	case reflect.Pointer:
+		r_type = r_type.Elem()
+		if r_type.Kind() == reflect.Struct {
+			return GetStructName(r_type)
 		}
-		return after
+		fallthrough
 
 	default:
 		return r_value.String()
 	}
+}
+
+// GetFuncName returns the name of the function using reflection.
+func GetFuncName(function any) string {
+	name := runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
+	_, after, ok := strings.CutLast(name, "/")
+	if !ok {
+		return name
+	}
+	return after
+}
+
+func GetStructName(r_type reflect.Type) string {
+	name := r_type.Name()
+	if len(name) == 0 {
+		return r_type.String()
+	}
+	name = strings.ToUpper(name[:1]) + name[1:]
+
+	_, after, ok := strings.CutLast(r_type.PkgPath(), "/")
+	if !ok {
+		return name
+	}
+	return after + "." + name
 }
