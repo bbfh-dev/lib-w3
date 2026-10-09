@@ -61,6 +61,7 @@ func (builder *Builder) Build() (*Engine, error) {
 		middleware:   builder.middleware,
 		errorHandler: defaultErrorHandler,
 	}
+	engine.endpointBuilder = newEndpointBuilder(engine)
 	engine.pool = internal.NewPool(builder.maxConcurrentRequests, engine.newContext)
 
 	engine.router.NotFound = engine.wrapErrorHandler(func(ctx *Context) w3errs.HttpError {

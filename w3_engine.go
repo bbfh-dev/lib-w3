@@ -10,6 +10,7 @@ import (
 )
 
 type Engine struct {
+	endpointBuilder
 	router       *httprouter.Router
 	pool         *internal.Pool[Context]
 	middleware   MiddlewareChain
@@ -19,30 +20,6 @@ type Engine struct {
 func (engine *Engine) ListenAndServe(addr string) error {
 	Logger.Info("Listening and serving on %s", addr)
 	return http.ListenAndServe(addr, engine.router)
-}
-
-func (engine *Engine) GET(path string, handler Handler) {
-	engine.newEndpoint(http.MethodGet, path, handler, MiddlewareChain{})
-}
-
-func (engine *Engine) HEAD(path string, handler Handler) {
-	engine.newEndpoint(http.MethodHead, path, handler, MiddlewareChain{})
-}
-
-func (engine *Engine) POST(path string, handler Handler) {
-	engine.newEndpoint(http.MethodPost, path, handler, MiddlewareChain{})
-}
-
-func (engine *Engine) PUT(path string, handler Handler) {
-	engine.newEndpoint(http.MethodPut, path, handler, MiddlewareChain{})
-}
-
-func (engine *Engine) DELETE(path string, handler Handler) {
-	engine.newEndpoint(http.MethodDelete, path, handler, MiddlewareChain{})
-}
-
-func (engine *Engine) PATCH(path string, handler Handler) {
-	engine.newEndpoint(http.MethodPatch, path, handler, MiddlewareChain{})
 }
 
 func (engine *Engine) newContext() Context {
