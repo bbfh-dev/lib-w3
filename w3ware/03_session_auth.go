@@ -1,6 +1,7 @@
 package w3ware
 
 import (
+	"net/http"
 	"strings"
 
 	libw3 "codeberg.org/bbfh/lib-w3"
@@ -8,8 +9,15 @@ import (
 	"codeberg.org/bbfh/lib-w3/w3store"
 )
 
-var ContextSessionError = w3store.AllocateContextStoreHolder[w3errs.HttpError]()
-var contextSessionPlaceholder = w3store.AllocateContextStoreHolder[any]()
+var (
+	ContextSessionError       = w3store.AllocateContextStoreHolder[w3errs.HttpError]()
+	contextSessionPlaceholder = w3store.AllocateContextStoreHolder[any]()
+	errUnauthorized           = w3errs.NewSimple(http.StatusUnauthorized)
+	errInvalidSession         = w3errs.NewPublic(
+		http.StatusUnauthorized,
+		"Invalid session, authentication denied by the server",
+	)
+)
 
 type authenticator[T any] func(session_id string) (session T, passed bool)
 
@@ -37,6 +45,54 @@ type SessionAuth[T any] struct {
 }
 
 func (middleware *SessionAuth[T]) Handle(ctx *libw3.Context) {
+	var err w3errs.HttpError
+	var credentials string
+
+	session_cookie, exists := ctx.Cookie(middleware.Cookie)
+	if exists {
+		credentials = session_cookie
+		goto authenticate
+	} else {
+		value := ctx.Request.Header.Get("Authorization")
+		if value == "" {
+			err = errUnauthorized
+			goto report_error
+		}
+
+		parts := strings.SplitN(value, " ", 2)
+		if len(parts) != 2 {
+			err = errUnauthorized
+			goto report_error
+		}
+
+		auth_type, auth_credentials := parts[0], parts[1]
+		if auth_type != "Bearer" {
+			err = w3errs.NewPublic(
+				http.StatusUnauthorized,
+				"Authorization header must be a Bearer token, got: "+auth_type,
+			)
+			goto report_error
+		}
+		credentials = auth_credentials
+		goto authenticate
+	}
+
+report_error:
+	if middleware.Required {
+		ctx.AbortWithError(err)
+	} else {
+		ctx.Set(ContextSessionError, err)
+	}
+	return
+
+authenticate:
+	session, ok := middleware.Authenticator(credentials)
+	if !ok {
+		ctx.ClearCookie(middleware.Cookie)
+		err = errInvalidSession
+		goto report_error
+	}
+	ctx.Set(*middleware.ContextSession, session)
 }
 
 func (middleware *SessionAuth[T]) ShouldInject(method, path string) bool {
