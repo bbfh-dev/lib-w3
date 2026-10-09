@@ -32,11 +32,13 @@ type Context struct {
 }
 
 // reset is called when this object is being reused from the pool.
-func (ctx *Context) reset() {
+func (ctx *Context) reset(writer http.ResponseWriter, request *http.Request) {
 	ctx.cursor = 0
 	for i := range ctx.store {
 		ctx.store[i] = nil
 	}
+	ctx.Writer = &ResponseWriter{ResponseWriter: writer}
+	ctx.Request = request
 }
 
 // Abort the request.

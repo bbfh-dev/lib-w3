@@ -3,11 +3,16 @@ package libw3
 import (
 	"slices"
 	"sort"
+	"strings"
 
 	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
 type MiddlewareChain []Middleware
+
+func (chain MiddlewareChain) String() string {
+	return strings.Join(chain.Names(), " → ")
+}
 
 // ProperAppend should be used instead of using [append] directly. Read the function body to see why.
 func (chain MiddlewareChain) ProperAppend(middleware Middleware) MiddlewareChain {

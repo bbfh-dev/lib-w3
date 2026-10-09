@@ -33,10 +33,37 @@ func (engine *Engine) wrapErrorHandler(err_getter func(*Context) w3errs.HttpErro
 		object_index, ctx := engine.pool.AcquireObject()
 		defer engine.pool.Release(object_index)
 
-		ctx.reset()
-		ctx.Writer = &ResponseWriter{ResponseWriter: writer}
-		ctx.Request = request
+		ctx.reset(writer, request)
 
 		engine.errorHandler(ctx, err_getter(ctx))
 	})
+}
+
+func (engine *Engine) newEndpoint(
+	method string,
+	path string,
+	handler Handler,
+	local_middleware MiddlewareChain,
+) {
+	middleware := append(engine.middleware, local_middleware...)
+	suitable := middleware.Filtered(method, path)
+	suitable.Sort()
+	handlers := append(suitable.Handlers(), handler)
+
+	Logger.Debug("New endpoint: %s %q using:\n\t%s → (Handler)", method, path, suitable.String())
+
+	engine.router.Handle(
+		method,
+		path,
+		func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+			object_index, ctx := engine.pool.AcquireObject()
+			defer engine.pool.Release(object_index)
+
+			ctx.reset(writer, request)
+			ctx.Params = params
+			ctx.handlers = handlers
+
+			ctx.executeHandlers()
+		},
+	)
 }

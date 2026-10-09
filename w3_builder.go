@@ -15,6 +15,7 @@ type Builder struct {
 	maxConcurrentRequests uint16
 	middleware            MiddlewareChain
 	errs                  []error
+	staticConfig          *StaticConfig
 }
 
 // Used to create a configured [Engine].
@@ -23,6 +24,7 @@ func NewBuilder() *Builder {
 		maxConcurrentRequests: 200,
 		middleware:            MiddlewareChain{},
 		errs:                  []error{},
+		staticConfig:          nil,
 	}
 }
 
@@ -40,6 +42,11 @@ func (builder *Builder) Use(middleware Middleware) *Builder {
 	return builder
 }
 
+func (builder *Builder) WithStaticConfig(config StaticConfig) *Builder {
+	builder.staticConfig = &config
+	return builder
+}
+
 // Get the configured [Engine].
 // Use [Builder.MustBuild] to exit on error instead of handling it manually.
 func (builder *Builder) Build() (*Engine, error) {
@@ -53,6 +60,7 @@ func (builder *Builder) Build() (*Engine, error) {
 		errorHandler: defaultErrorHandler,
 	}
 	engine.pool = internal.NewPool(builder.maxConcurrentRequests, engine.newContext)
+
 	engine.router.NotFound = engine.wrapErrorHandler(func(ctx *Context) w3errs.HttpError {
 		return w3errs.NewPublic(
 			http.StatusNotFound,
@@ -65,6 +73,16 @@ func (builder *Builder) Build() (*Engine, error) {
 			"Method Not Allowed: "+ctx.Request.Method,
 		)
 	})
+
+	if builder.staticConfig != nil {
+		engine.newEndpoint(
+			http.MethodGet,
+			"/static/*filepath",
+			builder.staticConfig.CreateHandler(),
+			builder.staticConfig.Middleware,
+		)
+	}
+
 	return engine, nil
 }
 
