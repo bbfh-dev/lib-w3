@@ -16,6 +16,11 @@ type Engine struct {
 	errorHandler ErrorHandler
 }
 
+func (engine *Engine) ListenAndServe(addr string) error {
+	Logger.Info("Listening and serving on %s", addr)
+	return http.ListenAndServe(addr, engine.router)
+}
+
 func (engine *Engine) newContext() Context {
 	return Context{
 		store:        make([]any, w3store.ContextStoreHolders()),
