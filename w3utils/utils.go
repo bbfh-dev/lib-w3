@@ -19,8 +19,17 @@ func IsStateModifyingMethod(method string) bool {
 	}
 }
 
+// HasName represents types whose name are known without reflection.
+type HasName interface {
+	Name() string
+}
+
 // GetName attemps to get a human-readable name of the datatype using reflection.
 func GetName(handler any) string {
+	if named, ok := handler.(HasName); ok {
+		return named.Name()
+	}
+
 	r_value := reflect.ValueOf(handler)
 	r_type := reflect.TypeOf(handler)
 	switch r_type.Kind() {
