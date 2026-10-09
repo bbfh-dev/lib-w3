@@ -1,6 +1,7 @@
 package libw3
 
 import (
+	"slices"
 	"sort"
 
 	"codeberg.org/bbfh/lib-w3/w3utils"
@@ -25,6 +26,11 @@ func (chain MiddlewareChain) Handlers() []Handler {
 		handlers[i] = middleware.Handle
 	}
 	return handlers
+}
+
+// Contains reports whether the [MiddlewareChain] contains [Middleware] by name.
+func (chain MiddlewareChain) Contains(middleware Middleware) bool {
+	return slices.Contains(chain.Names(), w3utils.GetName(middleware))
 }
 
 // Names returns human-readable names of contained [Middleware].

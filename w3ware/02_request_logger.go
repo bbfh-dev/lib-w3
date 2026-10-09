@@ -4,6 +4,7 @@ import (
 	"time"
 
 	libw3 "codeberg.org/bbfh/lib-w3"
+	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
 type requestLogger struct{}
@@ -18,4 +19,17 @@ func (middleware *requestLogger) Handle(ctx *libw3.Context) {
 
 func (middleware *requestLogger) Priority() int8 {
 	return libw3.PrioTiming
+}
+
+var printedWarning bool
+
+func (middleware *requestLogger) Init() (keep bool) {
+	if !printedWarning {
+		libw3.Logger.Warn(
+			"Using %q middleware should not be done in production due to performance concerns",
+			w3utils.GetName(middleware),
+		)
+		printedWarning = true
+	}
+	return true
 }
