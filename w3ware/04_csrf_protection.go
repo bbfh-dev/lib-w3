@@ -21,8 +21,8 @@ func (middleware *CsrfProtection) Handle(ctx *libw3.Context) {
 	expected_csrf := middleware.TokenExtractor(ctx)
 	if expected_csrf == "" {
 		ctx.AbortWithError(w3errs.NewPublic(
-			http.StatusInternalServerError,
-			"Couldn't extract the csrf token from your session",
+			http.StatusForbidden,
+			"Not authorized to access this page",
 		))
 		return
 	}
