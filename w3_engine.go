@@ -9,6 +9,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// Refer to [NewBuilder].
 type Engine struct {
 	endpointBuilder
 	router       *httprouter.Router
