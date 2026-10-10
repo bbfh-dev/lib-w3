@@ -11,6 +11,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+const sniffLen = 512
 const abortCursor uint = math.MaxUint
 
 // ErrorHandler is responsible for handling/reporting the error to the client.
@@ -135,7 +136,7 @@ func (ctx *Context) ClearCookie(name string) {
 // SendText writes the header and sends plain text response.
 // Use [Context.Writer] directly to write any additional data.
 func (ctx *Context) SendText(status_code int, text string) {
-	ctx.SendContentType("text/plain; charset=utf-8")
+	ctx.SetContentType("text/plain; charset=utf-8")
 	ctx.Writer.WriteHeader(status_code)
 	ctx.Writer.Write([]byte(text))
 }
@@ -143,7 +144,7 @@ func (ctx *Context) SendText(status_code int, text string) {
 // SendTextf writes the header and sends plain text response using [fmt.Fprintf].
 // Use [Context.Writer] directly to write any additional data.
 func (ctx *Context) SendTextf(status_code int, format string, args ...any) {
-	ctx.SendContentType("text/plain; charset=utf-8")
+	ctx.SetContentType("text/plain; charset=utf-8")
 	ctx.Writer.WriteHeader(status_code)
 	fmt.Fprintf(ctx.Writer, format, args...)
 }
@@ -153,7 +154,7 @@ func (ctx *Context) SendEmpty() {
 	ctx.Writer.WriteHeader(http.StatusNoContent)
 }
 
-// SendContentType is sugar code for setting specific content type.
-func (ctx *Context) SendContentType(content_type string) {
+// SetContentType is sugar code for setting specific content type.
+func (ctx *Context) SetContentType(content_type string) {
 	ctx.Writer.Header().Set("Content-Type", content_type)
 }
