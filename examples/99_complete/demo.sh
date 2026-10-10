@@ -19,9 +19,33 @@ curl -i http://localhost:8081/static/script.js >>/tmp/demo 2>/dev/null
 cat /tmp/demo
 echo ""
 
-echo -e "\x1b[97m==> Benchmark page:"
+echo -e "\n\x1b[97m==> GET /benchmark:"
 printf '\033[94m' >/tmp/demo
 curl -i http://localhost:8081/benchmark >>/tmp/demo 2>/dev/null
+cat /tmp/demo
+echo ""
+
+echo -e "\n\x1b[97m==> PUT /upload (wrong method):"
+printf '\033[94m' >/tmp/demo
+curl -i http://localhost:8081/upload >>/tmp/demo 2>/dev/null
+cat /tmp/demo
+echo ""
+
+echo -e "\n\x1b[97m==> PUT /upload (not authenticated):"
+printf '\033[94m' >/tmp/demo
+curl -i -X PUT http://localhost:8081/upload >>/tmp/demo 2>/dev/null
+cat /tmp/demo
+echo ""
+
+echo -e "\n\x1b[97m==> PUT /upload (missing csrf token):"
+printf '\033[94m' >/tmp/demo
+curl -i -X PUT -H 'Authorization: Bearer abc' http://localhost:8081/upload >>/tmp/demo 2>/dev/null
+cat /tmp/demo
+echo ""
+
+echo -e "\n\x1b[97m==> PUT /upload:"
+printf '\033[94m' >/tmp/demo
+curl -i -X PUT -H 'Authorization: Bearer abc' 'http://localhost:8081/upload?csrf_token=hello_world!&key=hi' >>/tmp/demo 2>/dev/null
 cat /tmp/demo
 echo ""
 

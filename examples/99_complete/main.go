@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	libclog "codeberg.org/bbfh/lib-clog"
 	libw3 "codeberg.org/bbfh/lib-w3"
 	"codeberg.org/bbfh/lib-w3/w3store"
 	"codeberg.org/bbfh/lib-w3/w3ware"
@@ -16,6 +17,10 @@ type Session struct {
 }
 
 var ContextAuth w3store.Holder[Session]
+
+func init() {
+	libw3.Logger.SetLevel(libclog.LogDebug)
+}
 
 func main() {
 	workdir, _ := os.Getwd()
@@ -30,6 +35,7 @@ func main() {
 				return session.CsrfToken
 			},
 		}).
+		Use(w3ware.RequestLogger).
 		Use(&w3ware.SessionAuth[Session]{
 			Cookie:         "session",
 			ContextSession: &ContextAuth,
@@ -43,26 +49,31 @@ func main() {
 			IgnoreStaticFiles: true,
 		}).
 		WithStaticHandler(libw3.StaticConfig{
-			FileSystem: os.DirFS(filepath.Join(workdir, "www", "static")),
-			Middleware: libw3.MiddlewareChain{
-				w3ware.RequestLogger,
-			},
+			FileSystem:       os.DirFS(filepath.Join(workdir, "www", "static")),
+			Middleware:       libw3.MiddlewareChain{},
 			AllowListingDirs: true,
 			CacheMaxAge:      libw3.MaxCacheAge,
 		}).
 		MustBuild()
 
 	engine.
-		Using(libw3.FromHandler(func(ctx *libw3.Context) {
-			ctx.ContinueChain()
-			ctx.Writer.Write([]byte("\nMessage from middleware! :)"))
-		})).
+		Using(libw3.FromHandler(CustomMiddleware)).
 		GET("/benchmark", func(ctx *libw3.Context) {
 			ctx.SendText(http.StatusCreated, "Done.")
 		})
+
+	engine.PUT("/upload", func(ctx *libw3.Context) {
+		value := ctx.Request.FormValue("key")
+		ctx.SendTextf(http.StatusOK, "Received %q", value)
+	})
 
 	err := engine.ListenAndServe(":8081")
 	if err != nil {
 		os.Stderr.WriteString(err.Error())
 	}
+}
+
+func CustomMiddleware(ctx *libw3.Context) {
+	ctx.ContinueChain()
+	ctx.Writer.Write([]byte("\nMessage from middleware! :)"))
 }
