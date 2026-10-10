@@ -16,6 +16,7 @@ type Builder struct {
 	middleware            MiddlewareChain
 	errs                  []error
 	staticConfig          *StaticConfig
+	errorHandler          ErrorHandler
 }
 
 // Used to create a configured [Engine].
@@ -25,6 +26,7 @@ func NewBuilder() *Builder {
 		middleware:            MiddlewareChain{},
 		errs:                  []error{},
 		staticConfig:          nil,
+		errorHandler:          defaultErrorHandler,
 	}
 }
 
@@ -49,6 +51,13 @@ func (builder *Builder) WithStaticHandler(config StaticConfig) *Builder {
 	return builder
 }
 
+// WithErrorHandler specifies [ErrorHandler] to be used by the [Engine] & [Context].
+// Providing this allows errors to be reported as HTML/JSON instead of plain text.
+func (builder *Builder) WithErrorHandler(handler ErrorHandler) *Builder {
+	builder.errorHandler = handler
+	return builder
+}
+
 // Get the configured [Engine].
 // Use [Builder.MustBuild] to exit on error instead of handling it manually.
 func (builder *Builder) Build() (*Engine, error) {
@@ -59,7 +68,7 @@ func (builder *Builder) Build() (*Engine, error) {
 		router:       httprouter.New(),
 		pool:         nil,
 		middleware:   builder.middleware,
-		errorHandler: defaultErrorHandler,
+		errorHandler: builder.errorHandler,
 	}
 	engine.endpointBuilder = newEndpointBuilder(engine)
 	engine.pool = internal.NewPool(builder.maxConcurrentRequests, engine.newContext)

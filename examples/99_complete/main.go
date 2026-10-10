@@ -1,12 +1,14 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"path/filepath"
 
 	libclog "codeberg.org/bbfh/lib-clog"
 	libw3 "codeberg.org/bbfh/lib-w3"
+	"codeberg.org/bbfh/lib-w3/w3errs"
 	"codeberg.org/bbfh/lib-w3/w3store"
 	"codeberg.org/bbfh/lib-w3/w3ware"
 )
@@ -54,6 +56,7 @@ func main() {
 			AllowListingDirs: true,
 			CacheMaxAge:      libw3.MaxCacheAge,
 		}).
+		WithErrorHandler(CustomErrorHandler).
 		MustBuild()
 
 	engine.
@@ -76,4 +79,20 @@ func main() {
 func CustomMiddleware(ctx *libw3.Context) {
 	ctx.ContinueChain()
 	ctx.Writer.Write([]byte("\nMessage from middleware! :)"))
+}
+
+func CustomErrorHandler(ctx *libw3.Context, err w3errs.HttpError) {
+	// Print the internal message into logger
+	if err.StatusCode >= 500 {
+		libw3.Logger.Error(
+			"%s %q → %s",
+			ctx.Request.Method,
+			ctx.Request.URL,
+			err.InternalText,
+		)
+	}
+
+	ctx.SendJsonMarshal(json.Marshal, err.StatusCode, map[string]string{
+		"error": err.PublicText,
+	})
 }

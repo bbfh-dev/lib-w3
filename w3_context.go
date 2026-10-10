@@ -154,6 +154,23 @@ func (ctx *Context) SendEmpty() {
 	ctx.Writer.WriteHeader(http.StatusNoContent)
 }
 
+// SendJsonMarshal is sugar code to run [Context.SendJson] using a JSON mashaler.
+func (ctx *Context) SendJsonMarshal(marshaler func(any) ([]byte, error), status_code int, data any) {
+	result, err := marshaler(data)
+	if err != nil {
+		ctx.AbortWithError(w3errs.NewInternal(http.StatusInternalServerError, err))
+		return
+	}
+	ctx.SendJson(status_code, result)
+}
+
+// SendJson writes application/json data.
+func (ctx *Context) SendJson(status_code int, data []byte) {
+	ctx.SetContentType("application/json; charset=utf-8")
+	ctx.Writer.WriteHeader(status_code)
+	ctx.Writer.Write(data)
+}
+
 // SetContentType is sugar code for setting specific content type.
 func (ctx *Context) SetContentType(content_type string) {
 	ctx.Writer.Header().Set("Content-Type", content_type)
