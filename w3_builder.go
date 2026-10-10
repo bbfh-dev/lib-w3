@@ -42,9 +42,9 @@ func (builder *Builder) Use(middleware Middleware) *Builder {
 	return builder
 }
 
-// WithStaticConfig specifies [StaticConfig] to be used by the [Builder].
+// WithStaticHandler specifies [StaticConfig] to be used by the [Builder].
 // Providing this will create a new endpoint `GET /static/*filepath`.
-func (builder *Builder) WithStaticConfig(config StaticConfig) *Builder {
+func (builder *Builder) WithStaticHandler(config StaticConfig) *Builder {
 	builder.staticConfig = &config
 	return builder
 }
