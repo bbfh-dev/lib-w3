@@ -75,3 +75,10 @@ func GetStructName(r_type reflect.Type) string {
 	}
 	return after + "." + name
 }
+
+func SafeUint(value int) uint {
+	if value < 0 {
+		return 0
+	}
+	return uint(value)
+}
