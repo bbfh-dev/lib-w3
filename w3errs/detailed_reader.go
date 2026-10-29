@@ -18,6 +18,7 @@ type DetailedReader struct {
 	line     uint
 	mark     uint
 	head     uint
+	rewinded uint
 }
 
 func NewDetailedReader(reader *bufio.Reader, expected_size uint64) *DetailedReader {
@@ -27,6 +28,7 @@ func NewDetailedReader(reader *bufio.Reader, expected_size uint64) *DetailedRead
 		line:     1,
 		mark:     0,
 		head:     0,
+		rewinded: 0,
 	}
 }
 
@@ -37,7 +39,11 @@ func (reader *DetailedReader) Read() (rune, error) {
 	if char == '\n' {
 		reader.line++
 	}
-	reader.document.Push(char)
+	if reader.rewinded == 0 {
+		reader.document.Push(char)
+	} else {
+		reader.rewinded--
+	}
 	return char, err
 }
 
@@ -45,6 +51,7 @@ func (reader *DetailedReader) Read() (rune, error) {
 func (reader *DetailedReader) Unread() {
 	reader.internal.UnreadRune()
 	reader.head--
+	reader.rewinded++
 }
 
 // MustUnread is similar to [DetailedReader.Unread], but panics on error.
