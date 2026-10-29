@@ -11,7 +11,6 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-const sniffLen = 512
 const abortCursor uint = math.MaxUint
 
 // ErrorHandler is responsible for handling/reporting the error to the client.
