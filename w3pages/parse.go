@@ -250,8 +250,42 @@ func readTagArgs(reader *w3errs.DetailedReader) ([]Argument, error) {
 			if len(key_buffer) != 0 {
 				return args, fmt.Errorf("unexpected character %q", char)
 			}
+			if len(buffer) == 0 || buffer[0] == '=' {
+				reader.MarkHere()
+				buffer = append(buffer, char)
+				continue
+			}
 			key_buffer = buffer
 			buffer = []rune{}
+
+		case '&':
+			// TODO: Add support for '||'
+			reader.MarkHere()
+			if len(key_buffer)+len(buffer) != 0 {
+				return args, fmt.Errorf("unexpected character %q", char)
+			}
+			char, err := reader.Read()
+			if err != nil {
+				return args, fmt.Errorf("reading '&&' token: %w", err)
+			}
+			if char != '&' {
+				return args, fmt.Errorf("unexpected character %q", char)
+			}
+			args = append(args, Argument{Key: "", Value: "&&"})
+
+		case '<', '>', '!':
+			// FIXME: Allow for '>' and '<'
+			if len(key_buffer)+len(buffer) != 0 {
+				return args, fmt.Errorf("unexpected character %q", char)
+			}
+			next_char, err := reader.Read()
+			if err != nil {
+				return args, fmt.Errorf("reading '>=|<=|!=' token: %w", err)
+			}
+			if next_char != '=' {
+				return args, fmt.Errorf("unexpected character %q", next_char)
+			}
+			args = append(args, Argument{Key: "", Value: string(char) + "="})
 
 		default:
 			return args, fmt.Errorf("unexpected character %q", char)
