@@ -236,6 +236,7 @@ func readTagArgs(reader *w3errs.DetailedReader) ([]Argument, error) {
 			}
 
 		case '}':
+			reader.MarkHere()
 			char, err := reader.Read()
 			if err != nil {
 				return args, fmt.Errorf("reading tag closing brace: %w", err)
