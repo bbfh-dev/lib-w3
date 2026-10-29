@@ -154,3 +154,11 @@ func (err DetailedError) Write(file *os.File) error {
 
 	return printer.ErrorsJoined()
 }
+
+func Write(err error, out *os.File) error {
+	if derr, ok := err.(DetailedError); ok {
+		return derr.Write(out)
+	}
+	_, e := out.WriteString(err.Error())
+	return e
+}
