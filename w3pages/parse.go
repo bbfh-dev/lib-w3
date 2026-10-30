@@ -81,7 +81,7 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 			// at this point it has consumed both '{{'
 			block, err := readTag(reader)
 			if err != nil {
-				return page, fmt.Errorf("reading tag '{{ ... }}-like structure': %w", err)
+				return page, fmt.Errorf("reading tag: %w", err)
 			}
 			page.HunkData = append(page.HunkData, block)
 			page.Hunks = append(page.Hunks, HunkBlock)
@@ -114,13 +114,13 @@ func readTag(reader *w3utils.DetailedReader) (Tag, error) {
 	reader.MarkHere()
 	name, err := readTagName(reader)
 	if err != nil {
-		return Tag{}, fmt.Errorf("reading tag name: %w", err)
+		return Tag{}, fmt.Errorf("reading name: %w", err)
 	}
 
 	reader.MarkHere()
 	args, err := readTagArgs(reader)
 	if err != nil {
-		return Tag{}, fmt.Errorf("reading tag arguments: %w", err)
+		return Tag{}, fmt.Errorf("reading arguments: %w", err)
 	}
 
 	return Tag{
@@ -251,39 +251,32 @@ func readTagArgs(reader *w3utils.DetailedReader) ([]Argument, error) {
 				return args, fmt.Errorf("unexpected character %q", char)
 			}
 			if len(buffer) == 0 || buffer[0] == '=' {
-				reader.MarkHere()
-				buffer = append(buffer, char)
+				buffer = []rune{}
+				args = append(args, Argument{Key: "", Value: "=="})
 				continue
 			}
 			keyBuffer = buffer
 			buffer = []rune{}
 
-		case '&':
-			// TODO: Add support for '||'
-			reader.MarkHere()
-			if len(keyBuffer)+len(buffer) != 0 {
-				return args, fmt.Errorf("unexpected character %q", char)
-			}
-			char, err := reader.Read()
+		case '&', '|':
+			err := readSpecific(reader, char)
 			if err != nil {
-				return args, fmt.Errorf("reading '&&' token: %w", err)
+				return args, fmt.Errorf("reading specific token: %w", err)
 			}
-			if char != '&' {
-				return args, fmt.Errorf("unexpected character %q", char)
-			}
-			args = append(args, Argument{Key: "", Value: "&&"})
+			args = append(args, Argument{Key: "", Value: string(char) + string(char)})
 
 		case '<', '>', '!':
-			// FIXME: Allow for '>' and '<'
+			nextChar, err := reader.Read()
+			if err != nil {
+				return args, fmt.Errorf("reading inequality sign: %w", err)
+			}
 			if len(keyBuffer)+len(buffer) != 0 {
 				return args, fmt.Errorf("unexpected character %q", char)
 			}
-			nextChar, err := reader.Read()
-			if err != nil {
-				return args, fmt.Errorf("reading '>=|<=|!=' token: %w", err)
-			}
 			if nextChar != '=' {
-				return args, fmt.Errorf("unexpected character %q", nextChar)
+				args = append(args, Argument{Key: "", Value: string(char)})
+				reader.Unread()
+				continue
 			}
 			args = append(args, Argument{Key: "", Value: string(char) + "="})
 
@@ -291,6 +284,18 @@ func readTagArgs(reader *w3utils.DetailedReader) ([]Argument, error) {
 			return args, fmt.Errorf("unexpected character %q", char)
 		}
 	}
+}
+
+func readSpecific(reader *w3utils.DetailedReader, expectedChar rune) error {
+	reader.MarkHere()
+	actualChar, err := reader.Read()
+	if err != nil {
+		return err
+	}
+	if actualChar != expectedChar {
+		return fmt.Errorf("expected %q, but got %q", expectedChar, actualChar)
+	}
+	return nil
 }
 
 func readQuoted(reader *w3utils.DetailedReader, quote rune) (string, error) {
