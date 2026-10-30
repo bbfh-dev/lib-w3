@@ -8,7 +8,7 @@ import (
 	libclog "codeberg.org/bbfh/lib-clog"
 )
 
-type DetailedError struct {
+type DocumentError struct {
 	Filename     string
 	ContextLines []string
 	FirstLine    uint
@@ -16,7 +16,7 @@ type DetailedError struct {
 	Message      string
 }
 
-func (err DetailedError) Error() string {
+func (err DocumentError) Error() string {
 	return fmt.Sprintf(
 		"%s:%d: %s",
 		err.Filename,
@@ -25,7 +25,7 @@ func (err DetailedError) Error() string {
 	)
 }
 
-func (err DetailedError) Write(file *os.File) error {
+func (err DocumentError) Write(file *os.File) error {
 	printer := libclog.NewPrinter(file, libclog.OutputColored)
 	printer.Coloredf(libclog.ColorBrightBlack, "─────┬%s\n", strings.Repeat("─", 30))
 	printer.Colored(libclog.ColorBrightBlack, "     │ [!] Error: ")
@@ -62,12 +62,4 @@ func (err DetailedError) Write(file *os.File) error {
 	)
 
 	return printer.ErrorsJoined()
-}
-
-func Write(err error, out *os.File) error {
-	if derr, ok := err.(DetailedError); ok {
-		return derr.Write(out)
-	}
-	_, e := out.WriteString(err.Error())
-	return e
 }

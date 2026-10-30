@@ -70,7 +70,7 @@ func (reader *DetailedReader) MarkHere() {
 
 // WrapError creates a [DetailedError] with current state context.
 // Use [DetailedError.Write] to pretty-print the error to file/console.
-func (reader *DetailedReader) WrapError(filename string, err error) w3errs.DetailedError {
+func (reader *DetailedReader) WrapError(filename string, err error) w3errs.DocumentError {
 	context := reader.document.Dump()
 	highlightStart := uint(len(context)) - (reader.head - reader.mark)
 	highlight := string(context[highlightStart:])
@@ -78,7 +78,7 @@ func (reader *DetailedReader) WrapError(filename string, err error) w3errs.Detai
 	contextTail = strings.TrimSuffix(contextTail, highlight)
 	contextLines := strings.Split(contextTail, "\n")
 
-	return w3errs.DetailedError{
+	return w3errs.DocumentError{
 		Filename:     filename,
 		ContextLines: contextLines,
 		FirstLine:    SafeUint(int(reader.line) - len(contextLines)),
