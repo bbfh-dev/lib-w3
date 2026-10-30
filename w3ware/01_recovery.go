@@ -24,17 +24,17 @@ func (middleware *recovery) Handle(ctx *libw3.Context) {
 			fmt.Println(separator)
 			// Check for a broken connection, as it is not really a
 			// condition that warrants a panic stack trace.
-			var is_broken_pipe bool
+			var isBrokenPipe bool
 			err, ok := recovery.(error)
 			if ok {
-				is_broken_pipe = errors.Is(err, syscall.EPIPE) ||
+				isBrokenPipe = errors.Is(err, syscall.EPIPE) ||
 					errors.Is(err, syscall.ECONNRESET) ||
 					errors.Is(err, http.ErrAbortHandler)
 			} else {
 				err = fmt.Errorf("%v", recovery)
 			}
 
-			if is_broken_pipe {
+			if isBrokenPipe {
 				libw3.Logger.Error("[Recovery] %s", recovery)
 			} else {
 				libw3.Logger.Error(
@@ -45,7 +45,7 @@ func (middleware *recovery) Handle(ctx *libw3.Context) {
 				)
 			}
 			fmt.Println(separator)
-			if !is_broken_pipe {
+			if !isBrokenPipe {
 				ctx.AbortWithError(w3errs.NewInternal(http.StatusInternalServerError, err))
 			}
 		}

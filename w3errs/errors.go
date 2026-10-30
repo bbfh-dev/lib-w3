@@ -19,26 +19,26 @@ func (err HttpError) Error() string {
 	)
 }
 
-func NewPublic(status_code int, text string) HttpError {
+func NewPublic(statusCode int, text string) HttpError {
 	return HttpError{
-		StatusCode:   status_code,
+		StatusCode:   statusCode,
 		InternalText: text,
 		PublicText:   text,
 	}
 }
 
-func NewSimple(status_code int) HttpError {
-	return NewPublic(status_code, statusText(status_code))
+func NewSimple(statusCode int) HttpError {
+	return NewPublic(statusCode, statusText(statusCode))
 }
 
-func NewInternal(status_code int, err error) HttpError {
+func NewInternal(statusCode int, err error) HttpError {
 	return HttpError{
-		StatusCode:   status_code,
+		StatusCode:   statusCode,
 		InternalText: err.Error(),
-		PublicText:   statusText(status_code),
+		PublicText:   statusText(statusCode),
 	}
 }
 
-func statusText(status_code int) string {
-	return fmt.Sprintf("%d %s", status_code, http.StatusText(status_code))
+func statusText(statusCode int) string {
+	return fmt.Sprintf("%d %s", statusCode, http.StatusText(statusCode))
 }

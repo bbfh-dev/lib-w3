@@ -30,12 +30,12 @@ type ParsedPage struct {
 }
 
 func Parse(file *os.File) (ParsedPage, error) {
-	var expected_size uint64
+	var expectedSize uint64
 	stat, err := file.Stat()
 	if err == nil {
-		expected_size = uint64(stat.Size())
+		expectedSize = uint64(stat.Size())
 	}
-	reader := w3errs.NewDetailedReader(bufio.NewReader(file), expected_size)
+	reader := w3errs.NewDetailedReader(bufio.NewReader(file), expectedSize)
 	page, err := parse(reader)
 	if err != nil {
 		return page, reader.WrapError(file.Name(), err)
@@ -61,16 +61,16 @@ func parse(reader *w3errs.DetailedReader) (ParsedPage, error) {
 
 		switch char {
 		case '{':
-			next_char, err := reader.Read()
+			nextChar, err := reader.Read()
 			if err != nil {
 				if err == io.EOF {
-					buffer = append(buffer, byte(next_char)) // put it as a plain '{'
+					buffer = append(buffer, byte(nextChar)) // put it as a plain '{'
 					goto finish
 				}
 				return page, err
 			}
-			if next_char != '{' { // not '{{'
-				buffer = append(buffer, byte(char), byte(next_char))
+			if nextChar != '{' { // not '{{'
+				buffer = append(buffer, byte(char), byte(nextChar))
 				continue
 			}
 			if len(buffer) != 0 {
@@ -106,7 +106,7 @@ func readTag(reader *w3errs.DetailedReader) (Tag, error) {
 	}
 
 	reader.MarkHere()
-	is_closing, err := readTagPrefix(reader)
+	isClosing, err := readTagPrefix(reader)
 	if err != nil {
 		return Tag{}, fmt.Errorf("reading whether tag is closing another tag: %w", err)
 	}
@@ -126,7 +126,7 @@ func readTag(reader *w3errs.DetailedReader) (Tag, error) {
 	return Tag{
 		Name:      name,
 		Args:      args,
-		IsClosing: is_closing,
+		IsClosing: isClosing,
 	}, nil
 }
 
@@ -146,7 +146,7 @@ func readWhiteSpace(reader *w3errs.DetailedReader) error {
 	}
 }
 
-func readTagPrefix(reader *w3errs.DetailedReader) (is_closing bool, err error) {
+func readTagPrefix(reader *w3errs.DetailedReader) (isClosing bool, err error) {
 	char, err := reader.Read()
 	if err != nil {
 		return false, err
@@ -197,7 +197,7 @@ func (arg Argument) HasKey() bool {
 func readTagArgs(reader *w3errs.DetailedReader) ([]Argument, error) {
 	var args = []Argument{}
 	var buffer = []rune{}
-	var key_buffer = []rune{}
+	var keyBuffer = []rune{}
 
 	for {
 		char, err := reader.Read()
@@ -221,17 +221,17 @@ func readTagArgs(reader *w3errs.DetailedReader) ([]Argument, error) {
 				return args, fmt.Errorf("parsing a quoted string: %w", err)
 			}
 			args = append(args, Argument{
-				Key:   string(key_buffer),
+				Key:   string(keyBuffer),
 				Value: arg,
 			})
 
 		case ' ':
 			if len(buffer) != 0 {
 				args = append(args, Argument{
-					Key:   string(key_buffer),
+					Key:   string(keyBuffer),
 					Value: string(buffer),
 				})
-				key_buffer = []rune{}
+				keyBuffer = []rune{}
 				buffer = []rune{}
 			}
 
@@ -247,7 +247,7 @@ func readTagArgs(reader *w3errs.DetailedReader) ([]Argument, error) {
 			return args, nil
 
 		case '=':
-			if len(key_buffer) != 0 {
+			if len(keyBuffer) != 0 {
 				return args, fmt.Errorf("unexpected character %q", char)
 			}
 			if len(buffer) == 0 || buffer[0] == '=' {
@@ -255,13 +255,13 @@ func readTagArgs(reader *w3errs.DetailedReader) ([]Argument, error) {
 				buffer = append(buffer, char)
 				continue
 			}
-			key_buffer = buffer
+			keyBuffer = buffer
 			buffer = []rune{}
 
 		case '&':
 			// TODO: Add support for '||'
 			reader.MarkHere()
-			if len(key_buffer)+len(buffer) != 0 {
+			if len(keyBuffer)+len(buffer) != 0 {
 				return args, fmt.Errorf("unexpected character %q", char)
 			}
 			char, err := reader.Read()
@@ -275,15 +275,15 @@ func readTagArgs(reader *w3errs.DetailedReader) ([]Argument, error) {
 
 		case '<', '>', '!':
 			// FIXME: Allow for '>' and '<'
-			if len(key_buffer)+len(buffer) != 0 {
+			if len(keyBuffer)+len(buffer) != 0 {
 				return args, fmt.Errorf("unexpected character %q", char)
 			}
-			next_char, err := reader.Read()
+			nextChar, err := reader.Read()
 			if err != nil {
 				return args, fmt.Errorf("reading '>=|<=|!=' token: %w", err)
 			}
-			if next_char != '=' {
-				return args, fmt.Errorf("unexpected character %q", next_char)
+			if nextChar != '=' {
+				return args, fmt.Errorf("unexpected character %q", nextChar)
 			}
 			args = append(args, Argument{Key: "", Value: string(char) + "="})
 

@@ -30,25 +30,25 @@ func GetName(handler any) string {
 		return named.Name()
 	}
 
-	r_value := reflect.ValueOf(handler)
-	r_type := reflect.TypeOf(handler)
-	switch r_type.Kind() {
+	rValue := reflect.ValueOf(handler)
+	rType := reflect.TypeOf(handler)
+	switch rType.Kind() {
 
 	case reflect.Func:
 		return GetFuncName(handler)
 
 	case reflect.Struct:
-		return GetStructName(r_type)
+		return GetStructName(rType)
 
 	case reflect.Pointer:
-		r_type = r_type.Elem()
-		if r_type.Kind() == reflect.Struct {
-			return GetStructName(r_type)
+		rType = rType.Elem()
+		if rType.Kind() == reflect.Struct {
+			return GetStructName(rType)
 		}
 		fallthrough
 
 	default:
-		return r_value.String()
+		return rValue.String()
 	}
 }
 
@@ -62,14 +62,14 @@ func GetFuncName(function any) string {
 	return after
 }
 
-func GetStructName(r_type reflect.Type) string {
-	name := r_type.Name()
+func GetStructName(rType reflect.Type) string {
+	name := rType.Name()
 	if len(name) == 0 {
-		return r_type.String()
+		return rType.String()
 	}
 	name = strings.ToUpper(name[:1]) + name[1:]
 
-	_, after, ok := strings.CutLast(r_type.PkgPath(), "/")
+	_, after, ok := strings.CutLast(rType.PkgPath(), "/")
 	if !ok {
 		return name
 	}

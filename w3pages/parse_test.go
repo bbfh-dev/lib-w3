@@ -21,8 +21,8 @@ func TestParse(t *testing.T) {
 		t.FailNow()
 	}
 
-	for i, hunk_kind := range page.Hunks {
-		switch hunk_kind {
+	for i, hunkKind := range page.Hunks {
+		switch hunkKind {
 		case w3pages.HunkBlock:
 			fmt.Printf("%#v\n", page.HunkData[i])
 		case w3pages.HunkRaw:

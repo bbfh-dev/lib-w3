@@ -18,8 +18,8 @@ type CsrfProtection struct {
 }
 
 func (middleware *CsrfProtection) Handle(ctx *libw3.Context) {
-	expected_csrf := middleware.TokenExtractor(ctx)
-	if expected_csrf == "" {
+	expectedCsrf := middleware.TokenExtractor(ctx)
+	if expectedCsrf == "" {
 		ctx.AbortWithError(w3errs.NewPublic(
 			http.StatusForbidden,
 			"Not authorized to access this page",
@@ -36,8 +36,8 @@ func (middleware *CsrfProtection) Handle(ctx *libw3.Context) {
 		return
 	}
 
-	request_csrf := ctx.Request.FormValue("csrf_token")
-	if request_csrf == "" {
+	requestCsrf := ctx.Request.FormValue("csrf_token")
+	if requestCsrf == "" {
 		ctx.AbortWithError(w3errs.NewPublic(
 			http.StatusBadRequest,
 			"Missing 'csrf_token' field in the request",
@@ -45,7 +45,7 @@ func (middleware *CsrfProtection) Handle(ctx *libw3.Context) {
 		return
 	}
 
-	if subtle.ConstantTimeCompare([]byte(request_csrf), []byte(expected_csrf)) != 1 {
+	if subtle.ConstantTimeCompare([]byte(requestCsrf), []byte(expectedCsrf)) != 1 {
 		ctx.AbortWithError(w3errs.NewPublic(
 			http.StatusBadRequest,
 			"Invalid 'csrf_token' field",

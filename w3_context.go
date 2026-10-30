@@ -134,17 +134,17 @@ func (ctx *Context) ClearCookie(name string) {
 
 // SendText writes the header and sends plain text response.
 // Use [Context.Writer] directly to write any additional data.
-func (ctx *Context) SendText(status_code int, text string) {
+func (ctx *Context) SendText(statusCode int, text string) {
 	ctx.SetContentType("text/plain; charset=utf-8")
-	ctx.Writer.WriteHeader(status_code)
+	ctx.Writer.WriteHeader(statusCode)
 	ctx.Writer.Write([]byte(text))
 }
 
 // SendTextf writes the header and sends plain text response using [fmt.Fprintf].
 // Use [Context.Writer] directly to write any additional data.
-func (ctx *Context) SendTextf(status_code int, format string, args ...any) {
+func (ctx *Context) SendTextf(statusCode int, format string, args ...any) {
 	ctx.SetContentType("text/plain; charset=utf-8")
-	ctx.Writer.WriteHeader(status_code)
+	ctx.Writer.WriteHeader(statusCode)
 	fmt.Fprintf(ctx.Writer, format, args...)
 }
 
@@ -154,23 +154,23 @@ func (ctx *Context) SendEmpty() {
 }
 
 // SendJsonMarshal is sugar code to run [Context.SendJson] using a JSON mashaler.
-func (ctx *Context) SendJsonMarshal(marshaler func(any) ([]byte, error), status_code int, data any) {
+func (ctx *Context) SendJsonMarshal(marshaler func(any) ([]byte, error), statusCode int, data any) {
 	result, err := marshaler(data)
 	if err != nil {
 		ctx.AbortWithError(w3errs.NewInternal(http.StatusInternalServerError, err))
 		return
 	}
-	ctx.SendJson(status_code, result)
+	ctx.SendJson(statusCode, result)
 }
 
 // SendJson writes application/json data.
-func (ctx *Context) SendJson(status_code int, data []byte) {
+func (ctx *Context) SendJson(statusCode int, data []byte) {
 	ctx.SetContentType("application/json; charset=utf-8")
-	ctx.Writer.WriteHeader(status_code)
+	ctx.Writer.WriteHeader(statusCode)
 	ctx.Writer.Write(data)
 }
 
 // SetContentType is sugar code for setting specific content type.
-func (ctx *Context) SetContentType(content_type string) {
-	ctx.Writer.Header().Set("Content-Type", content_type)
+func (ctx *Context) SetContentType(contentType string) {
+	ctx.Writer.Header().Set("Content-Type", contentType)
 }

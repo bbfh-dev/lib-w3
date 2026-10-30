@@ -17,8 +17,8 @@ func main() {
 		Use(&w3ware.SessionAuth[int]{
 			Cookie:         "session",
 			ContextSession: &ContextAuth,
-			Authenticator: func(session_id string) (session int, passed bool) {
-				return 123, session_id == "abc"
+			Authenticator: func(sessionId string) (session int, passed bool) {
+				return 123, sessionId == "abc"
 			},
 			Required:          false,
 			IgnoreStaticFiles: true,

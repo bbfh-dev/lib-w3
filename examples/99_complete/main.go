@@ -41,11 +41,11 @@ func main() {
 		Use(&w3ware.SessionAuth[Session]{
 			Cookie:         "session",
 			ContextSession: &ContextAuth,
-			Authenticator: func(session_id string) (session Session, passed bool) {
+			Authenticator: func(sessionId string) (session Session, passed bool) {
 				return Session{
 					Id:        123,
 					CsrfToken: "hello_world!",
-				}, session_id == "abc"
+				}, sessionId == "abc"
 			},
 			Required:          false,
 			IgnoreStaticFiles: true,

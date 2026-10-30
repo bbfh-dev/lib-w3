@@ -21,7 +21,7 @@ type DetailedReader struct {
 	rewinded uint
 }
 
-func NewDetailedReader(reader *bufio.Reader, expected_size uint64) *DetailedReader {
+func NewDetailedReader(reader *bufio.Reader, expectedSize uint64) *DetailedReader {
 	return &DetailedReader{
 		internal: reader,
 		document: internal.NewRingBuffer[rune](),
@@ -75,16 +75,16 @@ func (reader *DetailedReader) MarkHere() {
 // Use [DetailedError.Write] to pretty-print the error to file/console.
 func (reader *DetailedReader) WrapError(filename string, err error) DetailedError {
 	context := reader.document.Dump()
-	highlight_start := uint(len(context)) - (reader.head - reader.mark)
-	highlight := string(context[highlight_start:])
-	context_tail := string(lastLines(context, 4))
-	context_tail = strings.TrimSuffix(context_tail, highlight)
-	context_lines := strings.Split(context_tail, "\n")
+	highlightStart := uint(len(context)) - (reader.head - reader.mark)
+	highlight := string(context[highlightStart:])
+	contextTail := string(lastLines(context, 4))
+	contextTail = strings.TrimSuffix(contextTail, highlight)
+	contextLines := strings.Split(contextTail, "\n")
 
 	return DetailedError{
 		Filename:     filename,
-		ContextLines: context_lines,
-		FirstLine:    w3utils.SafeUint(int(reader.line) - len(context_lines)),
+		ContextLines: contextLines,
+		FirstLine:    w3utils.SafeUint(int(reader.line) - len(contextLines)),
 		Highlight:    highlight,
 		Message:      err.Error(),
 	}
@@ -140,18 +140,18 @@ func (err DetailedError) Write(file *os.File) error {
 		printer.Coloredf(libclog.ColorBrightBlack, "\n%4d │ %s", err.FirstLine+uint(i), line)
 	}
 
-	highlighted_lines := strings.Split(err.Highlight, "\n")
-	printer.Colored(libclog.ColorBrightRed, highlighted_lines[0])
-	first_line := err.FirstLine + uint(len(err.ContextLines))
-	for i, line := range highlighted_lines[1:] {
-		printer.Coloredf(libclog.ColorBrightBlack, "\n%4d │ ", first_line+uint(i))
+	highlightedLines := strings.Split(err.Highlight, "\n")
+	printer.Colored(libclog.ColorBrightRed, highlightedLines[0])
+	firstLine := err.FirstLine + uint(len(err.ContextLines))
+	for i, line := range highlightedLines[1:] {
+		printer.Coloredf(libclog.ColorBrightBlack, "\n%4d │ ", firstLine+uint(i))
 		printer.Colored(libclog.ColorBrightRed, line)
 	}
 	var length int
-	if len(highlighted_lines) == 1 {
-		length = len(highlighted_lines[0]) + len(err.ContextLines[len(err.ContextLines)-1])
+	if len(highlightedLines) == 1 {
+		length = len(highlightedLines[0]) + len(err.ContextLines[len(err.ContextLines)-1])
 	} else {
-		length = len(highlighted_lines[len(highlighted_lines)-1])
+		length = len(highlightedLines[len(highlightedLines)-1])
 	}
 	printer.Coloredf(
 		libclog.ColorBrightRed,

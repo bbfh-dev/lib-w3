@@ -63,19 +63,19 @@ func (chain MiddlewareChain) Filtered(method, path string) MiddlewareChain {
 // Sort mutates the [MiddlewareChain] according to individual [Middleware]'s priority if provided.
 func (chain MiddlewareChain) Sort() {
 	sort.SliceStable(chain, func(i, j int) bool {
-		a, a_ok := chain[i].(Ordered)
-		b, b_ok := chain[j].(Ordered)
+		a, aOk := chain[i].(Ordered)
+		b, bOk := chain[j].(Ordered)
 
-		var a_prio int8
-		if a_ok {
-			a_prio = a.Priority()
+		var aPrio int8
+		if aOk {
+			aPrio = a.Priority()
 		}
 
-		var b_prio int8
-		if b_ok {
-			b_prio = b.Priority()
+		var bPrio int8
+		if bOk {
+			bPrio = b.Priority()
 		}
 
-		return a_prio > b_prio
+		return aPrio > bPrio
 	})
 }

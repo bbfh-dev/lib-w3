@@ -30,14 +30,14 @@ func (engine *Engine) newContext() Context {
 	}
 }
 
-func (engine *Engine) wrapErrorHandler(err_getter func(*Context) w3errs.HttpError) http.Handler {
+func (engine *Engine) wrapErrorHandler(errGetter func(*Context) w3errs.HttpError) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		object_index, ctx := engine.pool.AcquireObject()
-		defer engine.pool.Release(object_index)
+		objectIndex, ctx := engine.pool.AcquireObject()
+		defer engine.pool.Release(objectIndex)
 
 		ctx.reset(writer, request)
 
-		engine.errorHandler(ctx, err_getter(ctx))
+		engine.errorHandler(ctx, errGetter(ctx))
 	})
 }
 
@@ -45,9 +45,9 @@ func (engine *Engine) newEndpoint(
 	method string,
 	path string,
 	handler Handler,
-	local_middleware MiddlewareChain,
+	localMiddleware MiddlewareChain,
 ) {
-	middleware := append(engine.middleware, local_middleware...)
+	middleware := append(engine.middleware, localMiddleware...)
 	suitable := middleware.Filtered(method, path)
 	suitable.Sort()
 	handlers := append(suitable.Handlers(), handler)
@@ -58,8 +58,8 @@ func (engine *Engine) newEndpoint(
 		method,
 		path,
 		func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-			object_index, ctx := engine.pool.AcquireObject()
-			defer engine.pool.Release(object_index)
+			objectIndex, ctx := engine.pool.AcquireObject()
+			defer engine.pool.Release(objectIndex)
 
 			ctx.reset(writer, request)
 			ctx.Params = params

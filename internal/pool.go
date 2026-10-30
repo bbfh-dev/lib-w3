@@ -24,9 +24,9 @@ func NewPool[T any](n uint16, factory func() T) *Pool[T] {
 	objects := make([]T, int(n))
 	free := make([]uint16, int(n))
 
-	var use_factory = factory != nil
+	var useFactory = factory != nil
 	for i := range n {
-		if use_factory {
+		if useFactory {
 			objects[i] = factory()
 		}
 		free[i] = i

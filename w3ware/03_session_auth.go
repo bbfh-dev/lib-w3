@@ -19,7 +19,7 @@ var (
 	)
 )
 
-type authenticator[T any] func(session_id string) (session T, passed bool)
+type authenticator[T any] func(sessionId string) (session T, passed bool)
 
 // Middleware to authenticate requests.
 // Uses specified cookie by default, falls back to Bearer HTTP Authorization otherwise.
@@ -31,7 +31,7 @@ type SessionAuth[T any] struct {
 	//	var ContextExample w3store.Holder[UserSession]
 	//	w3ware.SessionAuth{ContextSession: &ContextExample}
 	// Then query it from the [libw3.Context] using:
-	//	user_session, ok := ctx.Get(ContextExample)
+	//	userSession, ok := ctx.Get(ContextExample)
 	ContextSession *w3store.Holder[T]
 	// Function that validates the token and returns session data to pass down to other handlers.
 	Authenticator authenticator[T]
@@ -48,9 +48,9 @@ func (middleware *SessionAuth[T]) Handle(ctx *libw3.Context) {
 	var err w3errs.HttpError
 	var credentials string
 
-	session_cookie, exists := ctx.Cookie(middleware.Cookie)
+	sessionCookie, exists := ctx.Cookie(middleware.Cookie)
 	if exists {
-		credentials = session_cookie
+		credentials = sessionCookie
 		goto authenticate
 	} else {
 		value := ctx.Request.Header.Get("Authorization")
@@ -65,15 +65,15 @@ func (middleware *SessionAuth[T]) Handle(ctx *libw3.Context) {
 			goto report_error
 		}
 
-		auth_type, auth_credentials := parts[0], parts[1]
-		if auth_type != "Bearer" {
+		authType, authCredentials := parts[0], parts[1]
+		if authType != "Bearer" {
 			err = w3errs.NewPublic(
 				http.StatusUnauthorized,
-				"Authorization header must be a Bearer token, got: "+auth_type,
+				"Authorization header must be a Bearer token, got: "+authType,
 			)
 			goto report_error
 		}
-		credentials = auth_credentials
+		credentials = authCredentials
 		goto authenticate
 	}
 
