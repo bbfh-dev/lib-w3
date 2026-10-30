@@ -1,4 +1,4 @@
-package w3pages
+package w3html
 
 import (
 	"bufio"

@@ -1,4 +1,4 @@
-package w3pages_test
+package w3html_test
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"codeberg.org/bbfh/lib-w3/w3errs"
-	"codeberg.org/bbfh/lib-w3/w3pages"
+	"codeberg.org/bbfh/lib-w3/w3html"
 	"gotest.tools/assert"
 )
 
@@ -15,7 +15,7 @@ func TestParse(t *testing.T) {
 	assert.NilError(t, err)
 	defer file.Close()
 
-	page, err := w3pages.Parse(file)
+	page, err := w3html.Parse(file)
 	if err != nil {
 		w3errs.Write(err, os.Stderr)
 		t.FailNow()
@@ -23,9 +23,9 @@ func TestParse(t *testing.T) {
 
 	for i, hunkKind := range page.Hunks {
 		switch hunkKind {
-		case w3pages.HunkBlock:
+		case w3html.HunkBlock:
 			fmt.Printf("%#v\n", page.HunkData[i])
-		case w3pages.HunkRaw:
+		case w3html.HunkRaw:
 			fmt.Printf("%q\n", page.HunkData[i])
 		}
 	}
