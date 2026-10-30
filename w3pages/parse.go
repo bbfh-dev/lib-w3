@@ -61,6 +61,7 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 
 		switch char {
 		case '{':
+			reader.MarkHere()
 			nextChar, err := reader.Read()
 			if err != nil {
 				if err == io.EOF {
@@ -226,6 +227,7 @@ func readTagArgs(reader *w3utils.DetailedReader) ([]Argument, error) {
 			})
 
 		case ' ':
+			reader.MarkHere()
 			if len(buffer) != 0 {
 				args = append(args, Argument{
 					Key:   string(keyBuffer),
@@ -259,6 +261,7 @@ func readTagArgs(reader *w3utils.DetailedReader) ([]Argument, error) {
 			buffer = []rune{}
 
 		case '&', '|':
+			reader.MarkHere()
 			err := readSpecific(reader, char)
 			if err != nil {
 				return args, fmt.Errorf("reading specific token: %w", err)
@@ -266,6 +269,7 @@ func readTagArgs(reader *w3utils.DetailedReader) ([]Argument, error) {
 			args = append(args, Argument{Key: "", Value: string(char) + string(char)})
 
 		case '<', '>', '!':
+			reader.MarkHere()
 			nextChar, err := reader.Read()
 			if err != nil {
 				return args, fmt.Errorf("reading inequality sign: %w", err)
@@ -279,6 +283,17 @@ func readTagArgs(reader *w3utils.DetailedReader) ([]Argument, error) {
 				continue
 			}
 			args = append(args, Argument{Key: "", Value: string(char) + "="})
+
+		case '.':
+			reader.MarkHere()
+			path, err := readPath(reader)
+			if err != nil {
+				return args, fmt.Errorf("reading path: %w", err)
+			}
+			args = append(args, Argument{
+				Key:   string(keyBuffer),
+				Value: path,
+			})
 
 		default:
 			return args, fmt.Errorf("unexpected character %q", char)
@@ -318,11 +333,46 @@ func readQuoted(reader *w3utils.DetailedReader, quote rune) (string, error) {
 	}
 }
 
+func readPath(reader *w3utils.DetailedReader) (string, error) {
+	var buffer = []rune{}
+
+	for {
+		char, err := reader.Read()
+		if err != nil {
+			return "", err
+		}
+
+		if isPathCharset(char) {
+			buffer = append(buffer, char)
+			continue
+		}
+
+		switch char {
+		case ' ':
+			return "." + string(buffer), nil
+
+		case '(':
+			reader.MarkHere()
+			if err := readSpecific(reader, ')'); err != nil {
+				return "", fmt.Errorf("reading function parentheses: %w", err)
+			}
+			buffer = append(buffer, '(', ')')
+
+		default:
+			return "", fmt.Errorf("unexpected character %q", char)
+		}
+	}
+}
+
 func isNameCharset(char rune) bool {
+	return (char >= 'a' && char <= 'z') ||
+		(char >= '0' && char <= '9')
+}
+
+func isPathCharset(char rune) bool {
 	return (char >= 'a' && char <= 'z') ||
 		(char >= 'A' && char <= 'Z') ||
 		(char >= '0' && char <= '9') ||
 		char == '_' ||
-		char == '-' ||
 		char == '.'
 }
