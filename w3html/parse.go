@@ -252,10 +252,17 @@ func readTagArgs(reader *w3utils.DetailedReader) ([]Argument, error) {
 			if len(keyBuffer) != 0 {
 				return args, fmt.Errorf("unexpected character %q", char)
 			}
-			if len(buffer) == 0 || buffer[0] == '=' {
-				buffer = []rune{}
-				args = append(args, Argument{Key: "", Value: "=="})
-				continue
+			if len(buffer) == 0 {
+				nextChar, err := reader.Read()
+				if err != nil {
+					return args, fmt.Errorf("reading equality sign: %w", err)
+				}
+				if nextChar == '=' {
+					buffer = []rune{}
+					args = append(args, Argument{Key: "", Value: "=="})
+					continue
+				}
+				reader.Unread()
 			}
 			keyBuffer = buffer
 			buffer = []rune{}

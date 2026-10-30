@@ -62,7 +62,6 @@ func TestParse(t *testing.T) {
 				Args: []w3html.Argument{
 					{Key: "", Value: ".Page.String()"},
 					{Key: "", Value: "=="},
-					{Key: "", Value: "=="},
 					{
 						Key:   "",
 						Value: "home",
