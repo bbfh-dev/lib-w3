@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode"
 
-	"codeberg.org/bbfh/lib-w3/w3errs"
+	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
 type HunkEnum uint8
@@ -35,7 +35,7 @@ func Parse(file *os.File) (ParsedPage, error) {
 	if err == nil {
 		expectedSize = uint64(stat.Size())
 	}
-	reader := w3errs.NewDetailedReader(bufio.NewReader(file), expectedSize)
+	reader := w3utils.NewDetailedReader(bufio.NewReader(file), expectedSize)
 	page, err := parse(reader)
 	if err != nil {
 		return page, reader.WrapError(file.Name(), err)
@@ -43,7 +43,7 @@ func Parse(file *os.File) (ParsedPage, error) {
 	return page, nil
 }
 
-func parse(reader *w3errs.DetailedReader) (ParsedPage, error) {
+func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 	page := ParsedPage{
 		Hunks:    []HunkEnum{},
 		HunkData: []any{},
@@ -99,7 +99,7 @@ finish:
 	return page, nil
 }
 
-func readTag(reader *w3errs.DetailedReader) (Tag, error) {
+func readTag(reader *w3utils.DetailedReader) (Tag, error) {
 	reader.MarkHere()
 	if err := readWhiteSpace(reader); err != nil {
 		return Tag{}, fmt.Errorf("reading whitespace: %w", err)
@@ -130,7 +130,7 @@ func readTag(reader *w3errs.DetailedReader) (Tag, error) {
 	}, nil
 }
 
-func readWhiteSpace(reader *w3errs.DetailedReader) error {
+func readWhiteSpace(reader *w3utils.DetailedReader) error {
 	for {
 		char, err := reader.Read()
 		if err != nil {
@@ -146,7 +146,7 @@ func readWhiteSpace(reader *w3errs.DetailedReader) error {
 	}
 }
 
-func readTagPrefix(reader *w3errs.DetailedReader) (isClosing bool, err error) {
+func readTagPrefix(reader *w3utils.DetailedReader) (isClosing bool, err error) {
 	char, err := reader.Read()
 	if err != nil {
 		return false, err
@@ -158,7 +158,7 @@ func readTagPrefix(reader *w3errs.DetailedReader) (isClosing bool, err error) {
 	return false, nil
 }
 
-func readTagName(reader *w3errs.DetailedReader) (string, error) {
+func readTagName(reader *w3utils.DetailedReader) (string, error) {
 	var builder strings.Builder
 
 	for {
@@ -194,7 +194,7 @@ func (arg Argument) HasKey() bool {
 	return arg.Key != ""
 }
 
-func readTagArgs(reader *w3errs.DetailedReader) ([]Argument, error) {
+func readTagArgs(reader *w3utils.DetailedReader) ([]Argument, error) {
 	var args = []Argument{}
 	var buffer = []rune{}
 	var keyBuffer = []rune{}
@@ -293,7 +293,7 @@ func readTagArgs(reader *w3errs.DetailedReader) ([]Argument, error) {
 	}
 }
 
-func readQuoted(reader *w3errs.DetailedReader, quote rune) (string, error) {
+func readQuoted(reader *w3utils.DetailedReader, quote rune) (string, error) {
 	var buffer = []rune{}
 
 	for {
