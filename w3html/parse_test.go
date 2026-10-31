@@ -21,82 +21,132 @@ func TestParse(t *testing.T) {
 	}
 
 	assert.DeepEqual(t, page, w3html.ParsedPage{
-		Hunks: []w3html.HunkEnum{
-			w3html.HunkBlock,
-			w3html.HunkRaw,
-			w3html.HunkBlock,
-			w3html.HunkRaw,
-			w3html.HunkBlock,
-			w3html.HunkRaw,
-			w3html.HunkBlock,
-			w3html.HunkRaw,
-			w3html.HunkBlock,
-			w3html.HunkRaw,
-			w3html.HunkBlock,
-			w3html.HunkRaw,
-			w3html.HunkBlock,
-			w3html.HunkRaw,
-			w3html.HunkBlock,
-			w3html.HunkRaw,
-			w3html.HunkBlock,
-			w3html.HunkRaw,
-		},
-		HunkData: []any{
-			w3html.Tag{
-				Name: "include",
-				Args: []w3html.Argument{
-					{Key: "", Value: "_root"},
-					{Key: "title", Value: "Hello World!"},
-				},
-				IsClosing: false,
-			},
-			[]byte("\n"),
-			w3html.Tag{
-				Name:      "slot",
-				Args:      []w3html.Argument{{Key: "", Value: "body"}},
-				IsClosing: false,
-			},
-			[]byte("\n<main>\n    "),
-			w3html.Tag{
-				Name: "if",
-				Args: []w3html.Argument{
-					{Key: "", Value: ".Page.String()"},
-					{Key: "", Value: "=="},
-					{
-						Key:   "",
-						Value: "home",
+		Filename: "parse_test.01.html",
+		Hunks: []w3html.Hunk{
+			{
+				Kind: w3html.HunkBlock,
+				Line: 1,
+				Data: w3html.Tag{
+					Name: "include",
+					Args: []w3html.Argument{
+						{Key: "", Value: "_root"},
+						{Key: "title", Value: "Hello World!"},
 					},
-					{Key: "", Value: "&&"},
-					{Key: "", Value: ".Index"},
-					{Key: "", Value: ">"},
-					{Key: "", Value: "1"},
+					IsClosing: false,
 				},
-				IsClosing: false,
 			},
-			[]byte("\n    "),
-			w3html.Tag{
-				Name: "include",
-				Args: []w3html.Argument{
-					{Key: "", Value: "_button"},
-					{Key: "label", Value: "My Button"},
+			{
+				Kind: w3html.HunkRaw,
+				Line: 1,
+				Data: []byte("\n"),
+			},
+			{
+				Kind: w3html.HunkBlock,
+				Line: 2,
+				Data: w3html.Tag{
+					Name:      "slot",
+					Args:      []w3html.Argument{{Key: "", Value: "body"}},
+					IsClosing: false,
 				},
-				IsClosing: false,
 			},
-			[]byte("\n    "),
-			w3html.Tag{
-				Name:      "include",
-				Args:      []w3html.Argument{{Key: "", Value: "icons/eyecons.svg"}},
-				IsClosing: false,
+			{
+				Kind: w3html.HunkRaw,
+				Line: 2,
+				Data: []byte("\n<main>\n    "),
 			},
-			[]byte("\n    "),
-			w3html.Tag{Name: "include", Args: []w3html.Argument{}, IsClosing: true},
-			[]byte("\n    "),
-			w3html.Tag{Name: "if", Args: []w3html.Argument{}, IsClosing: true},
-			[]byte("\n</main>\n"),
-			w3html.Tag{Name: "slot", Args: []w3html.Argument{}, IsClosing: true},
-			[]byte("\n"),
-			w3html.Tag{Name: "include", Args: []w3html.Argument{}, IsClosing: true},
-			[]byte("\n"),
+			{
+				Kind: w3html.HunkBlock,
+				Line: 4,
+				Data: w3html.Tag{
+					Name: "if",
+					Args: []w3html.Argument{
+						{Key: "", Value: ".Page.String()"},
+						{Key: "", Value: "=="},
+						{Key: "", Value: "home"},
+						{Key: "", Value: "&&"},
+						{Key: "", Value: ".Index"},
+						{Key: "", Value: ">"},
+						{Key: "", Value: "1"},
+					},
+					IsClosing: false,
+				},
+			},
+			{
+				Kind: w3html.HunkRaw,
+				Line: 4,
+				Data: []byte("\n    "),
+			},
+			{
+				Kind: w3html.HunkBlock,
+				Line: 5,
+				Data: w3html.Tag{
+					Name: "include",
+					Args: []w3html.Argument{
+						{Key: "", Value: "_button"},
+						{Key: "label", Value: "My Button"},
+					},
+					IsClosing: false,
+				},
+			},
+			{
+				Kind: w3html.HunkRaw,
+				Line: 5,
+				Data: []byte("\n    "),
+			},
+			{
+				Kind: w3html.HunkBlock,
+				Line: 6,
+				Data: w3html.Tag{
+					Name:      "include",
+					Args:      []w3html.Argument{{Key: "", Value: "icons/eyecons.svg"}},
+					IsClosing: false,
+				},
+			},
+			{
+				Kind: w3html.HunkRaw,
+				Line: 6,
+				Data: []byte("\n    "),
+			},
+			{
+				Kind: w3html.HunkBlock,
+				Line: 7,
+				Data: w3html.Tag{Name: "include", Args: []w3html.Argument{}, IsClosing: true},
+			},
+			{
+				Kind: w3html.HunkRaw,
+				Line: 7,
+				Data: []byte("\n    "),
+			},
+			{
+				Kind: w3html.HunkBlock,
+				Line: 8,
+				Data: w3html.Tag{Name: "if", Args: []w3html.Argument{}, IsClosing: true},
+			},
+			{
+				Kind: w3html.HunkRaw,
+				Line: 8,
+				Data: []byte("\n</main>\n"),
+			},
+			{
+				Kind: w3html.HunkBlock,
+				Line: 10,
+				Data: w3html.Tag{Name: "slot", Args: []w3html.Argument{}, IsClosing: true},
+			},
+			{
+				Kind: w3html.HunkRaw,
+				Line: 10,
+				Data: []byte("\n"),
+			},
+			{
+				Kind: w3html.HunkBlock,
+				Line: 11,
+				Data: w3html.Tag{Name: "include", Args: []w3html.Argument{}, IsClosing: true},
+			},
+			{
+				Kind: w3html.HunkRaw,
+				Line: 11,
+				Data: []byte("\n"),
+			},
 		},
 	})
 }

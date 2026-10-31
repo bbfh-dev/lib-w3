@@ -18,6 +18,12 @@ const (
 	HunkBlock
 )
 
+type Hunk struct {
+	Kind HunkEnum
+	Data any
+	Line uint
+}
+
 type Tag struct {
 	Name      string
 	Args      []Argument
@@ -26,8 +32,7 @@ type Tag struct {
 
 type ParsedPage struct {
 	Filename string
-	Hunks    []HunkEnum
-	HunkData []any
+	Hunks    []Hunk
 }
 
 func Parse(file *os.File) (ParsedPage, error) {
@@ -47,10 +52,10 @@ func Parse(file *os.File) (ParsedPage, error) {
 
 func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 	page := ParsedPage{
-		Hunks:    []HunkEnum{},
-		HunkData: []any{},
+		Hunks: []Hunk{},
 	}
 	buffer := []byte{}
+	line := reader.Line()
 
 	for {
 		char, err := reader.Read()
@@ -77,17 +82,24 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 				continue
 			}
 			if len(buffer) != 0 {
-				page.HunkData = append(page.HunkData, buffer)
-				page.Hunks = append(page.Hunks, HunkRaw)
+				page.Hunks = append(page.Hunks, Hunk{
+					Kind: HunkRaw,
+					Data: buffer,
+					Line: line,
+				})
 				buffer = []byte{}
+				line = reader.Line()
 			}
 			// at this point it has consumed both '{{'
 			block, err := readTag(reader)
 			if err != nil {
 				return page, fmt.Errorf("reading tag: %w", err)
 			}
-			page.HunkData = append(page.HunkData, block)
-			page.Hunks = append(page.Hunks, HunkBlock)
+			page.Hunks = append(page.Hunks, Hunk{
+				Kind: HunkBlock,
+				Data: block,
+				Line: line,
+			})
 
 		default:
 			buffer = append(buffer, byte(char))
@@ -96,8 +108,11 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 
 finish:
 	if len(buffer) != 0 {
-		page.HunkData = append(page.HunkData, buffer)
-		page.Hunks = append(page.Hunks, HunkRaw)
+		page.Hunks = append(page.Hunks, Hunk{
+			Kind: HunkRaw,
+			Data: buffer,
+			Line: line,
+		})
 	}
 	return page, nil
 }

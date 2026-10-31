@@ -87,6 +87,11 @@ func (reader *DetailedReader) WrapError(filename string, err error) w3errs.Docum
 	}
 }
 
+// Line returns the current reader file line.
+func (reader *DetailedReader) Line() uint {
+	return reader.line
+}
+
 func lastLines(runes []rune, maxLines int) []rune {
 	if maxLines <= 0 {
 		return nil
