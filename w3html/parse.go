@@ -25,6 +25,7 @@ type Tag struct {
 }
 
 type ParsedPage struct {
+	Filename string
 	Hunks    []HunkEnum
 	HunkData []any
 }
@@ -40,6 +41,7 @@ func Parse(file *os.File) (ParsedPage, error) {
 	if err != nil {
 		return page, reader.WrapError(file.Name(), err)
 	}
+	page.Filename = file.Name()
 	return page, nil
 }
 
