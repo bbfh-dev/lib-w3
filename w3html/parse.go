@@ -30,8 +30,28 @@ type Tag struct {
 	IsClosing bool
 }
 
+func (tag Tag) FindNamedArg(name string, i int) string {
+	if len(tag.Args) == 0 {
+		return ""
+	}
+
+	for _, arg := range tag.Args {
+		if arg.Key == name {
+			return arg.Value
+		}
+	}
+
+	iLast := len(tag.Args) - 1
+	return tag.Args[min(i, iLast)].Value
+}
+
+func (tag Tag) String() string {
+	return ""
+}
+
 type ParsedPage struct {
 	Filename string
+	Slots    map[string]uint
 	Hunks    []Hunk
 }
 

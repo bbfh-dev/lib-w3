@@ -26,7 +26,7 @@ func (err DocumentError) Error() string {
 }
 
 func (err DocumentError) Write(file *os.File) error {
-	printer := libclog.NewPrinter(file, libclog.OutputColored)
+	printer := libclog.NewPrinter(file, libclog.OutputAuto)
 	printer.Coloredf(libclog.ColorBrightBlack, "─────┬%s\n", strings.Repeat("─", 30))
 	printer.Colored(libclog.ColorBrightBlack, "     │ [!] Error: ")
 	printer.Coloredln(libclog.ColorBrightRed, err.Message)
