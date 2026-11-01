@@ -24,7 +24,7 @@ func TestParse(t *testing.T) {
 		Filename: "parse_test.01.html",
 		Hunks: []w3html.Hunk{
 			{
-				Kind: w3html.HunkBlock,
+				Kind: w3html.HunkTag,
 				Line: 1,
 				Data: w3html.Tag{
 					Name: "include",
@@ -41,7 +41,7 @@ func TestParse(t *testing.T) {
 				Data: []byte("\n"),
 			},
 			{
-				Kind: w3html.HunkBlock,
+				Kind: w3html.HunkTag,
 				Line: 2,
 				Data: w3html.Tag{
 					Name:      "slot",
@@ -55,7 +55,7 @@ func TestParse(t *testing.T) {
 				Data: []byte("\n<main>\n    "),
 			},
 			{
-				Kind: w3html.HunkBlock,
+				Kind: w3html.HunkTag,
 				Line: 4,
 				Data: w3html.Tag{
 					Name: "if",
@@ -77,7 +77,7 @@ func TestParse(t *testing.T) {
 				Data: []byte("\n    "),
 			},
 			{
-				Kind: w3html.HunkBlock,
+				Kind: w3html.HunkTag,
 				Line: 5,
 				Data: w3html.Tag{
 					Name: "include",
@@ -94,7 +94,7 @@ func TestParse(t *testing.T) {
 				Data: []byte("\n    "),
 			},
 			{
-				Kind: w3html.HunkBlock,
+				Kind: w3html.HunkTag,
 				Line: 6,
 				Data: w3html.Tag{
 					Name:      "include",
@@ -108,7 +108,7 @@ func TestParse(t *testing.T) {
 				Data: []byte("\n    "),
 			},
 			{
-				Kind: w3html.HunkBlock,
+				Kind: w3html.HunkTag,
 				Line: 7,
 				Data: w3html.Tag{Name: "include", Args: []w3html.Argument{}, IsClosing: true},
 			},
@@ -118,7 +118,7 @@ func TestParse(t *testing.T) {
 				Data: []byte("\n    "),
 			},
 			{
-				Kind: w3html.HunkBlock,
+				Kind: w3html.HunkTag,
 				Line: 8,
 				Data: w3html.Tag{Name: "if", Args: []w3html.Argument{}, IsClosing: true},
 			},
@@ -128,7 +128,7 @@ func TestParse(t *testing.T) {
 				Data: []byte("\n</main>\n"),
 			},
 			{
-				Kind: w3html.HunkBlock,
+				Kind: w3html.HunkTag,
 				Line: 10,
 				Data: w3html.Tag{Name: "slot", Args: []w3html.Argument{}, IsClosing: true},
 			},
@@ -138,7 +138,7 @@ func TestParse(t *testing.T) {
 				Data: []byte("\n"),
 			},
 			{
-				Kind: w3html.HunkBlock,
+				Kind: w3html.HunkTag,
 				Line: 11,
 				Data: w3html.Tag{Name: "include", Args: []w3html.Argument{}, IsClosing: true},
 			},

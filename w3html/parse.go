@@ -15,7 +15,7 @@ type HunkEnum uint8
 
 const (
 	HunkRaw HunkEnum = iota
-	HunkBlock
+	HunkTag
 )
 
 type Hunk struct {
@@ -111,13 +111,13 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 				line = reader.Line()
 			}
 			// at this point it has consumed both '{{'
-			block, err := readTag(reader)
+			tag, err := readTag(reader)
 			if err != nil {
 				return page, fmt.Errorf("reading tag: %w", err)
 			}
 			page.Hunks = append(page.Hunks, Hunk{
-				Kind: HunkBlock,
-				Data: block,
+				Kind: HunkTag,
+				Data: tag,
 				Line: line,
 			})
 

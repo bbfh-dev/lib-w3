@@ -28,7 +28,7 @@ func process(inPage, outPage *ParsedPage, params map[string]string) error {
 		case HunkRaw:
 			outPage.Hunks = append(outPage.Hunks, hunk)
 
-		case HunkBlock:
+		case HunkTag:
 			tag := hunk.Data.(Tag)
 			switch tag.Name {
 
