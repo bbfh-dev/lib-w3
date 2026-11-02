@@ -25,8 +25,8 @@ func (err DocumentError) Error() string {
 	)
 }
 
-func (err DocumentError) Write(file *os.File) error {
-	printer := libclog.NewPrinter(file, libclog.OutputAuto)
+func (err DocumentError) Write(file *os.File, mode libclog.OutputModeEnum) error {
+	printer := libclog.NewPrinter(file, mode)
 	printer.Coloredf(libclog.ColorBrightBlack, "─────┬%s\n", strings.Repeat("─", 30))
 	printer.Colored(libclog.ColorBrightBlack, "     │ [!] Error: ")
 	printer.Coloredln(libclog.ColorBrightRed, err.Message)
@@ -60,6 +60,7 @@ func (err DocumentError) Write(file *os.File) error {
 		"\n%s↑\n",
 		strings.Repeat(" ", 7+length-1),
 	)
+	printer.Coloredf(libclog.ColorBrightBlack, "─────┴%s\n", strings.Repeat("─", 30))
 
 	return printer.ErrorsJoined()
 }

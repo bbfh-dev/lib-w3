@@ -24,15 +24,17 @@ func (err TagError) Error() string {
 	)
 }
 
-func (err TagError) Write(file *os.File) error {
-	printer := libclog.NewPrinter(file, libclog.OutputAuto)
+func (err TagError) Write(file *os.File, mode libclog.OutputModeEnum) error {
+	printer := libclog.NewPrinter(file, mode)
 	printer.Coloredf(libclog.ColorBrightBlack, "─────┬%s\n", strings.Repeat("─", 30))
 	printer.Colored(libclog.ColorBrightBlack, "     │ [!] Error: ")
 	printer.Coloredln(libclog.ColorBrightRed, err.Message)
 	printer.Colored(libclog.ColorBrightBlack, "     │ in ")
 	printer.Coloredf(libclog.ColorBrightWhite, "%s:%d\n", err.Filename, err.LineNumber)
 	printer.Coloredf(libclog.ColorBrightBlack, "─────┼%s", strings.Repeat("─", 30))
-	printer.Coloredf(libclog.ColorBrightBlack, "\n     │ %s\n", err.Context)
+	printer.Colored(libclog.ColorBrightBlack, "\n     │ ")
+	printer.Coloredln(libclog.ColorBrightRed, err.Context)
+	printer.Coloredf(libclog.ColorBrightBlack, "─────┴%s\n", strings.Repeat("─", 30))
 
 	return printer.ErrorsJoined()
 }
