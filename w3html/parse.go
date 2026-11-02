@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode"
@@ -49,6 +50,16 @@ func (tag Tag) FindNamedArg(name string, i int) string {
 	return tag.Args[min(i, iLast)].Value
 }
 
+func (tag Tag) ArgsExcluding(names ...string) map[string]string {
+	out := map[string]string{}
+	for _, arg := range tag.Args {
+		if !slices.Contains(names, arg.Key) {
+			out[arg.Key] = arg.Value
+		}
+	}
+	return out
+}
+
 func (tag Tag) String() string {
 	var builder strings.Builder
 	builder.WriteString("{{ ")
@@ -77,30 +88,21 @@ func (tag Tag) String() string {
 
 type ParsedPage struct {
 	Filename string
-	Slots    map[string]uint
+	Slots    map[string][]uint
 	Hunks    []Hunk
 	// temporary, used during parsing
 	breadcrumbs []*Hunk
 }
 
-func (page ParsedPage) FindSlot(name string) int {
-	var first int = -1
+func (page ParsedPage) FindSlot(name string) []uint {
 	if len(page.Slots) == 0 {
-		goto return_not_found
+		return nil
 	}
-	for slotName, slot := range page.Slots {
-		if first == -1 {
-			first = int(slot)
-		}
-		if slotName == name {
-			return int(slot)
-		}
+	path, ok := page.Slots[name]
+	if !ok {
+		return nil
 	}
-	if name == "default" {
-		return first
-	}
-return_not_found:
-	return -1
+	return path
 }
 
 func (page *ParsedPage) walk(hunk *Hunk) *Hunk {
@@ -163,7 +165,7 @@ func Parse(file *os.File) (ParsedPage, error) {
 func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 	page := ParsedPage{
 		Hunks: []Hunk{},
-		Slots: map[string]uint{},
+		Slots: map[string][]uint{},
 	}
 	buffer := []byte{}
 	line := reader.Line()
@@ -227,9 +229,17 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 				// Realitically that would be a part of processing.
 				name := tag.FindNamedArg("name", 0)
 				if name == "" {
-					return page, errors.New("'place' tag requires a 'name' argument")
+					name = "default"
+					return page, errors.New(
+						"'place' tag requires a 'name' argument. Please, explicitly specify 'default' if that was your intent.",
+					)
 				}
-				page.Slots[name] = uint(len(page.Hunks) - 1)
+				location := make([]uint, 0, len(page.Hunks)+len(page.breadcrumbs))
+				location = append(location, uint(len(page.Hunks)-1))
+				for _, tag := range page.breadcrumbs {
+					location = append(location, uint(len(tag.Children)-1))
+				}
+				page.Slots[name] = location
 
 			case "extend", "if", "slot":
 				if tag.IsClosing {

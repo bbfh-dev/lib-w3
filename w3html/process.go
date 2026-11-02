@@ -17,6 +17,7 @@ type Source struct {
 func Process(inPage ParsedPage, params map[string]string) (ParsedPage, error) {
 	outPage := ParsedPage{
 		Filename: inPage.Filename,
+		Slots:    inPage.Slots,
 		Hunks:    make([]Hunk, 0, len(inPage.Hunks)),
 	}
 	err := process(&inPage, &outPage, params)
@@ -94,7 +95,12 @@ func process(inPage, outPage *ParsedPage, params map[string]string) error {
 				}
 				defer file.Close()
 
-				extendPage, err := Parse(file)
+				rawExtendPage, err := Parse(file)
+				if err != nil {
+					return err
+				}
+
+				extendPage, err := Process(rawExtendPage, tag.ArgsExcluding("path", "at"))
 				if err != nil {
 					return err
 				}
@@ -103,15 +109,13 @@ func process(inPage, outPage *ParsedPage, params map[string]string) error {
 				if at == "" {
 					at = "default"
 				}
-				slot := extendPage.FindSlot(at)
-				if slot == -1 {
+				slotPath := extendPage.FindSlot(at)
+				if slotPath == nil {
 					return newTagError(inPage.Filename, hunk, fmt.Sprintf(
 						"unable to find a matching '{{ place %q }}' in the extended document",
 						at,
 					))
 				}
-				// hunksBefore := extendPage.Hunks[:slot]
-				// hunksAfter := extendPage.Hunks[slot+1:]
 				fmt.Println(extendPage)
 
 			case "slot", "if":

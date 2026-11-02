@@ -1,10 +1,11 @@
 {{ extend "_root" title="Hello World!" }}
-    {{ slot "body" }}
-    <main>
-        {{ if .Page.String() == "home" && .Index > 1 }}
-            {{ include "_button" label="My Button" }}
-            {{ include "icons/eyecons.svg" }}
-        {{ /if }}
-    </main>
-    {{ /slot }}
+{{ slot "body" }}
+<main>
+    {{ if .Page.String() == "home" && .Index > 1 }}
+    {{ include "_button" label="My Button" }}
+    {{ include "icons/eyecons.svg" }}
+    {{ place `default` }}
+    {{ /if }}
+</main>
+{{ /slot }}
 {{ /extend }}

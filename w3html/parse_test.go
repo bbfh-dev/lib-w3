@@ -31,7 +31,9 @@ func TestParse(t *testing.T) {
 		t,
 		w3html.ParsedPage{
 			Filename: "parse_test.01.html",
-			Slots:    map[string]uint{},
+			Slots: map[string][]uint{
+				"default": {0, 1, 1, 5},
+			},
 			Hunks: []w3html.Hunk{
 				{
 					Kind: w3html.HunkTag,
@@ -123,6 +125,25 @@ func TestParse(t *testing.T) {
 											Kind: w3html.HunkTag,
 											Line: 7,
 											Data: w3html.Tag{
+												Name: "place",
+												Args: []w3html.Argument{
+													{
+														Key:   "",
+														Value: "default",
+													},
+												},
+												IsClosing: false,
+											},
+										},
+										{
+											Kind: w3html.HunkRaw,
+											Line: 7,
+											Data: []byte("\n    "),
+										},
+										{
+											Kind: w3html.HunkTag,
+											Line: 8,
+											Data: w3html.Tag{
 												Name:      "if",
 												Args:      []w3html.Argument{},
 												IsClosing: true,
@@ -132,12 +153,12 @@ func TestParse(t *testing.T) {
 								},
 								{
 									Kind: w3html.HunkRaw,
-									Line: 7,
+									Line: 8,
 									Data: []byte("\n</main>\n"),
 								},
 								{
 									Kind: w3html.HunkTag,
-									Line: 9,
+									Line: 10,
 									Data: w3html.Tag{
 										Name:      "slot",
 										Args:      []w3html.Argument{},
@@ -148,12 +169,12 @@ func TestParse(t *testing.T) {
 						},
 						{
 							Kind: w3html.HunkRaw,
-							Line: 9,
+							Line: 10,
 							Data: []byte("\n"),
 						},
 						{
 							Kind: w3html.HunkTag,
-							Line: 10,
+							Line: 11,
 							Data: w3html.Tag{
 								Name:      "extend",
 								Args:      []w3html.Argument{},
@@ -164,7 +185,7 @@ func TestParse(t *testing.T) {
 				},
 				{
 					Kind: w3html.HunkRaw,
-					Line: 10,
+					Line: 11,
 					Data: []byte("\n"),
 				},
 			},
