@@ -29,6 +29,29 @@ type Hunk struct {
 	Children []Hunk
 }
 
+// MeaningfulChildren returns [Hunk.Children] that aren't purely whitespace.
+func (hunk Hunk) MeaningfulChildren() []Hunk {
+	out := make([]Hunk, 0, len(hunk.Children))
+loop:
+	for _, child := range hunk.Children {
+		switch hunk.Kind {
+		case HunkTag:
+			out = append(out, child)
+		case HunkRaw:
+			buffer := hunk.Data.([]byte)
+			for _, char := range buffer {
+				switch char {
+				case '\t', '\n', '\v', '\f', '\r', ' ':
+				default:
+					continue loop
+				}
+			}
+			out = append(out, child)
+		}
+	}
+	return out
+}
+
 type Tag struct {
 	Name      string
 	Args      []Argument

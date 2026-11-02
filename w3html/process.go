@@ -9,9 +9,10 @@ import (
 	"codeberg.org/bbfh/lib-w3/w3errs"
 )
 
-type Source struct {
-	Filename string
-	Line     uint
+type Processor struct {
+	In     *ParsedPage
+	Out    *ParsedPage
+	Params map[string]string
 }
 
 func Process(inPage ParsedPage, params map[string]string) (ParsedPage, error) {
@@ -20,16 +21,21 @@ func Process(inPage ParsedPage, params map[string]string) (ParsedPage, error) {
 		Slots:    inPage.Slots,
 		Hunks:    make([]Hunk, 0, len(inPage.Hunks)),
 	}
-	err := process(&inPage, &outPage, params)
+	proc := Processor{
+		In:     &inPage,
+		Out:    &outPage,
+		Params: params,
+	}
+	err := proc.Run()
 	return outPage, err
 }
 
-func process(inPage, outPage *ParsedPage, params map[string]string) error {
-	for _, hunk := range inPage.Hunks {
+func (proc Processor) Run() error {
+	for _, hunk := range proc.In.Hunks {
 		switch hunk.Kind {
 
 		case HunkRaw:
-			outPage.Hunks = append(outPage.Hunks, hunk)
+			proc.Out.Hunks = append(proc.Out.Hunks, hunk)
 
 		case HunkTag:
 			tag := hunk.Data.(Tag)
@@ -48,10 +54,10 @@ func process(inPage, outPage *ParsedPage, params map[string]string) error {
 				value := tag.Args[0].Value
 				after, ok := strings.CutPrefix(value, ".")
 				if ok && strings.ToLower(after) == after {
-					param, ok := params[after]
+					param, ok := proc.Params[after]
 					if !ok {
 						return newTagError(
-							inPage.Filename,
+							proc.In.Filename,
 							hunk,
 							fmt.Sprintf(
 								"undefined parameter %q.\nMake sure you 1) provide it in the tag that includes/extends this file. 2) didn't mean to access a struct field (use capitalized name in that case)",
@@ -59,39 +65,69 @@ func process(inPage, outPage *ParsedPage, params map[string]string) error {
 							),
 						)
 					}
-					outPage.Hunks = append(outPage.Hunks, Hunk{
+					proc.Out.Hunks = append(proc.Out.Hunks, Hunk{
 						Kind: HunkRaw,
 						Data: param,
 						Line: hunk.Line,
 					})
 					continue
 				}
-				outPage.Hunks = append(outPage.Hunks, hunk)
+				proc.Out.Hunks = append(proc.Out.Hunks, hunk)
 
 			case "include":
 				path := tag.FindNamedArg("path", 0)
 				if path == "" {
 					return newTagError(
-						inPage.Filename,
+						proc.In.Filename,
 						hunk,
 						"'include' tag requires 'path' argument",
 					)
 				}
 
 			case "extend":
+				insertions := map[string][]Hunk{}
+				for _, child := range hunk.MeaningfulChildren() {
+					switch child.Kind {
+					case HunkRaw:
+						insertions["default"] = append(insertions["default"], child)
+					case HunkTag:
+						tag := child.Data.(Tag)
+						if tag.Name == "slot" {
+							name := tag.FindNamedArg("name", 0)
+							if name == "" {
+								return newTagError(
+									proc.In.Filename,
+									child,
+									"'slot' tag requires 'name' argument",
+								)
+							}
+							if _, ok := insertions[name]; ok {
+								return newTagError(
+									proc.In.Filename,
+									child,
+									fmt.Sprintf("'slot' with name %q is already placed", name),
+								)
+							}
+							insertions[name] = child.Children
+						} else {
+							insertions["default"] = append(insertions["default"], child)
+						}
+					}
+				}
+
 				path := tag.FindNamedArg("path", 0)
 				if path == "" {
 					return newTagError(
-						inPage.Filename,
+						proc.In.Filename,
 						hunk,
 						"'extend' tag requires 'path' argument",
 					)
 				}
 
-				path = filepath.Join(filepath.Dir(inPage.Filename), path)
+				path = filepath.Join(filepath.Dir(proc.In.Filename), path)
 				file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
 				if err != nil {
-					return newTagError(inPage.Filename, hunk, err.Error())
+					return newTagError(proc.In.Filename, hunk, err.Error())
 				}
 				defer file.Close()
 
@@ -105,25 +141,27 @@ func process(inPage, outPage *ParsedPage, params map[string]string) error {
 					return err
 				}
 
+				// FIXME: instead of "at" there should be a "slot" tag inside
 				at := tag.FindNamedArg("at", 1)
 				if at == "" {
 					at = "default"
 				}
 				slotPath := extendPage.FindSlot(at)
 				if slotPath == nil {
-					return newTagError(inPage.Filename, hunk, fmt.Sprintf(
+					return newTagError(proc.In.Filename, hunk, fmt.Sprintf(
 						"unable to find a matching '{{ place %q }}' in the extended document",
 						at,
 					))
 				}
+				// TODO: this
 				fmt.Println(extendPage)
 
 			case "slot", "if":
-				outPage.Hunks = append(outPage.Hunks, hunk)
+				proc.Out.Hunks = append(proc.Out.Hunks, hunk)
 
 			default:
 				return newTagError(
-					inPage.Filename,
+					proc.In.Filename,
 					hunk,
 					fmt.Sprintf(
 						"unknown tag function %q. Available are: %s",
