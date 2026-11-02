@@ -2,6 +2,8 @@ package w3html
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"codeberg.org/bbfh/lib-w3/w3errs"
@@ -61,8 +63,6 @@ func process(inPage, outPage *ParsedPage, params map[string]string) error {
 				}
 				outPage.Hunks = append(outPage.Hunks, hunk)
 
-			case "place":
-
 			case "include":
 				path := tag.FindNamedArg("path", 0)
 				if path == "" {
@@ -82,6 +82,33 @@ func process(inPage, outPage *ParsedPage, params map[string]string) error {
 						"'extend' tag requires 'path' argument",
 					)
 				}
+
+				path = filepath.Join(filepath.Dir(inPage.Filename), path)
+				file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
+				if err != nil {
+					return newTagError(inPage.Filename, hunk, err.Error())
+				}
+				defer file.Close()
+
+				extendPage, err := Parse(file)
+				if err != nil {
+					return err
+				}
+
+				at := tag.FindNamedArg("at", 1)
+				if at == "" {
+					at = "default"
+				}
+				slot := extendPage.FindSlot(at)
+				if slot == -1 {
+					return newTagError(inPage.Filename, hunk, fmt.Sprintf(
+						"unable to find a matching '{{ place %q }}' in the extended document",
+						at,
+					))
+				}
+				// hunksBefore := extendPage.Hunks[:slot]
+				// hunksAfter := extendPage.Hunks[slot+1:]
+				fmt.Println(extendPage)
 
 			case "slot", "if":
 				outPage.Hunks = append(outPage.Hunks, hunk)

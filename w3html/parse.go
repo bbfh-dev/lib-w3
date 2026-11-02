@@ -2,6 +2,7 @@ package w3html
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -55,6 +56,26 @@ type ParsedPage struct {
 	Hunks    []Hunk
 }
 
+func (page ParsedPage) FindSlot(name string) int {
+	var first int = -1
+	if len(page.Slots) == 0 {
+		goto return_not_found
+	}
+	for slotName, slot := range page.Slots {
+		if first == -1 {
+			first = int(slot)
+		}
+		if slotName == name {
+			return int(slot)
+		}
+	}
+	if name == "default" {
+		return first
+	}
+return_not_found:
+	return -1
+}
+
 func Parse(file *os.File) (ParsedPage, error) {
 	var expectedSize uint64
 	stat, err := file.Stat()
@@ -73,6 +94,7 @@ func Parse(file *os.File) (ParsedPage, error) {
 func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 	page := ParsedPage{
 		Hunks: []Hunk{},
+		Slots: map[string]uint{},
 	}
 	buffer := []byte{}
 	line := reader.Line()
@@ -120,6 +142,15 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 				Data: tag,
 				Line: line,
 			})
+			if tag.Name == "place" {
+				// We do this during parsing simply because it's convenient.
+				// Realitically that would be a part of processing.
+				name := tag.FindNamedArg("name", 0)
+				if name == "" {
+					return page, errors.New("'place' tag requires a 'name' argument")
+				}
+				page.Slots[name] = uint(len(page.Hunks) - 1)
+			}
 
 		default:
 			buffer = append(buffer, byte(char))
