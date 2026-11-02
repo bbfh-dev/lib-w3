@@ -52,6 +52,12 @@ loop:
 	return out
 }
 
+// Tag returns the [Tag] representation of [Hunk.Data].
+// Panics if [Hunk.Data] is not a [Tag].
+func (hunk Hunk) Tag() Tag {
+	return hunk.Data.(Tag)
+}
+
 type Tag struct {
 	Name      string
 	Args      []Argument
