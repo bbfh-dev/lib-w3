@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"unicode"
 
+	"codeberg.org/bbfh/lib-w3/w3errs"
 	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
@@ -20,9 +22,10 @@ const (
 )
 
 type Hunk struct {
-	Kind HunkEnum
-	Data any
-	Line uint
+	Kind     HunkEnum
+	Data     any
+	Line     uint
+	Children []Hunk
 }
 
 type Tag struct {
@@ -47,13 +50,37 @@ func (tag Tag) FindNamedArg(name string, i int) string {
 }
 
 func (tag Tag) String() string {
-	return ""
+	var builder strings.Builder
+	builder.WriteString("{{ ")
+	if tag.IsClosing {
+		builder.WriteRune('/')
+	}
+	builder.WriteString(tag.Name)
+	for _, arg := range tag.Args {
+		if arg.Key != "" {
+			builder.WriteString(arg.Key)
+			builder.WriteRune('=')
+		}
+		quoted := strconv.Quote(arg.Value)
+		quoted = quoted[1 : len(quoted)-1]
+		if quoted == arg.Value {
+			builder.WriteString(arg.Value)
+		} else {
+			builder.WriteRune('"')
+			builder.WriteString(quoted)
+			builder.WriteRune('"')
+		}
+	}
+	builder.WriteString(" }}")
+	return builder.String()
 }
 
 type ParsedPage struct {
 	Filename string
 	Slots    map[string]uint
 	Hunks    []Hunk
+	// temporary, used during parsing
+	breadcrumbs []*Hunk
 }
 
 func (page ParsedPage) FindSlot(name string) int {
@@ -76,6 +103,44 @@ return_not_found:
 	return -1
 }
 
+func (page *ParsedPage) walk(hunk *Hunk) *Hunk {
+	if len(hunk.Children) == 0 {
+		return hunk
+	}
+	return page.walk(&hunk.Children[len(hunk.Children)-1])
+}
+
+func (page *ParsedPage) enterTagBody() {
+	page.breadcrumbs = append(
+		page.breadcrumbs,
+		page.walk(&page.Hunks[len(page.Hunks)-1]),
+	)
+}
+
+func (page *ParsedPage) leaveTagBody(tag Tag) error {
+	pivot := page.breadcrumbs[len(page.breadcrumbs)-1]
+	pivotTag := pivot.Data.(Tag)
+	if pivotTag.Name != tag.Name {
+		return fmt.Errorf(
+			"found closing tag for %q, but %q tag should be closed first!",
+			tag.Name,
+			pivotTag.Name,
+		)
+	}
+	page.breadcrumbs = page.breadcrumbs[:len(page.breadcrumbs)-1]
+	return nil
+}
+
+func (page *ParsedPage) add(hunk Hunk) {
+	if len(page.breadcrumbs) == 0 {
+		page.Hunks = append(page.Hunks, hunk)
+		return
+	}
+
+	pivot := page.breadcrumbs[len(page.breadcrumbs)-1]
+	pivot.Children = append(pivot.Children, hunk)
+}
+
 func Parse(file *os.File) (ParsedPage, error) {
 	var expectedSize uint64
 	stat, err := file.Stat()
@@ -85,6 +150,10 @@ func Parse(file *os.File) (ParsedPage, error) {
 	reader := w3utils.NewDetailedReader(bufio.NewReader(file), expectedSize)
 	page, err := parse(reader)
 	if err != nil {
+		if err, ok := err.(w3errs.TagError); ok {
+			err.Filename = file.Name()
+			return page, err
+		}
 		return page, reader.WrapError(file.Name(), err)
 	}
 	page.Filename = file.Name()
@@ -124,10 +193,11 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 				continue
 			}
 			if len(buffer) != 0 {
-				page.Hunks = append(page.Hunks, Hunk{
-					Kind: HunkRaw,
-					Data: buffer,
-					Line: line,
+				page.add(Hunk{
+					Kind:     HunkRaw,
+					Data:     buffer,
+					Line:     line,
+					Children: nil,
 				})
 				buffer = []byte{}
 				line = reader.Line()
@@ -137,12 +207,15 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 			if err != nil {
 				return page, fmt.Errorf("reading tag: %w", err)
 			}
-			page.Hunks = append(page.Hunks, Hunk{
-				Kind: HunkTag,
-				Data: tag,
-				Line: line,
+			page.add(Hunk{
+				Kind:     HunkTag,
+				Data:     tag,
+				Line:     line,
+				Children: nil,
 			})
-			if tag.Name == "place" {
+			switch tag.Name {
+
+			case "place":
 				// We do this during parsing simply because it's convenient.
 				// Realitically that would be a part of processing.
 				name := tag.FindNamedArg("name", 0)
@@ -150,6 +223,20 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 					return page, errors.New("'place' tag requires a 'name' argument")
 				}
 				page.Slots[name] = uint(len(page.Hunks) - 1)
+
+			case "extend", "if", "slot":
+				if tag.IsClosing {
+					err := page.leaveTagBody(tag)
+					if err != nil {
+						return page, newTagError(
+							page.Filename,
+							Hunk{Data: tag, Line: line},
+							err.Error(),
+						)
+					}
+				} else {
+					page.enterTagBody()
+				}
 			}
 
 		default:
@@ -159,10 +246,11 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 
 finish:
 	if len(buffer) != 0 {
-		page.Hunks = append(page.Hunks, Hunk{
-			Kind: HunkRaw,
-			Data: buffer,
-			Line: line,
+		page.add(Hunk{
+			Kind:     HunkRaw,
+			Data:     buffer,
+			Line:     line,
+			Children: nil,
 		})
 	}
 	return page, nil

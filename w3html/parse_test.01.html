@@ -1,11 +1,10 @@
-{{ include "_root" title="Hello World!" }}
+{{ extend "_root" title="Hello World!" }}
 {{ slot "body" }}
 <main>
     {{ if .Page.String() == "home" && .Index > 1 }}
     {{ include "_button" label="My Button" }}
     {{ include "icons/eyecons.svg" }}
-    {{ /include }}
     {{ /if }}
 </main>
 {{ /slot }}
-{{ /include }}
+{{ /extend }}
