@@ -32,6 +32,10 @@ func process(inPage, outPage *ParsedPage, params map[string]string) error {
 
 		case HunkTag:
 			tag := hunk.Data.(Tag)
+			if tag.IsClosing {
+				continue // ParsedPage has already validated these have pairs
+			}
+
 			switch tag.Name {
 
 			case "":

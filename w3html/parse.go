@@ -216,6 +216,13 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 			switch tag.Name {
 
 			case "place":
+				if tag.IsClosing {
+					return page, newTagError(
+						page.Filename,
+						Hunk{Data: tag, Line: line},
+						"'place' tag is not a closable tag",
+					)
+				}
 				// We do this during parsing simply because it's convenient.
 				// Realitically that would be a part of processing.
 				name := tag.FindNamedArg("name", 0)
@@ -236,6 +243,15 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 					}
 				} else {
 					page.enterTagBody()
+				}
+
+			default:
+				if tag.IsClosing {
+					return page, newTagError(
+						page.Filename,
+						Hunk{Data: tag, Line: line},
+						fmt.Sprintf("%q tag is not a closable tag", tag.Name),
+					)
 				}
 			}
 
