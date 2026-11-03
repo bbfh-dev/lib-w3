@@ -152,3 +152,12 @@ func (parser *DocumentParser) appendRaw() {
 		Children: nil,
 	})
 }
+
+func (parser *DocumentParser) appendPlaceholder() {
+	parser.page.Append(Hunk{
+		Kind:     HunkPlaceholder,
+		Line:     parser.line,
+		Data:     nil,
+		Children: nil,
+	})
+}
