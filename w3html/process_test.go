@@ -33,7 +33,5 @@ func TestProcess(t *testing.T) {
 		t.FailNow()
 	}
 
-	for _, hunk := range proc.Out.Hunks {
-		fmt.Printf("%s", hunk.Data)
-	}
+	fmt.Println(proc.Out)
 }

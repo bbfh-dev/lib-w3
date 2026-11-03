@@ -31,9 +31,7 @@ func TestParse(t *testing.T) {
 		t,
 		w3html.ParsedPage{
 			Filename: "parse_test.01.html",
-			Slots: map[string][]uint{
-				"default": {0, 1, 1, 5},
-			},
+			Slots:    nil,
 			Hunks: []w3html.Hunk{
 				{
 					Kind: w3html.HunkTag,

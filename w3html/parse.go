@@ -2,7 +2,6 @@ package w3html
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"strings"
 	"unicode"
 
+	libclog "codeberg.org/bbfh/lib-clog"
 	"codeberg.org/bbfh/lib-w3/w3errs"
 	"codeberg.org/bbfh/lib-w3/w3utils"
 )
@@ -22,6 +22,19 @@ const (
 	HunkTag
 	HunkEmpty
 )
+
+func (enum HunkEnum) String() string {
+	switch enum {
+	case HunkRaw:
+		return "HunkRaw"
+	case HunkTag:
+		return "HunkTag"
+	case HunkEmpty:
+		return "HunkEmpty"
+	default:
+		return fmt.Sprintf("HunkEnum(%d)", enum)
+	}
+}
 
 type Hunk struct {
 	Kind     HunkEnum
@@ -37,6 +50,9 @@ func (hunk Hunk) MeaningfulChildren() []Hunk {
 		switch child.Kind {
 		case HunkTag:
 			if !child.Tag().IsClosing {
+				// NOTE: ensure that this is applicable here.
+				// Check whether the whitespace should be kept instead.
+				child.Children = child.MeaningfulChildren()
 				out = append(out, child)
 			}
 		case HunkRaw:
@@ -57,10 +73,46 @@ func (hunk Hunk) Tag() Tag {
 	return hunk.Data.(Tag)
 }
 
+func (hunk Hunk) String() string {
+	return hunk.StringIndented(0)
+}
+
+func (hunk Hunk) StringIndented(indent uint) string {
+	var builder strings.Builder
+	indentString := strings.Repeat("    ", int(indent))
+	data := hunk.Data
+	if data == nil {
+		data = "(Empty)"
+	}
+	fmt.Fprintf(
+		&builder,
+		"%s— %s —%s\n%[1]s%[4]s%[5]s%[6]s\n",
+		indentString,
+		hunk.Kind,
+		strings.Repeat("—", 40),
+		libclog.AnsiColor(libclog.ColorBrightBlack),
+		data,
+		libclog.AnsiReset,
+	)
+	for _, child := range hunk.Children {
+		builder.WriteString(child.StringIndented(indent + 1))
+	}
+	return builder.String()
+}
+
 type Tag struct {
 	Name      string
 	Args      []Argument
 	IsClosing bool
+}
+
+func (tag Tag) IsPaired() bool {
+	switch tag.Name {
+	case "extend", "if", "slot":
+		return true
+	default:
+		return false
+	}
 }
 
 func (tag Tag) FindNamedArg(name string, i int) string {
@@ -118,19 +170,8 @@ type ParsedPage struct {
 	Filename string
 	Slots    map[string][]uint
 	Hunks    []Hunk
-	// temporary, used during parsing
+	// temporary, used during parsing & processing
 	breadcrumbs []*Hunk
-}
-
-func (page ParsedPage) FindSlot(name string) []uint {
-	if len(page.Slots) == 0 {
-		return nil
-	}
-	path, ok := page.Slots[name]
-	if !ok {
-		return nil
-	}
-	return path
 }
 
 func (page *ParsedPage) walk(hunk *Hunk) *Hunk {
@@ -171,6 +212,21 @@ func (page *ParsedPage) add(hunk Hunk) {
 	pivot.Children = append(pivot.Children, hunk)
 }
 
+func (page *ParsedPage) appendOrMergeRaw(data []byte, line uint) {
+	if len(page.Hunks) != 0 {
+		last := &page.Hunks[len(page.Hunks)-1]
+		if last.Kind == HunkRaw {
+			last.Data = append(last.Data.([]byte), data...)
+			return
+		}
+	}
+	page.Hunks = append(page.Hunks, Hunk{
+		Kind: HunkRaw,
+		Data: data,
+		Line: line,
+	})
+}
+
 func (page *ParsedPage) Replace(path []uint, replacement ...Hunk) {
 	page.replace(page.Hunks, path, replacement...)
 }
@@ -203,6 +259,19 @@ func (page *ParsedPage) replace(children []Hunk, path []uint, replacement ...Hun
 	page.replace(children[i].Children, path[1:], replacement...)
 }
 
+func (page ParsedPage) String() string {
+	var builder strings.Builder
+	builder.WriteString(strings.Repeat("—", 80))
+	builder.WriteRune('\n')
+
+	for _, hunk := range page.Hunks {
+		builder.WriteString(hunk.String())
+	}
+
+	builder.WriteString(strings.Repeat("—", 80))
+	return builder.String()
+}
+
 func Parse(file *os.File) (ParsedPage, error) {
 	var expectedSize uint64
 	stat, err := file.Stat()
@@ -225,7 +294,7 @@ func Parse(file *os.File) (ParsedPage, error) {
 func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 	page := ParsedPage{
 		Hunks: []Hunk{},
-		Slots: map[string][]uint{},
+		Slots: nil,
 	}
 	buffer := []byte{}
 	line := reader.Line()
@@ -275,33 +344,7 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 				Line:     line,
 				Children: nil,
 			})
-			switch tag.Name {
-
-			case "place":
-				if tag.IsClosing {
-					return page, newTagError(
-						page.Filename,
-						Hunk{Data: tag, Line: line},
-						"'place' tag is not a closable tag",
-					)
-				}
-				// We do this during parsing simply because it's convenient.
-				// Realitically that would be a part of processing.
-				name := tag.FindNamedArg("name", 0)
-				if name == "" {
-					name = "default"
-					return page, errors.New(
-						"'place' tag requires a 'name' argument. Please, explicitly specify 'default' if that was your intent.",
-					)
-				}
-				location := make([]uint, 0, len(page.Hunks)+len(page.breadcrumbs))
-				location = append(location, uint(len(page.Hunks)-1))
-				for _, tag := range page.breadcrumbs {
-					location = append(location, uint(len(tag.Children)-1))
-				}
-				page.Slots[name] = location
-
-			case "extend", "if", "slot":
+			if tag.IsPaired() {
 				if tag.IsClosing {
 					err := page.leaveTagBody(tag)
 					if err != nil {
@@ -314,15 +357,12 @@ func parse(reader *w3utils.DetailedReader) (ParsedPage, error) {
 				} else {
 					page.enterTagBody()
 				}
-
-			default:
-				if tag.IsClosing {
-					return page, newTagError(
-						page.Filename,
-						Hunk{Data: tag, Line: line},
-						fmt.Sprintf("%q tag is not a closable tag", tag.Name),
-					)
-				}
+			} else if tag.IsClosing {
+				return page, newTagError(
+					page.Filename,
+					Hunk{Data: tag, Line: line},
+					fmt.Sprintf("%q tag is not a closable tag", tag.Name),
+				)
 			}
 
 		default:

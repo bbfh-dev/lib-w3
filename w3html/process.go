@@ -21,7 +21,7 @@ type Processor struct {
 func NewProcessor(page *ParsedPage, params map[string]string) Processor {
 	outPage := ParsedPage{
 		Filename: page.Filename,
-		Slots:    page.Slots,
+		Slots:    map[string][]uint{},
 		Hunks:    make([]Hunk, 0, len(page.Hunks)),
 	}
 	return Processor{
@@ -47,12 +47,17 @@ func (proc Processor) process(hunk Hunk) (err error) {
 	switch hunk.Kind {
 
 	case HunkRaw:
-		proc.Out.Hunks = append(proc.Out.Hunks, hunk)
+		proc.Out.appendOrMergeRaw(hunk.Data.([]byte), hunk.Line)
 
 	case HunkTag:
 		tag := hunk.Tag()
 		if tag.IsClosing {
+			proc.Out.breadcrumbs = proc.Out.breadcrumbs[:len(proc.Out.breadcrumbs)-1]
 			return nil // ParsedPage has already validated these have pairs
+		}
+
+		if tag.IsPaired() {
+			proc.Out.breadcrumbs = append(proc.Out.breadcrumbs, &hunk)
 		}
 
 		switch tag.Name {
@@ -62,8 +67,29 @@ func (proc Processor) process(hunk Hunk) (err error) {
 			err = proc.handleInclude(hunk)
 		case "extend":
 			err = proc.handleExtend(hunk)
-		case "if", "place":
+		case "if":
 			// TODO: this
+		case "place":
+			name := tag.FindNamedArg("name", 0)
+			if name == "" {
+				name = "default"
+				return errors.New(
+					"'place' tag requires a 'name' argument. Please, explicitly specify 'default' if that was your intent.",
+				)
+			}
+
+			location := make([]uint, 0, len(proc.Out.Hunks)+len(proc.Out.breadcrumbs))
+			location = append(location, uint(len(proc.Out.Hunks)))
+			for _, tag := range proc.Out.breadcrumbs {
+				location = append(location, uint(len(tag.Children)-1))
+			}
+			proc.Out.Slots[name] = location
+			proc.Out.Hunks = append(proc.Out.Hunks, Hunk{
+				Kind:     HunkEmpty,
+				Data:     nil,
+				Line:     hunk.Line,
+				Children: nil,
+			})
 		case "slot":
 			// ignore
 		default:
@@ -101,11 +127,7 @@ func (proc Processor) handleEmpty(hunk Hunk) error {
 				after,
 			)
 		}
-		proc.Out.Hunks = append(proc.Out.Hunks, Hunk{
-			Kind: HunkRaw,
-			Data: []byte(param),
-			Line: hunk.Line,
-		})
+		proc.Out.appendOrMergeRaw([]byte(param), hunk.Line)
 		return nil
 	}
 
@@ -126,7 +148,6 @@ func (proc Processor) handleExtend(hunk Hunk) error {
 	for _, child := range hunk.MeaningfulChildren() {
 		switch child.Kind {
 		case HunkRaw:
-			fmt.Printf("DEBUG: %q\n", child.Data)
 			insertions["default"] = append(insertions["default"], child)
 		case HunkTag:
 			tag := child.Data.(Tag)
@@ -184,15 +205,6 @@ func (proc Processor) handleExtend(hunk Hunk) error {
 			)
 		}
 
-		fmt.Println("==============================")
-		for _, hunk := range extendedPage.In.Hunks {
-			fmt.Printf("%+v\n", hunk)
-		}
-		fmt.Println("==============================")
-		for _, hunk := range extendedPage.Out.Hunks {
-			fmt.Printf("%+v\n", hunk)
-		}
-		fmt.Println("==============================")
 		extendedPage.Out.Replace(path, hunks...)
 	}
 	proc.Out.Hunks = append(proc.Out.Hunks, extendedPage.Out.Hunks...)
