@@ -73,6 +73,10 @@ func (hunk Hunk) String() string {
 
 func (hunk Hunk) Write(w io.Writer, indent uint) {
 	indentString := strings.Repeat("    ", int(indent))
+	data := hunk.Data
+	if data == nil {
+		data = "(empty)"
+	}
 	fmt.Fprintf(
 		w,
 		"%s— %s —%s\n%[1]s%[4]s%[5]s%[6]s\n",
@@ -80,7 +84,7 @@ func (hunk Hunk) Write(w io.Writer, indent uint) {
 		hunk.Kind,
 		strings.Repeat("—", 30),
 		libclog.AnsiColor(libclog.ColorBrightBlack),
-		hunk.Data,
+		data,
 		libclog.AnsiReset,
 	)
 	if !hunk.Kind.IsPseudo() {
