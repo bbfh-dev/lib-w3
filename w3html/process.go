@@ -68,7 +68,15 @@ func (proc Processor) process(hunk Hunk) (err error) {
 		case "extend":
 			err = proc.handleExtend(hunk)
 		case "if":
-			// TODO: this
+			// TODO: remove code repetition. Something like "processChildren" flag
+			children := hunk.Children
+			hunk.Children = nil
+			proc.Out.Hunks = append(proc.Out.Hunks, hunk)
+			for _, child := range children {
+				if err := proc.process(child); err != nil {
+					return err
+				}
+			}
 		case "place":
 			name := tag.FindNamedArg("name", 0)
 			if name == "" {
@@ -187,24 +195,30 @@ func (proc Processor) handleInclude(hunk Hunk) error {
 
 func (proc Processor) handleExtend(hunk Hunk) error {
 	insertions := map[string][]Hunk{}
+
 	for _, child := range hunk.MeaningfulChildren() {
 		switch child.Kind {
 		case HunkRaw:
 			insertions["default"] = append(insertions["default"], child)
+
 		case HunkTag:
-			tag := child.Data.(Tag)
+			tag := child.Tag()
+
 			if tag.Name == "slot" {
 				name := tag.FindNamedArg("name", 0)
 				if name == "" {
 					return errors.New("'slot' tag requires 'name' argument")
 				}
+
 				if _, ok := insertions[name]; ok {
 					return fmt.Errorf("'slot' with name %q is already placed", name)
 				}
+
 				insertions[name] = child.Children
-			} else {
-				insertions["default"] = append(insertions["default"], child)
+				continue
 			}
+
+			insertions["default"] = append(insertions["default"], child)
 		}
 	}
 
@@ -223,8 +237,16 @@ func (proc Processor) handleExtend(hunk Hunk) error {
 			)
 		}
 
-		extendedPage.Out.Replace(path, hunks...)
+		processed := NewProcessor(proc.Out, proc.Params)
+		for _, child := range hunks {
+			if err := processed.process(child); err != nil {
+				return err
+			}
+		}
+
+		extendedPage.Out.Replace(path, processed.Out.Hunks...)
 	}
+
 	proc.Out.Hunks = append(proc.Out.Hunks, extendedPage.Out.Hunks...)
 
 	return nil

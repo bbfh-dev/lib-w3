@@ -2,8 +2,7 @@
 {{ slot "body" }}
 <main>
     {{ if .Page.String() == "home" && .Index > 1 }}
-    {{ include "_button" label="My Button" }}
-    {{ include "icons/eyecons.svg" }}
+    {{ include "parse_test.03" label="My Button" }}
     {{ place `default` }}
     {{ /if }}
 </main>
