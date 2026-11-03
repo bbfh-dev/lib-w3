@@ -15,6 +15,7 @@ import (
 
 type DocumentParser struct {
 	StripWhitespace bool
+	Params          map[string]string
 	file            *os.File
 	reader          *w3utils.DetailedReader
 	buffer          []byte
@@ -26,9 +27,11 @@ func Parse(
 	parent *w3utils.DetailedReader,
 	file *os.File,
 	stripWhitespace bool,
+	params map[string]string,
 ) (ParsedPage, error) {
 	parser := DocumentParser{
 		StripWhitespace: stripWhitespace,
+		Params:          params,
 		file:            file,
 		reader:          w3utils.NewDetailedReader(parent, file),
 		buffer:          []byte{},
@@ -194,5 +197,5 @@ func (parser *DocumentParser) parseNestedDocument(tag Tag) (ParsedPage, error) {
 	}
 	defer file.Close()
 
-	return Parse(parser.reader, file, parser.StripWhitespace)
+	return Parse(parser.reader, file, parser.StripWhitespace, tag.ArgsExcluding("path"))
 }
