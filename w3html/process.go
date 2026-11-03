@@ -135,11 +135,53 @@ func (proc Processor) handleEmpty(hunk Hunk) error {
 	return nil
 }
 
-func (proc Processor) handleInclude(hunk Hunk) error {
-	path := hunk.Tag().FindNamedArg("path", 0)
+func (proc Processor) openMentionedDocument(tag Tag) (*os.File, error) {
+	path := tag.FindNamedArg("path", 0)
 	if path == "" {
-		return errors.New("'include' tag requires 'path' argument")
+		return nil, fmt.Errorf("%q tag requires 'path' argument", tag.Name)
 	}
+	path = filepath.Join(filepath.Dir(proc.In.Filename), path)
+	file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		if os.IsNotExist(err) {
+			file, err = os.OpenFile(path+".html", os.O_RDONLY, os.ModePerm)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+	return file, nil
+}
+
+func (proc Processor) processMentionedDocument(tag Tag) (Processor, error) {
+	file, err := proc.openMentionedDocument(tag)
+	if err != nil {
+		return proc, err
+	}
+	defer file.Close()
+
+	nestedParsedDoc, err := Parse(file)
+	if err != nil {
+		return proc, err
+	}
+
+	nestedProcessor := NewProcessor(&nestedParsedDoc, tag.ArgsExcluding("path"))
+	if err := nestedProcessor.Process(); err != nil {
+		return proc, err
+	}
+
+	return nestedProcessor, nil
+}
+
+func (proc Processor) handleInclude(hunk Hunk) error {
+	includedPage, err := proc.processMentionedDocument(hunk.Tag())
+	if err != nil {
+		return err
+	}
+
+	proc.Out.Hunks = append(proc.Out.Hunks, includedPage.Out.Hunks...)
 	return nil
 }
 
@@ -166,32 +208,8 @@ func (proc Processor) handleExtend(hunk Hunk) error {
 		}
 	}
 
-	path := hunk.Tag().FindNamedArg("path", 0)
-	if path == "" {
-		return errors.New("'extend' tag requires 'path' argument")
-	}
-
-	path = filepath.Join(filepath.Dir(proc.In.Filename), path)
-	file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
+	extendedPage, err := proc.processMentionedDocument(hunk.Tag())
 	if err != nil {
-		if os.IsNotExist(err) {
-			file, err = os.OpenFile(path+".html", os.O_RDONLY, os.ModePerm)
-			if err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-	}
-	defer file.Close()
-
-	rawExtendedPage, err := Parse(file)
-	if err != nil {
-		return err
-	}
-
-	extendedPage := NewProcessor(&rawExtendedPage, hunk.Tag().ArgsExcluding("path", "at"))
-	if err := extendedPage.Process(); err != nil {
 		return err
 	}
 
