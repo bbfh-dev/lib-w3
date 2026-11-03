@@ -63,7 +63,7 @@ func (parser *DocumentParser) processOpening(tag Tag, mark uint) error {
 
 	parser.appendTag(tag)
 	if tag.IsPaired() {
-		parser.trackedTags = append(parser.trackedTags, TrackedTag{
+		parser.openingTags = append(parser.openingTags, OpeningTag{
 			Hunk: parser.page.lastHunk,
 			Mark: mark,
 		})
