@@ -29,14 +29,15 @@ func Parse(
 	stripWhitespace bool,
 	params map[string]string,
 ) (ParsedPage, error) {
-	filename := parent.Origin().FileName()
+	reader := w3utils.NewDetailedReader(parent, file)
+	filename := reader.Origin().FileName()
 	params["_filename"] = filename
 	params["_filename.base"] = filepath.Base(filename)
 	parser := DocumentParser{
 		StripWhitespace: stripWhitespace,
 		Params:          params,
 		file:            file,
-		reader:          w3utils.NewDetailedReader(parent, file),
+		reader:          reader,
 		buffer:          []byte{},
 		line:            1,
 	}
