@@ -1,4 +1,4 @@
-{{ extend "_root" title="Hello World!" }}
+{{ extend "parse_test.02" title="Hello World!" }}
 {{ slot "body" }}
 <main>
     {{ if .Page.String() == "home" && .Index > 1 }}

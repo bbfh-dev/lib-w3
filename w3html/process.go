@@ -3,8 +3,10 @@ package w3html
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"codeberg.org/bbfh/lib-w3/w3errs"
@@ -16,64 +18,71 @@ type Processor struct {
 	Params map[string]string
 }
 
-func Process(inPage ParsedPage, params map[string]string) (ParsedPage, error) {
+func NewProcessor(page *ParsedPage, params map[string]string) Processor {
 	outPage := ParsedPage{
-		Filename: inPage.Filename,
-		Slots:    inPage.Slots,
-		Hunks:    make([]Hunk, 0, len(inPage.Hunks)),
+		Filename: page.Filename,
+		Slots:    page.Slots,
+		Hunks:    make([]Hunk, 0, len(page.Hunks)),
 	}
-	proc := Processor{
-		In:     &inPage,
+	return Processor{
+		In:     page,
 		Out:    &outPage,
 		Params: params,
 	}
-	err := proc.Run()
-	return outPage, err
 }
 
-func (proc Processor) Run() error {
+func (proc Processor) Process() error {
 	for _, hunk := range proc.In.Hunks {
-		switch hunk.Kind {
-
-		case HunkRaw:
-			proc.Out.Hunks = append(proc.Out.Hunks, hunk)
-
-		case HunkTag:
-			tag := hunk.Data.(Tag)
-			if tag.IsClosing {
-				continue // ParsedPage has already validated these have pairs
+		if err := proc.process(hunk); err != nil {
+			if _, ok := err.(w3errs.WritableError); ok {
+				return err
 			}
+			return newTagError(proc.In.Filename, hunk, err.Error())
+		}
+	}
+	return nil
+}
 
-			var err error
-			switch tag.Name {
-			case "":
-				err = proc.handleEmpty(hunk)
-			case "include":
-				err = proc.handleInclude(hunk)
-			case "extend":
-				err = proc.handleExtend(hunk)
-			case "if":
-				// TODO: this
-			case "slot":
-				// ignore
-			default:
-				err = fmt.Errorf(
-					"unknown tag function %q. Available are: %s",
-					tag.Name,
-					strings.Join([]string{"include", "extend", "slot", "if"}, ", "),
-				)
-			}
+func (proc Processor) process(hunk Hunk) (err error) {
+	switch hunk.Kind {
 
-			if err != nil {
-				if _, ok := err.(w3errs.WritableError); ok {
-					return err
-				}
-				return newTagError(proc.In.Filename, hunk, err.Error())
+	case HunkRaw:
+		proc.Out.Hunks = append(proc.Out.Hunks, hunk)
+
+	case HunkTag:
+		tag := hunk.Tag()
+		if tag.IsClosing {
+			return nil // ParsedPage has already validated these have pairs
+		}
+
+		switch tag.Name {
+		case "":
+			err = proc.handleEmpty(hunk)
+		case "include":
+			err = proc.handleInclude(hunk)
+		case "extend":
+			err = proc.handleExtend(hunk)
+		case "if", "place":
+			// TODO: this
+		case "slot":
+			// ignore
+		default:
+			err = fmt.Errorf(
+				"unknown tag function %q. Available are: %s",
+				tag.Name,
+				strings.Join([]string{"include", "extend", "slot", "if"}, ", "),
+			)
+		}
+
+	case HunkEmpty:
+		for _, child := range hunk.Children {
+			if err := proc.process(child); err != nil {
+				return err
 			}
 		}
 	}
 
-	return nil
+	return err
 }
 
 func (proc Processor) handleEmpty(hunk Hunk) error {
@@ -88,13 +97,13 @@ func (proc Processor) handleEmpty(hunk Hunk) error {
 		param, ok := proc.Params[after]
 		if !ok {
 			return fmt.Errorf(
-				"undefined parameter %q.\nMake sure you 1) provide it in the tag that includes/extends this file. 2) didn't mean to access a struct field (use capitalized name in that case)",
+				"undefined parameter %q.\n\tMake sure you\n\t1) provide it in the tag that includes/extends this file.\n\t2) didn't mean to access a struct field (use capitalized name in that case)",
 				after,
 			)
 		}
 		proc.Out.Hunks = append(proc.Out.Hunks, Hunk{
 			Kind: HunkRaw,
-			Data: param,
+			Data: []byte(param),
 			Line: hunk.Line,
 		})
 		return nil
@@ -117,6 +126,7 @@ func (proc Processor) handleExtend(hunk Hunk) error {
 	for _, child := range hunk.MeaningfulChildren() {
 		switch child.Kind {
 		case HunkRaw:
+			fmt.Printf("DEBUG: %q\n", child.Data)
 			insertions["default"] = append(insertions["default"], child)
 		case HunkTag:
 			tag := child.Data.(Tag)
@@ -143,34 +153,50 @@ func (proc Processor) handleExtend(hunk Hunk) error {
 	path = filepath.Join(filepath.Dir(proc.In.Filename), path)
 	file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
 	if err != nil {
-		return err
+		if os.IsNotExist(err) {
+			file, err = os.OpenFile(path+".html", os.O_RDONLY, os.ModePerm)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
 	}
 	defer file.Close()
 
-	rawExtendPage, err := Parse(file)
+	rawExtendedPage, err := Parse(file)
 	if err != nil {
 		return err
 	}
 
-	extendPage, err := Process(rawExtendPage, hunk.Tag().ArgsExcluding("path", "at"))
-	if err != nil {
+	extendedPage := NewProcessor(&rawExtendedPage, hunk.Tag().ArgsExcluding("path", "at"))
+	if err := extendedPage.Process(); err != nil {
 		return err
 	}
 
-	// FIXME: instead of "at" there should be a "slot" tag inside
-	at := hunk.Tag().FindNamedArg("at", 1)
-	if at == "" {
-		at = "default"
+	for slot, hunks := range insertions {
+		path, ok := extendedPage.Out.Slots[slot]
+		if !ok {
+			return fmt.Errorf(
+				"trying to inject into slot named %q, but it's undefined among [%s]",
+				slot,
+				strings.Join(slices.Collect(maps.Keys(extendedPage.Out.Slots)), ", "),
+			)
+		}
+
+		fmt.Println("==============================")
+		for _, hunk := range extendedPage.In.Hunks {
+			fmt.Printf("%+v\n", hunk)
+		}
+		fmt.Println("==============================")
+		for _, hunk := range extendedPage.Out.Hunks {
+			fmt.Printf("%+v\n", hunk)
+		}
+		fmt.Println("==============================")
+		extendedPage.Out.Replace(path, hunks...)
 	}
-	slotPath := extendPage.FindSlot(at)
-	if slotPath == nil {
-		return fmt.Errorf(
-			"unable to find a matching '{{ place %q }}' in the extended document",
-			at,
-		)
-	}
-	// TODO: this
-	fmt.Println(extendPage)
+	proc.Out.Hunks = append(proc.Out.Hunks, extendedPage.Out.Hunks...)
+
 	return nil
 }
 

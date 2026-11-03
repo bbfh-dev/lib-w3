@@ -41,7 +41,7 @@ func TestParse(t *testing.T) {
 					Data: w3html.Tag{
 						Name: "extend",
 						Args: []w3html.Argument{
-							{Key: "", Value: "_root"},
+							{Key: "", Value: "parse_test.02"},
 							{Key: "title", Value: "Hello World!"},
 						},
 						IsClosing: false,

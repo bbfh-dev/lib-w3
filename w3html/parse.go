@@ -20,6 +20,7 @@ type HunkEnum uint8
 const (
 	HunkRaw HunkEnum = iota
 	HunkTag
+	HunkEmpty
 )
 
 type Hunk struct {
@@ -32,21 +33,19 @@ type Hunk struct {
 // MeaningfulChildren returns [Hunk.Children] that aren't purely whitespace.
 func (hunk Hunk) MeaningfulChildren() []Hunk {
 	out := make([]Hunk, 0, len(hunk.Children))
-loop:
 	for _, child := range hunk.Children {
-		switch hunk.Kind {
+		switch child.Kind {
 		case HunkTag:
-			out = append(out, child)
-		case HunkRaw:
-			buffer := hunk.Data.([]byte)
-			for _, char := range buffer {
-				switch char {
-				case '\t', '\n', '\v', '\f', '\r', ' ':
-				default:
-					continue loop
-				}
+			if !child.Tag().IsClosing {
+				out = append(out, child)
 			}
-			out = append(out, child)
+		case HunkRaw:
+			buffer := child.Data.([]byte)
+			if !strings.ContainsAny(string(buffer), "\t\n\v\f\r ") {
+				out = append(out, child)
+			}
+		case HunkEmpty:
+			// not meaningful
 		}
 	}
 	return out
@@ -91,25 +90,25 @@ func (tag Tag) ArgsExcluding(names ...string) map[string]string {
 
 func (tag Tag) String() string {
 	var builder strings.Builder
-	builder.WriteString("{{ ")
+	builder.WriteString("{{")
 	if tag.IsClosing {
 		builder.WriteRune('/')
 	}
-	builder.WriteString(tag.Name)
+	if len(tag.Name) != 0 {
+		builder.WriteRune(' ')
+		builder.WriteString(tag.Name)
+	}
 	for _, arg := range tag.Args {
+		builder.WriteRune(' ')
 		if arg.Key != "" {
 			builder.WriteString(arg.Key)
 			builder.WriteRune('=')
 		}
+		builder.WriteRune('"')
 		quoted := strconv.Quote(arg.Value)
 		quoted = quoted[1 : len(quoted)-1]
-		if quoted == arg.Value {
-			builder.WriteString(arg.Value)
-		} else {
-			builder.WriteRune('"')
-			builder.WriteString(quoted)
-			builder.WriteRune('"')
-		}
+		builder.WriteString(quoted)
+		builder.WriteRune('"')
 	}
 	builder.WriteString(" }}")
 	return builder.String()
@@ -170,6 +169,38 @@ func (page *ParsedPage) add(hunk Hunk) {
 
 	pivot := page.breadcrumbs[len(page.breadcrumbs)-1]
 	pivot.Children = append(pivot.Children, hunk)
+}
+
+func (page *ParsedPage) Replace(path []uint, replacement ...Hunk) {
+	page.replace(page.Hunks, path, replacement...)
+}
+
+func (page *ParsedPage) replace(children []Hunk, path []uint, replacement ...Hunk) {
+	i := path[0]
+	if len(path) == 1 {
+		switch len(replacement) {
+		case 0:
+			children[i] = Hunk{
+				Kind:     HunkEmpty,
+				Data:     nil,
+				Line:     children[i].Line,
+				Children: nil,
+			}
+		case 1:
+			replacement[0].Line = children[i].Line
+			children[i] = replacement[0]
+		default:
+			children[i] = Hunk{
+				Kind:     HunkEmpty,
+				Data:     nil,
+				Line:     children[i].Line,
+				Children: replacement,
+			}
+		}
+		return
+	}
+
+	page.replace(children[i].Children, path[1:], replacement...)
 }
 
 func Parse(file *os.File) (ParsedPage, error) {
@@ -324,9 +355,19 @@ func readTag(reader *w3utils.DetailedReader) (Tag, error) {
 	}
 
 	reader.MarkHere()
-	name, err := readTagName(reader)
+	char, err := reader.Read()
 	if err != nil {
-		return Tag{}, fmt.Errorf("reading name: %w", err)
+		return Tag{}, err
+	}
+	reader.Unread()
+
+	var name string
+	if char != '.' {
+		reader.MarkHere()
+		name, err = readTagName(reader)
+		if err != nil {
+			return Tag{}, fmt.Errorf("reading name: %w", err)
+		}
 	}
 
 	reader.MarkHere()
