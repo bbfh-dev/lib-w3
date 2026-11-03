@@ -29,6 +29,9 @@ func Parse(
 	stripWhitespace bool,
 	params map[string]string,
 ) (ParsedPage, error) {
+	filename := parent.Origin().FileName()
+	params["_filename"] = filename
+	params["_filename.base"] = filepath.Base(filename)
 	parser := DocumentParser{
 		StripWhitespace: stripWhitespace,
 		Params:          params,

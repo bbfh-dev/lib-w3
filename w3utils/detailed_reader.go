@@ -34,6 +34,17 @@ func NewDetailedReader(parent *DetailedReader, file *os.File) *DetailedReader {
 	}
 }
 
+func (reader *DetailedReader) Origin() *DetailedReader {
+	if reader.parent != nil {
+		return reader.parent.Origin()
+	}
+	return reader
+}
+
+func (reader *DetailedReader) FileName() string {
+	return reader.filename
+}
+
 // Read the next rune.
 func (reader *DetailedReader) Read() (rune, error) {
 	char, _, err := reader.internal.ReadRune()
