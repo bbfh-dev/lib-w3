@@ -21,6 +21,12 @@ type DocumentParser struct {
 	buffer          []byte
 	line            uint
 	page            ParsedPage
+	trackedTags     []TrackedTag
+}
+
+type TrackedTag struct {
+	Hunk *Hunk
+	Mark uint
 }
 
 func Parse(
@@ -40,6 +46,7 @@ func Parse(
 		reader:          reader,
 		buffer:          []byte{},
 		line:            1,
+		trackedTags:     []TrackedTag{},
 	}
 	err := parser.Parse()
 	if err != nil {
@@ -105,10 +112,22 @@ func (parser *DocumentParser) Parse() error {
 		if err != nil {
 			return fmt.Errorf("reading tag: %w", err)
 		}
-		if !closing {
-			if err := parser.process(tag); err != nil {
+		if closing {
+			openingTag := parser.findClosestTrackedTag(tag.Name)
+			if openingTag == nil {
+				return fmt.Errorf(
+					"failed to retrieve the opening tag pair for %q. This is most likely a bug!",
+					tag.Name,
+				)
+			}
+			if err := parser.processClosing(openingTag.Hunk.AsTag()); err != nil {
+				parser.reader.MoveMarkTo(openingTag.Mark)
+				return fmt.Errorf("processing tag closing: %w", err)
+			}
+		} else {
+			if err := parser.processOpening(tag, tagBeginning); err != nil {
 				parser.reader.MoveMarkTo(tagBeginning)
-				return fmt.Errorf("processing tag: %w", err)
+				return fmt.Errorf("processing opening tag: %w", err)
 			}
 		}
 
@@ -215,4 +234,21 @@ func (parser *DocumentParser) parseNestedDocument(tag Tag) (ParsedPage, error) {
 	defer file.Close()
 
 	return Parse(parser.reader, file, parser.StripWhitespace, tag.ArgsExcluding("path"))
+}
+
+func (parse *DocumentParser) findClosestTrackedTag(name string) *TrackedTag {
+	return findClosestTrackedTag(parse.trackedTags, name)
+}
+
+func findClosestTrackedTag(trackedTags []TrackedTag, name string) *TrackedTag {
+	if len(trackedTags) == 0 {
+		return nil
+	}
+
+	last := len(trackedTags) - 1
+	if trackedTags[last].Hunk.AsTag().Name == name {
+		return &trackedTags[last]
+	}
+
+	return findClosestTrackedTag(trackedTags[:last], name)
 }

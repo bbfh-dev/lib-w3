@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (parser *DocumentParser) process(tag Tag) error {
+func (parser *DocumentParser) processOpening(tag Tag, mark uint) error {
 	if tag.IsPath() {
 		path := tag.Args[0].Value[1:]
 		if isCompileTimeVariable(path) {
@@ -34,10 +34,9 @@ func (parser *DocumentParser) process(tag Tag) error {
 			)
 		}
 		parser.appendPlaceholder()
-		pivot := parser.page.Pivot()
 		parser.page.Slots[name] = SlotLocation{
-			Parent: pivot,
-			Index:  uint(len(pivot.Children) - 1),
+			Parent: parser.page.lastHunk,
+			Index:  uint(parser.page.lastIndex),
 		}
 		return nil
 
@@ -63,6 +62,20 @@ func (parser *DocumentParser) process(tag Tag) error {
 	}
 
 	parser.appendTag(tag)
+	if tag.IsPaired() {
+		parser.trackedTags = append(parser.trackedTags, TrackedTag{
+			Hunk: parser.page.lastHunk,
+			Mark: mark,
+		})
+	}
+	return nil
+}
+
+func (parser *DocumentParser) processClosing(tag Tag) error {
+	switch tag.Name {
+	case "extend":
+		fmt.Println("HI!")
+	}
 	return nil
 }
 

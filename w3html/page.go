@@ -18,7 +18,8 @@ type ParsedPage struct {
 	Root  Hunk
 	// temporary, stores current hunk parents during parsing
 	breadcrumbs []*Hunk
-	last        *Hunk
+	lastHunk    *Hunk
+	lastIndex   uint
 }
 
 // Pivot returns the current [Hunk] that should be appended to.
@@ -31,7 +32,7 @@ func (page *ParsedPage) Pivot() *Hunk {
 }
 
 func (page *ParsedPage) OnEnterTagBody() {
-	page.breadcrumbs = append(page.breadcrumbs, page.last)
+	page.breadcrumbs = append(page.breadcrumbs, page.lastHunk)
 }
 
 func (page *ParsedPage) OnLeaveTagBody(tag Tag) error {
@@ -55,7 +56,9 @@ func (page *ParsedPage) Append(hunk Hunk) {
 	} else {
 		page.append(hunk)
 	}
-	page.last = &page.Pivot().Children[len(page.Pivot().Children)-1]
+	pivot := page.Pivot()
+	page.lastIndex = uint(len(pivot.Children) - 1)
+	page.lastHunk = &pivot.Children[page.lastIndex]
 }
 
 func (page *ParsedPage) append(hunk Hunk) {
