@@ -34,7 +34,7 @@ func TestParser(t *testing.T) {
 	assert.NilError(t, err)
 	defer file.Close()
 
-	page, err := w3html.Parse(file, false)
+	page, err := w3html.Parse(file, true)
 	if err != nil {
 		w3errs.Write(err, os.Stderr, outputMode)
 		t.FailNow()

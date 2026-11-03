@@ -48,6 +48,11 @@ func (page *ParsedPage) OnLeaveTagBody(tag Tag) error {
 }
 
 func (page *ParsedPage) Append(hunk Hunk) {
+	page.append(hunk)
+	page.last = &page.Pivot().Children[len(page.Pivot().Children)-1]
+}
+
+func (page *ParsedPage) append(hunk Hunk) {
 	pivot := page.Pivot()
 
 	// merge [HunkRaw] if they are adjacent.
@@ -61,11 +66,6 @@ func (page *ParsedPage) Append(hunk Hunk) {
 
 	// for everything else
 	pivot.Children = append(pivot.Children, hunk)
-}
-
-func (page *ParsedPage) AppendAndRemember(hunk Hunk) {
-	page.Append(hunk)
-	page.last = &page.Pivot().Children[len(page.Pivot().Children)-1]
 }
 
 func (page *ParsedPage) Place(slot string, replacement ...Hunk) error {

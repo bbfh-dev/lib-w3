@@ -1,6 +1,7 @@
 package w3html
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -10,7 +11,6 @@ import (
 )
 
 type DocumentParser struct {
-	// TODO: Make this do something
 	StripWhitespace bool
 	file            *os.File
 	reader          *w3utils.DetailedReader
@@ -118,12 +118,7 @@ func (parser *DocumentParser) Result() ParsedPage {
 
 func (parser *DocumentParser) flush() {
 	if len(parser.buffer) != 0 {
-		parser.page.Append(Hunk{
-			Kind:     HunkRaw,
-			Data:     parser.buffer,
-			Line:     parser.line,
-			Children: nil,
-		})
+		parser.appendRaw()
 	}
 	parser.buffer = []byte{}
 }
@@ -132,4 +127,28 @@ func (parser *DocumentParser) writeRune(char rune) {
 	encoded := make([]byte, 4)
 	n := utf8.EncodeRune(encoded, char)
 	parser.buffer = append(parser.buffer, encoded[:n]...)
+}
+
+func (parser *DocumentParser) appendTag(tag Tag) {
+	parser.page.Append(Hunk{
+		Kind:     HunkTag,
+		Line:     parser.line,
+		Data:     tag,
+		Children: nil,
+	})
+}
+
+func (parser *DocumentParser) appendRaw() {
+	if parser.StripWhitespace {
+		parser.buffer = bytes.TrimSpace(parser.buffer)
+		if len(parser.buffer) == 0 {
+			return // skip
+		}
+	}
+	parser.page.Append(Hunk{
+		Kind:     HunkRaw,
+		Data:     parser.buffer,
+		Line:     parser.line,
+		Children: nil,
+	})
 }
