@@ -2,6 +2,7 @@ package w3utils
 
 import (
 	"bufio"
+	"os"
 	"slices"
 	"strings"
 
@@ -10,6 +11,8 @@ import (
 )
 
 type DetailedReader struct {
+	parent   *DetailedReader
+	filename string
 	internal *bufio.Reader
 	document *internal.RingBuffer[rune]
 	line     uint
@@ -18,9 +21,15 @@ type DetailedReader struct {
 	rewinded uint
 }
 
-func NewDetailedReader(reader *bufio.Reader, expectedSize uint64) *DetailedReader {
+func NewDetailedReader(
+	parent *DetailedReader,
+	file *os.File,
+	expectedSize uint64,
+) *DetailedReader {
 	return &DetailedReader{
-		internal: reader,
+		parent:   parent,
+		filename: file.Name(),
+		internal: bufio.NewReader(file),
 		document: internal.NewRingBuffer[rune](),
 		line:     1,
 		mark:     0,
@@ -68,6 +77,17 @@ func (reader *DetailedReader) MarkHere() {
 	}
 }
 
+func (reader *DetailedReader) callStack() w3errs.DocumentCallStack {
+	location := w3errs.DocumentLocation{
+		Filename: reader.filename,
+		Line:     reader.line,
+	}
+	if reader.parent == nil {
+		return w3errs.DocumentCallStack{location}
+	}
+	return append(reader.parent.callStack(), location)
+}
+
 // WrapError creates a [DetailedError] with current state context.
 // Use [DetailedError.Write] to pretty-print the error to file/console.
 func (reader *DetailedReader) WrapError(filename string, err error) w3errs.DocumentError {
@@ -77,11 +97,9 @@ func (reader *DetailedReader) WrapError(filename string, err error) w3errs.Docum
 	contextTail := string(lastLines(context, 4))
 	contextTail = strings.TrimSuffix(contextTail, highlight)
 	contextLines := strings.Split(contextTail, "\n")
-
 	return w3errs.DocumentError{
-		Filename:     filename,
+		CallStack:    reader.callStack(),
 		ContextLines: contextLines,
-		FirstLine:    SafeUint(int(reader.line) - len(contextLines)),
 		Highlight:    highlight,
 		Message:      err.Error(),
 	}
