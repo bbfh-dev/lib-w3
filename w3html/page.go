@@ -48,7 +48,13 @@ func (page *ParsedPage) OnLeaveTagBody(tag Tag) error {
 }
 
 func (page *ParsedPage) Append(hunk Hunk) {
-	page.append(hunk)
+	if hunk.Kind == HunkRoot {
+		for _, child := range hunk.Children {
+			page.append(child)
+		}
+	} else {
+		page.append(hunk)
+	}
 	page.last = &page.Pivot().Children[len(page.Pivot().Children)-1]
 }
 

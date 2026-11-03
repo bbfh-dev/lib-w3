@@ -1,14 +1,17 @@
 package w3html
 
-import "errors"
+import (
+	"errors"
+)
 
 func (parser *DocumentParser) process(tag Tag) error {
 	switch tag.Name {
+
 	case "place":
 		name := tag.FindNamedArg("name", 0)
 		if name == "" {
 			return errors.New(
-				"'place' tag requires a 'name' argument. Please, explicitly specify 'default' if that was your intent. Example: {{ place 'default' }}.",
+				"'place' tag requires a 'name' argument. Please, explicitly specify 'default' if that was your intent. Example: {{ place 'default' }}",
 			)
 		}
 		parser.appendPlaceholder()
@@ -17,6 +20,14 @@ func (parser *DocumentParser) process(tag Tag) error {
 			Parent: pivot,
 			Index:  uint(len(pivot.Children) - 1),
 		}
+		return nil
+
+	case "include":
+		nestedPage, err := parser.parseNestedDocument(tag)
+		if err != nil {
+			return err
+		}
+		parser.page.Append(nestedPage.Root)
 		return nil
 	}
 

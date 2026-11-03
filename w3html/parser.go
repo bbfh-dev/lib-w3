@@ -2,11 +2,14 @@ package w3html
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"unicode/utf8"
 
+	"codeberg.org/bbfh/lib-w3/w3errs"
 	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
@@ -19,16 +22,23 @@ type DocumentParser struct {
 	page            ParsedPage
 }
 
-func Parse(file *os.File, stripWhitespace bool) (ParsedPage, error) {
+func Parse(
+	parent *w3utils.DetailedReader,
+	file *os.File,
+	stripWhitespace bool,
+) (ParsedPage, error) {
 	parser := DocumentParser{
 		StripWhitespace: stripWhitespace,
 		file:            file,
-		reader:          w3utils.NewDetailedReader(nil, file),
+		reader:          w3utils.NewDetailedReader(parent, file),
 		buffer:          []byte{},
 		line:            1,
 	}
 	err := parser.Parse()
 	if err != nil {
+		if _, ok := err.(w3errs.DocumentError); ok {
+			return ParsedPage{}, err
+		}
 		return ParsedPage{}, parser.reader.WrapError(parser.file.Name(), err)
 	}
 	return parser.Result(), nil
@@ -160,4 +170,29 @@ func (parser *DocumentParser) appendPlaceholder() {
 		Data:     nil,
 		Children: nil,
 	})
+}
+
+func (parser *DocumentParser) parseNestedDocument(tag Tag) (ParsedPage, error) {
+	path := tag.FindNamedArg("path", 0)
+	if path == "" {
+		return ParsedPage{}, errors.New(
+			"'include' tag requires a 'path' argument pointing to the file (relatively to current file location)",
+		)
+	}
+
+	path = filepath.Join(filepath.Dir(parser.file.Name()), path)
+	file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		if os.IsNotExist(err) {
+			file, err = os.OpenFile(path+".html", os.O_RDONLY, os.ModePerm)
+			if err != nil {
+				return ParsedPage{}, err
+			}
+		} else {
+			return ParsedPage{}, err
+		}
+	}
+	defer file.Close()
+
+	return Parse(parser.reader, file, parser.StripWhitespace)
 }
