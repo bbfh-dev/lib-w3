@@ -1,9 +1,9 @@
-{{ extend "parse_test.02" title="Hello World!" }}
+{{ extend "parser_test.02" title="Hello World!" }}
 {{ slot "body" }}
 <main>
     {{ if .Page.String() == "home" && .Index > 1 }}
-    {{ include "parse_test.03" label="My Button" }}
-    {{include "parse_test.04.svg"}}
+    {{ include "parser_test.03" label="My Button" }}
+    {{include "parser_test.04.svg"}}
     {{ place `default` }}
     {{ /if }}
 </main>

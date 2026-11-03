@@ -54,6 +54,7 @@ func (err DocumentError) Error() string {
 }
 
 func (err DocumentError) Write(file *os.File, mode libclog.OutputModeEnum) error {
+	// This function is only scary if you have to modify it. Just think about it this way.
 	printer := libclog.NewPrinter(file, mode)
 	printer.Coloredf(libclog.ColorBrightBlack, "─────┬%s\n", strings.Repeat("─", 30))
 	printer.Colored(libclog.ColorBrightBlack, "     │ [!] Error: ")

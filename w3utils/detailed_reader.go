@@ -21,11 +21,7 @@ type DetailedReader struct {
 	rewinded uint
 }
 
-func NewDetailedReader(
-	parent *DetailedReader,
-	file *os.File,
-	expectedSize uint64,
-) *DetailedReader {
+func NewDetailedReader(parent *DetailedReader, file *os.File) *DetailedReader {
 	return &DetailedReader{
 		parent:   parent,
 		filename: file.Name(),
@@ -70,11 +66,17 @@ func (reader *DetailedReader) MustUnread() {
 // MarkHere marks the current position as the beginning of context.
 //
 // e.g. the position where parser began reading an object name.
-func (reader *DetailedReader) MarkHere() {
+func (reader *DetailedReader) MarkHere() uint {
 	reader.mark = reader.head
 	if reader.head != 0 {
 		reader.mark--
 	}
+	return reader.mark
+}
+
+// MoveMarkTo moves the [DetailedReader.mark] to specified absolute byte offset.
+func (reader *DetailedReader) MoveMarkTo(offset uint) {
+	reader.mark = offset
 }
 
 func (reader *DetailedReader) callStack() w3errs.DocumentCallStack {
