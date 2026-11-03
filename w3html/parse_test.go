@@ -92,7 +92,7 @@ func TestParse(t *testing.T) {
 											Data: w3html.Tag{
 												Name: "include",
 												Args: []w3html.Argument{
-													{Key: "", Value: "_button"},
+													{Key: "", Value: "parse_test.03"},
 													{Key: "label", Value: "My Button"},
 												},
 												IsClosing: false,
@@ -109,7 +109,7 @@ func TestParse(t *testing.T) {
 											Data: w3html.Tag{
 												Name: "include",
 												Args: []w3html.Argument{
-													{Key: "", Value: "icons/eyecons.svg"},
+													{Key: "", Value: "parse_test.04.svg"},
 												},
 												IsClosing: false,
 											},
