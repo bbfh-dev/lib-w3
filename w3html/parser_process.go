@@ -34,9 +34,9 @@ func (parser *DocumentParser) processOpening(tag Tag, mark uint) error {
 			)
 		}
 		parser.appendPlaceholder()
-		parser.page.Slots[name] = SlotLocation{
-			Parent: parser.page.lastHunk,
-			Index:  uint(parser.page.lastIndex),
+		parser.page.Slots[name] = HunkLocation{
+			Parent:     parser.page.lastHunk,
+			ChildIndex: uint(parser.page.lastIndex),
 		}
 		return nil
 
@@ -79,8 +79,9 @@ func (parser *DocumentParser) processClosing(tag Tag) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(nestedPage.Slots)
+		parser.page.Append(nestedPage.Root)
 	}
+
 	return nil
 }
 

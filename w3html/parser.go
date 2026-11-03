@@ -61,7 +61,7 @@ func Parse(
 
 func (parser *DocumentParser) Parse() error {
 	parser.page = ParsedPage{
-		Slots: map[string]SlotLocation{},
+		Slots: map[string]HunkLocation{},
 		Root: Hunk{
 			Kind:     HunkRoot,
 			Line:     1,
@@ -120,6 +120,7 @@ func (parser *DocumentParser) Parse() error {
 			}
 			line := parser.reader.Line
 			parser.reader.Line = openingTag.Line
+			// TODO: replace opening tag with new contents
 			if err := parser.processClosing(openingTag.Hunk.AsTag()); err != nil {
 				parser.reader.MoveMarkTo(openingTag.Mark)
 				if _, ok := err.(w3errs.DocumentError); ok {
