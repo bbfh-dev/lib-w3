@@ -115,10 +115,7 @@ func (parser *DocumentParser) Parse() error {
 		if closing {
 			openingTag := parser.findMatchingOpeningTag(tag.Name)
 			if openingTag == nil {
-				return fmt.Errorf(
-					"failed to retrieve the opening tag pair for %q. This is most likely a bug!",
-					tag.Name,
-				)
+				return fmt.Errorf("tag %q was never opened", tag.Name)
 			}
 			if err := parser.processClosing(openingTag.Hunk.AsTag()); err != nil {
 				parser.reader.MoveMarkTo(openingTag.Mark)
