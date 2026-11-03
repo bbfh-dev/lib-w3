@@ -27,6 +27,7 @@ type DocumentParser struct {
 type OpeningTag struct {
 	Hunk *Hunk
 	Mark uint
+	Line uint
 }
 
 func Parse(
@@ -105,7 +106,7 @@ func (parser *DocumentParser) Parse() error {
 			continue
 		}
 		parser.flush()
-		parser.line = parser.reader.Line()
+		parser.line = parser.reader.Line
 
 		// at this point it's expected to be a tag
 		tag, closing, err := parser.readTag()
@@ -117,13 +118,22 @@ func (parser *DocumentParser) Parse() error {
 			if openingTag == nil {
 				return fmt.Errorf("tag %q was never opened", tag.Name)
 			}
+			line := parser.reader.Line
+			parser.reader.Line = openingTag.Line
 			if err := parser.processClosing(openingTag.Hunk.AsTag()); err != nil {
 				parser.reader.MoveMarkTo(openingTag.Mark)
+				if _, ok := err.(w3errs.DocumentError); ok {
+					return err
+				}
 				return fmt.Errorf("processing tag closing: %w", err)
 			}
+			parser.reader.Line = line
 		} else {
 			if err := parser.processOpening(tag, tagBeginning); err != nil {
 				parser.reader.MoveMarkTo(tagBeginning)
+				if _, ok := err.(w3errs.DocumentError); ok {
+					return err
+				}
 				return fmt.Errorf("processing opening tag: %w", err)
 			}
 		}

@@ -15,10 +15,11 @@ type DetailedReader struct {
 	filename string
 	internal *bufio.Reader
 	document *internal.RingBuffer[rune]
-	line     uint
+	Line     uint
 	mark     uint
 	head     uint
 	rewinded uint
+	cutLast  uint
 }
 
 func NewDetailedReader(parent *DetailedReader, file *os.File) *DetailedReader {
@@ -27,10 +28,11 @@ func NewDetailedReader(parent *DetailedReader, file *os.File) *DetailedReader {
 		filename: file.Name(),
 		internal: bufio.NewReader(file),
 		document: internal.NewRingBuffer[rune](),
-		line:     1,
+		Line:     1,
 		mark:     0,
 		head:     0,
 		rewinded: 0,
+		cutLast:  0,
 	}
 }
 
@@ -50,7 +52,7 @@ func (reader *DetailedReader) Read() (rune, error) {
 	char, _, err := reader.internal.ReadRune()
 	reader.head++
 	if char == '\n' {
-		reader.line++
+		reader.Line++
 	}
 	if reader.rewinded == 0 {
 		reader.document.Push(char)
@@ -87,13 +89,14 @@ func (reader *DetailedReader) MarkHere() uint {
 
 // MoveMarkTo moves the [DetailedReader.mark] to specified absolute byte offset.
 func (reader *DetailedReader) MoveMarkTo(offset uint) {
+	reader.cutLast = reader.mark - offset
 	reader.mark = offset
 }
 
 func (reader *DetailedReader) callStack() w3errs.DocumentCallStack {
 	location := w3errs.DocumentLocation{
 		Filename: reader.filename,
-		Line:     reader.line,
+		Line:     reader.Line,
 	}
 	if reader.parent == nil {
 		return w3errs.DocumentCallStack{location}
@@ -105,8 +108,10 @@ func (reader *DetailedReader) callStack() w3errs.DocumentCallStack {
 // Use [DetailedError.Write] to pretty-print the error to file/console.
 func (reader *DetailedReader) WrapError(filename string, err error) w3errs.DocumentError {
 	context := reader.document.Dump()
-	highlightStart := uint(len(context)) - (reader.head - reader.mark)
+	length := uint(len(context))
+	highlightStart := length - (reader.head - reader.mark)
 	highlight := string(context[highlightStart:])
+	context = context[:length-reader.cutLast-2]
 	contextTail := string(lastLines(context, 4))
 	contextTail = strings.TrimSuffix(contextTail, highlight)
 	contextLines := strings.Split(contextTail, "\n")
@@ -116,11 +121,6 @@ func (reader *DetailedReader) WrapError(filename string, err error) w3errs.Docum
 		Highlight:    highlight,
 		Message:      err.Error(),
 	}
-}
-
-// Line returns the current reader file line.
-func (reader *DetailedReader) Line() uint {
-	return reader.line
 }
 
 func lastLines(runes []rune, maxLines int) []rune {

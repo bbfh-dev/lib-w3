@@ -66,6 +66,7 @@ func (parser *DocumentParser) processOpening(tag Tag, mark uint) error {
 		parser.openingTags = append(parser.openingTags, OpeningTag{
 			Hunk: parser.page.lastHunk,
 			Mark: mark,
+			Line: parser.line,
 		})
 	}
 	return nil
@@ -74,7 +75,11 @@ func (parser *DocumentParser) processOpening(tag Tag, mark uint) error {
 func (parser *DocumentParser) processClosing(tag Tag) error {
 	switch tag.Name {
 	case "extend":
-		fmt.Println("HI!")
+		nestedPage, err := parser.parseNestedDocument(tag)
+		if err != nil {
+			return err
+		}
+		fmt.Println(nestedPage.Slots)
 	}
 	return nil
 }
