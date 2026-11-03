@@ -20,6 +20,13 @@ func (tag Tag) IsPaired() bool {
 	}
 }
 
+func (tag Tag) IsPath() bool {
+	return tag.Name == "" &&
+		len(tag.Args) == 1 &&
+		tag.Args[0].Key == "" &&
+		strings.HasPrefix(tag.Args[0].Value, ".")
+}
+
 func (tag Tag) FindNamedArg(name string, i int) string {
 	if len(tag.Args) == 0 {
 		return ""

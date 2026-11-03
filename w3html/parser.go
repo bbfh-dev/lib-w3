@@ -135,7 +135,7 @@ func (parser *DocumentParser) Result() ParsedPage {
 
 func (parser *DocumentParser) flush() {
 	if len(parser.buffer) != 0 {
-		parser.appendRaw()
+		parser.appendBuffer()
 	}
 	parser.buffer = []byte{}
 }
@@ -155,16 +155,20 @@ func (parser *DocumentParser) appendTag(tag Tag) {
 	})
 }
 
-func (parser *DocumentParser) appendRaw() {
+func (parser *DocumentParser) appendBuffer() {
+	parser.appendRaw(parser.buffer)
+}
+
+func (parser *DocumentParser) appendRaw(buffer []byte) {
 	if parser.StripWhitespace {
-		parser.buffer = bytes.TrimSpace(parser.buffer)
-		if len(parser.buffer) == 0 {
+		buffer = bytes.TrimSpace(buffer)
+		if len(buffer) == 0 {
 			return // skip
 		}
 	}
 	parser.page.Append(Hunk{
 		Kind:     HunkRaw,
-		Data:     parser.buffer,
+		Data:     buffer,
 		Line:     parser.line,
 		Children: nil,
 	})
@@ -175,6 +179,15 @@ func (parser *DocumentParser) appendPlaceholder() {
 		Kind:     HunkPlaceholder,
 		Line:     parser.line,
 		Data:     nil,
+		Children: nil,
+	})
+}
+
+func (parser *DocumentParser) appendVariable(path string) {
+	parser.page.Append(Hunk{
+		Kind:     HunkVariable,
+		Line:     parser.line,
+		Data:     path,
 		Children: nil,
 	})
 }

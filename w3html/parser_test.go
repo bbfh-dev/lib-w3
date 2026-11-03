@@ -14,7 +14,7 @@ import (
 
 var expected = w3html.ParsedPage{
 	Slots: map[string]w3html.SlotLocation{
-		"default": {Parent: nil, Index: 2},
+		"default": {Parent: nil, Index: 1},
 	},
 	Root: w3html.Hunk{
 		Kind:     w3html.HunkRoot,
