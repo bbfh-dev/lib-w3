@@ -21,7 +21,7 @@ type DocumentParser struct {
 	buffer          []byte
 	line            uint
 	page            ParsedPage
-	openingTags     []OpeningTag
+	openingTags     []HunkLocation
 }
 
 type OpeningTag struct {
@@ -47,7 +47,7 @@ func Parse(
 		reader:          reader,
 		buffer:          []byte{},
 		line:            1,
-		openingTags:     []OpeningTag{},
+		openingTags:     []HunkLocation{},
 	}
 	err := parser.Parse()
 	if err != nil {
@@ -115,14 +115,13 @@ func (parser *DocumentParser) Parse() error {
 		}
 		if closing {
 			openingTag := parser.findMatchingOpeningTag(tag.Name)
-			if openingTag == nil {
+			if openingTag.IsNull() {
 				return fmt.Errorf("tag %q was never opened", tag.Name)
 			}
 			line := parser.reader.Line
 			parser.reader.Line = openingTag.Line
-			// TODO: replace opening tag with new contents
-			if err := parser.processClosing(openingTag.Hunk.AsTag()); err != nil {
-				parser.reader.MoveMarkTo(openingTag.Mark)
+			if err := parser.processClosing(openingTag); err != nil {
+				parser.reader.MoveMarkTo(openingTag.ByteOffset)
 				if _, ok := err.(w3errs.DocumentError); ok {
 					return err
 				}
@@ -139,6 +138,7 @@ func (parser *DocumentParser) Parse() error {
 			}
 		}
 
+		// FIXME: this should be a part of the previous code, otherwise it gets replaced with Root and only then checks the closing
 		if tag.IsPaired() {
 			if closing {
 				err := parser.page.OnLeaveTagBody(tag)
@@ -244,18 +244,18 @@ func (parser *DocumentParser) parseNestedDocument(tag Tag) (ParsedPage, error) {
 	return Parse(parser.reader, file, parser.StripWhitespace, tag.ArgsExcluding("path"))
 }
 
-func (parse *DocumentParser) findMatchingOpeningTag(name string) *OpeningTag {
+func (parse *DocumentParser) findMatchingOpeningTag(name string) HunkLocation {
 	return findMatchingOpeningTag(parse.openingTags, name)
 }
 
-func findMatchingOpeningTag(openingTags []OpeningTag, name string) *OpeningTag {
+func findMatchingOpeningTag(openingTags []HunkLocation, name string) HunkLocation {
 	if len(openingTags) == 0 {
-		return nil
+		return HunkLocation{}
 	}
 
 	last := len(openingTags) - 1
-	if openingTags[last].Hunk.AsTag().Name == name {
-		return &openingTags[last]
+	if openingTags[last].Hunk().AsTag().Name == name {
+		return openingTags[last]
 	}
 
 	return findMatchingOpeningTag(openingTags[:last], name)

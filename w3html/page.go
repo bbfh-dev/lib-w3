@@ -15,6 +15,14 @@ type HunkLocation struct {
 	ByteOffset uint
 }
 
+func (location HunkLocation) IsNull() bool {
+	return location.Parent == nil
+}
+
+func (location HunkLocation) Hunk() *Hunk {
+	return &location.Parent.Children[location.ChildIndex]
+}
+
 type ParsedPage struct {
 	Slots map[string]HunkLocation
 	Root  Hunk
@@ -38,6 +46,10 @@ func (page *ParsedPage) OnEnterTagBody() {
 }
 
 func (page *ParsedPage) OnLeaveTagBody(tag Tag) error {
+	if len(page.breadcrumbs) == 0 {
+		return fmt.Errorf("found closing tag for %q, but no tags have been opened yet", tag.Name)
+	}
+
 	last := page.breadcrumbs[len(page.breadcrumbs)-1].AsTag()
 	if last.Name != tag.Name {
 		return fmt.Errorf(
@@ -51,13 +63,7 @@ func (page *ParsedPage) OnLeaveTagBody(tag Tag) error {
 }
 
 func (page *ParsedPage) Append(hunk Hunk) {
-	if hunk.Kind == HunkRoot {
-		for _, child := range hunk.Children {
-			page.append(child)
-		}
-	} else {
-		page.append(hunk)
-	}
+	page.append(hunk)
 	pivot := page.Pivot()
 	page.lastIndex = uint(len(pivot.Children) - 1)
 	page.lastHunk = &pivot.Children[page.lastIndex]

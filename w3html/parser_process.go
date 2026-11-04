@@ -35,7 +35,7 @@ func (parser *DocumentParser) processOpening(tag Tag, mark uint) error {
 		}
 		parser.appendPlaceholder()
 		parser.page.Slots[name] = HunkLocation{
-			Parent:     parser.page.lastHunk,
+			Parent:     parser.page.Pivot(),
 			ChildIndex: uint(parser.page.lastIndex),
 		}
 		return nil
@@ -63,23 +63,26 @@ func (parser *DocumentParser) processOpening(tag Tag, mark uint) error {
 
 	parser.appendTag(tag)
 	if tag.IsPaired() {
-		parser.openingTags = append(parser.openingTags, OpeningTag{
-			Hunk: parser.page.lastHunk,
-			Mark: mark,
-			Line: parser.line,
+		parser.openingTags = append(parser.openingTags, HunkLocation{
+			Parent:     parser.page.Pivot(),
+			ChildIndex: parser.page.lastIndex,
+			Line:       parser.line,
+			ByteOffset: mark,
 		})
 	}
 	return nil
 }
 
-func (parser *DocumentParser) processClosing(tag Tag) error {
+func (parser *DocumentParser) processClosing(opening HunkLocation) error {
+	tag := opening.Hunk().AsTag()
+
 	switch tag.Name {
 	case "extend":
 		nestedPage, err := parser.parseNestedDocument(tag)
 		if err != nil {
 			return err
 		}
-		parser.page.Append(nestedPage.Root)
+		opening.Parent.Children[opening.ChildIndex] = nestedPage.Root
 	}
 
 	return nil

@@ -13,8 +13,8 @@ import (
 )
 
 var expected = w3html.ParsedPage{
-	Slots: map[string]w3html.SlotLocation{
-		"default": {Parent: nil, Index: 1},
+	Slots: map[string]w3html.HunkLocation{
+		"default": {Parent: nil, ChildIndex: 1},
 	},
 	Root: w3html.Hunk{
 		Kind:     w3html.HunkRoot,
@@ -47,6 +47,6 @@ func TestParser(t *testing.T) {
 		expected,
 		page,
 		cmpopts.IgnoreUnexported(w3html.ParsedPage{}),
-		cmpopts.IgnoreFields(w3html.SlotLocation{}, "Parent"),
+		cmpopts.IgnoreFields(w3html.HunkLocation{}, "Parent"),
 	)
 }
