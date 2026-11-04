@@ -45,7 +45,9 @@ func (parser *DocumentParser) processOpening(tag Tag, mark uint) error {
 		if err != nil {
 			return err
 		}
-		parser.page.Append(nestedPage.Root)
+		for _, child := range nestedPage.Root.Children {
+			parser.page.Append(child)
+		}
 		return nil
 
 	case "":
@@ -78,11 +80,10 @@ func (parser *DocumentParser) processClosing(opening HunkLocation) error {
 
 	switch tag.Name {
 	case "extend":
-		nestedPage, err := parser.parseNestedDocument(tag)
+		_, err := parser.parseNestedDocument(tag)
 		if err != nil {
 			return err
 		}
-		fmt.Println(nestedPage)
 		// opening.Parent.Children[opening.ChildIndex] = nestedPage.Root
 	}
 
