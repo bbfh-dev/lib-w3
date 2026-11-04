@@ -1,7 +1,6 @@
 package w3html
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -112,12 +111,14 @@ func (hunk Hunk) InjectSlots() (map[string][]Hunk, error) {
 		case HunkTag:
 			tag := child.AsTag()
 			if tag.Name == "slot" {
-				name := tag.FindNamedArg("name", 0)
-				if name == "" {
-					return slots, errors.New(
-						"'slot' tag requires a 'name' argument. Example: {{ slot 'body' }}. If your intent was to place into 'default' slot, simply remove '{{ slot }}' tag alltogether",
+				nameArg, err := tag.RequireNamedArg(ArgString, "name", 0)
+				if err != nil {
+					return slots, fmt.Errorf(
+						"%w. Example: {{ slot 'body' }}. If your intent was to place into 'default' slot, simply remove '{{ slot }}' tag alltogether",
+						err,
 					)
 				}
+				name := nameArg.AsString()
 				slots[name] = append(slots[name], child.Children...)
 				continue
 			}

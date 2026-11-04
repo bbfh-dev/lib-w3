@@ -1,7 +1,6 @@
 package w3html
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -199,7 +198,7 @@ func (parser *DocumentParser) appendPlaceholder() {
 	})
 }
 
-func (parser *DocumentParser) appendVariable(path string) {
+func (parser *DocumentParser) appendVariable(path StringPath) {
 	parser.page.Append(Hunk{
 		Kind:     HunkVariable,
 		Line:     parser.line,
@@ -209,12 +208,11 @@ func (parser *DocumentParser) appendVariable(path string) {
 }
 
 func (parser *DocumentParser) parseNestedDocument(tag Tag) (ParsedPage, error) {
-	path := tag.FindNamedArg("path", 0)
-	if path == "" {
-		return ParsedPage{}, errors.New(
-			"'include' tag requires a 'path' argument pointing to the file (relatively to current file location)",
-		)
+	pathArg, err := tag.RequireNamedArg(ArgString, "path", 0)
+	if err != nil {
+		return ParsedPage{}, fmt.Errorf("%w (the path is relative to THIS document)", err)
 	}
+	path := pathArg.AsString()
 
 	path = filepath.Join(filepath.Dir(parser.file.Name()), path)
 	file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
@@ -230,7 +228,7 @@ func (parser *DocumentParser) parseNestedDocument(tag Tag) (ParsedPage, error) {
 	}
 	defer file.Close()
 
-	return Parse(parser.reader, file, tag.ArgsExcluding("path"))
+	return Parse(parser.reader, file, tag.StringArgsExcluding("path"))
 }
 
 func (parse *DocumentParser) findMatchingOpeningTag(name string) HunkLocation {

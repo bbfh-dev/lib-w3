@@ -2,6 +2,7 @@ package w3html
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -123,17 +124,35 @@ func (parser *DocumentParser) readTagArgs() ([]Argument, error) {
 				return args, fmt.Errorf("parsing a quoted string: %w", err)
 			}
 			args = append(args, Argument{
-				Key:   string(keyBuffer),
-				Value: arg,
+				Kind: ArgString,
+				Key:  string(keyBuffer),
+				Data: arg,
 			})
 
 		case ' ':
 			parser.reader.MarkHere()
 			if len(buffer) != 0 {
-				args = append(args, Argument{
-					Key:   string(keyBuffer),
-					Value: string(buffer),
-				})
+				asInt, err := strconv.Atoi(string(buffer))
+				if err == nil {
+					args = append(args, Argument{
+						Kind: ArgInt,
+						Key:  string(keyBuffer),
+						Data: asInt,
+					})
+				} else {
+					asFloat, err := strconv.ParseFloat(string(buffer), 64)
+					if err != nil {
+						return args, fmt.Errorf(
+							"%q is not a number. Put quotes around if it's meant to be a string",
+							string(buffer),
+						)
+					}
+					args = append(args, Argument{
+						Kind: ArgFloat,
+						Key:  string(keyBuffer),
+						Data: asFloat,
+					})
+				}
 				keyBuffer = []rune{}
 				buffer = []rune{}
 			}
@@ -160,7 +179,7 @@ func (parser *DocumentParser) readTagArgs() ([]Argument, error) {
 				}
 				if nextChar == '=' {
 					buffer = []rune{}
-					args = append(args, Argument{Key: "", Value: "=="})
+					args = append(args, Argument{Kind: ArgOperation, Data: OpEquals})
 					continue
 				}
 				parser.reader.Unread()
@@ -174,9 +193,20 @@ func (parser *DocumentParser) readTagArgs() ([]Argument, error) {
 			if err != nil {
 				return args, fmt.Errorf("reading %q token: %w", char, err)
 			}
-			args = append(args, Argument{Key: "", Value: string(char) + string(char)})
+			args = append(
+				args,
+				Argument{Kind: ArgOperation, Data: Operation(string(char) + string(char))},
+			)
 
-		case '<', '>', '!':
+		case '!':
+			parser.reader.MarkHere()
+			err := parser.readExactly('=')
+			if err != nil {
+				return args, fmt.Errorf("reading '=' token: %w", err)
+			}
+			args = append(args, Argument{Kind: ArgOperation, Data: OpNotEquals})
+
+		case '<', '>':
 			parser.reader.MarkHere()
 			nextChar, err := parser.reader.Read()
 			if err != nil {
@@ -186,21 +216,26 @@ func (parser *DocumentParser) readTagArgs() ([]Argument, error) {
 				return args, fmt.Errorf("unexpected character %q", char)
 			}
 			if nextChar != '=' {
-				args = append(args, Argument{Key: "", Value: string(char)})
+				args = append(args, Argument{Kind: ArgOperation, Data: Operation(string(char))})
 				parser.reader.Unread()
 				continue
 			}
-			args = append(args, Argument{Key: "", Value: string(char) + "="})
+			args = append(args, Argument{Kind: ArgOperation, Data: Operation(string(char) + "=")})
 
 		case '.':
+			if len(buffer) != 0 {
+				buffer = append(buffer, '.')
+				continue
+			}
 			parser.reader.MarkHere()
 			path, err := parser.readPath()
 			if err != nil {
 				return args, fmt.Errorf("reading path: %w", err)
 			}
 			args = append(args, Argument{
-				Key:   string(keyBuffer),
-				Value: path,
+				Kind: ArgPath,
+				Key:  string(keyBuffer),
+				Data: path,
 			})
 
 		default:
@@ -241,13 +276,13 @@ func (parser *DocumentParser) readQuoted(quote rune) (string, error) {
 	}
 }
 
-func (parser *DocumentParser) readPath() (string, error) {
+func (parser *DocumentParser) readPath() (StringPath, error) {
 	var buffer = []rune{}
 
 	for {
 		char, err := parser.reader.Read()
 		if err != nil {
-			return "", err
+			return StringPath{}, err
 		}
 
 		if isPathCharset(char) {
@@ -257,17 +292,17 @@ func (parser *DocumentParser) readPath() (string, error) {
 
 		switch char {
 		case ' ':
-			return "." + string(buffer), nil
+			return StringPath(strings.Split(string(buffer), ".")), nil
 
 		case '(':
 			parser.reader.MarkHere()
 			if err := parser.readExactly(')'); err != nil {
-				return "", fmt.Errorf("reading function parentheses: %w", err)
+				return StringPath{}, fmt.Errorf("reading function parentheses: %w", err)
 			}
 			buffer = append(buffer, '(', ')')
 
 		default:
-			return "", fmt.Errorf("unexpected character %q", char)
+			return StringPath{}, fmt.Errorf("unexpected character %q", char)
 		}
 	}
 }
