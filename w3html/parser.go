@@ -124,6 +124,12 @@ func (parser *DocumentParser) Parse() error {
 				return fmt.Errorf("tag %q was never opened", tag.Name)
 			}
 
+			err := parser.page.OnLeaveTagBody(tag)
+			if err != nil {
+				parser.reader.MoveMarkTo(tagBeginning)
+				return err
+			}
+
 			line := parser.reader.Line
 			parser.reader.Line = openingTag.Line
 			if err := parser.processClosing(openingTag); err != nil {
@@ -134,12 +140,6 @@ func (parser *DocumentParser) Parse() error {
 				return fmt.Errorf("processing tag closing: %w", err)
 			}
 			parser.reader.Line = line
-
-			err := parser.page.OnLeaveTagBody(tag)
-			if err != nil {
-				parser.reader.MoveMarkTo(tagBeginning)
-				return err
-			}
 		} else {
 			if err := parser.processOpening(tag, tagBeginning); err != nil {
 				parser.reader.MoveMarkTo(tagBeginning)

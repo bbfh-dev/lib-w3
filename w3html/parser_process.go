@@ -80,11 +80,11 @@ func (parser *DocumentParser) processClosing(opening HunkLocation) error {
 
 	switch tag.Name {
 	case "extend":
-		_, err := parser.parseNestedDocument(tag)
+		nestedPage, err := parser.parseNestedDocument(tag)
 		if err != nil {
 			return err
 		}
-		// opening.Parent.Children[opening.ChildIndex] = nestedPage.Root
+		opening.Parent.Children[opening.ChildIndex] = nestedPage.Root
 	}
 
 	return nil
