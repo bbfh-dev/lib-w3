@@ -60,21 +60,28 @@ func (parser *DocumentParser) processOpening(tag Tag, mark uint) error {
 		}
 		return fmt.Errorf("unnamed tag must have a single path argument, but got %d", len(tag.Args))
 
-	case "if", "extend", "slot", "range":
-		parser.appendTag(tag)
-		if tag.IsPaired() {
-			parser.openingTags = append(parser.openingTags, HunkLocation{
-				Parent:     parser.page.Pivot(),
-				ChildIndex: parser.page.lastIndex,
-				Line:       parser.line,
-				ByteOffset: mark,
-			})
-		}
-		return nil
+	case "extend", "slot", "range":
+		goto reappend
+
+	case "if":
+		// TODO: Add validation
+		goto reappend
 
 	default:
 		return fmt.Errorf("unknown tag %q", tag.Name)
 	}
+
+reappend:
+	parser.appendTag(tag)
+	if tag.IsPaired() {
+		parser.openingTags = append(parser.openingTags, HunkLocation{
+			Parent:     parser.page.Pivot(),
+			ChildIndex: parser.page.lastIndex,
+			Line:       parser.line,
+			ByteOffset: mark,
+		})
+	}
+	return nil
 }
 
 func (parser *DocumentParser) processClosing(opening HunkLocation) error {
