@@ -19,15 +19,15 @@ const (
 func (enum ArgumentEnum) String() string {
 	switch enum {
 	case ArgString:
-		return "ArgString"
+		return "String"
 	case ArgOperation:
-		return "ArgOperation"
+		return "Operation"
 	case ArgInt:
-		return "ArgInt"
+		return "Int"
 	case ArgFloat:
-		return "ArgFloat"
+		return "Float"
 	case ArgPath:
-		return "ArgPath"
+		return "Path"
 	default:
 		return fmt.Sprintf("ArgumentEnum(%d)", enum)
 	}

@@ -57,7 +57,7 @@ func (tag Tag) RequireNamedArg(
 	}
 	if arg.Kind != requiredKind {
 		return nil, fmt.Errorf(
-			"%q tag requires a %q argument to be a %q, but got %q instead",
+			"%q tag requires a %q argument to be %q, but got %q instead",
 			tag.Name,
 			name,
 			requiredKind,
