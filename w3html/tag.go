@@ -70,7 +70,7 @@ func (tag Tag) RequireNamedArg(
 func (tag Tag) StringArgsExcluding(names ...string) map[string]string {
 	out := map[string]string{}
 	for _, arg := range tag.Args {
-		if !slices.Contains(names, arg.Key) {
+		if arg.Key != "" && !slices.Contains(names, arg.Key) {
 			out[arg.Key] = arg.ToString()
 		}
 	}
