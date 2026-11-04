@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"unicode/utf8"
 
 	"codeberg.org/bbfh/lib-w3/w3errs"
@@ -214,6 +215,32 @@ func (parser *DocumentParser) parseNestedDocument(tag Tag) (ParsedPage, error) {
 		return ParsedPage{}, fmt.Errorf("%w (the path is relative to THIS document)", err)
 	}
 	path := pathArg.AsString()
+
+	placeholderCount := strings.Count(path, "%s")
+	if placeholderCount != 0 {
+		formatArgs := tag.FormatArgs()
+		if placeholderCount != len(formatArgs) {
+			return ParsedPage{}, fmt.Errorf(
+				"'path' contains %d formatting placeholders ('%%s'), but %d (%q) compile-time paths are provided for substitution among %d other ignored arguments",
+				placeholderCount,
+				len(formatArgs),
+				formatArgs,
+				len(tag.Args)-len(formatArgs),
+			)
+		}
+		args := make([]any, len(formatArgs))
+		for i, arg := range formatArgs {
+			value, ok := parser.Params[arg.Flatten()]
+			if !ok {
+				return ParsedPage{}, fmt.Errorf(
+					"unknown compile-time variable %q. Make sure the variable is set in the 'include' or 'extend' tag calling this file",
+					path,
+				)
+			}
+			args[i] = value
+		}
+		path = fmt.Sprintf(path, args...)
+	}
 
 	path = filepath.Join(filepath.Dir(parser.file.Name()), path)
 	file, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)

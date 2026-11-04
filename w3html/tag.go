@@ -77,6 +77,16 @@ func (tag Tag) StringArgsExcluding(names ...string) map[string]string {
 	return out
 }
 
+func (tag Tag) FormatArgs() []StringPath {
+	out := make([]StringPath, 0, len(tag.Args))
+	for _, arg := range tag.Args {
+		if arg.Key == "" && arg.Kind == ArgPath && isCompileTimeVariable(arg.AsPath()) {
+			out = append(out, arg.AsPath())
+		}
+	}
+	return out
+}
+
 func (tag Tag) String() string {
 	var builder strings.Builder
 	builder.WriteString("{{")
