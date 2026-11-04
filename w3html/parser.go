@@ -1,7 +1,6 @@
 package w3html
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -14,14 +13,13 @@ import (
 )
 
 type DocumentParser struct {
-	StripWhitespace bool
-	Params          map[string]string
-	file            *os.File
-	reader          *w3utils.DetailedReader
-	buffer          []byte
-	line            uint
-	page            ParsedPage
-	openingTags     []HunkLocation
+	Params      map[string]string
+	file        *os.File
+	reader      *w3utils.DetailedReader
+	buffer      []byte
+	line        uint
+	page        ParsedPage
+	openingTags []HunkLocation
 }
 
 type OpeningTag struct {
@@ -33,7 +31,6 @@ type OpeningTag struct {
 func Parse(
 	parent *w3utils.DetailedReader,
 	file *os.File,
-	stripWhitespace bool,
 	params map[string]string,
 ) (ParsedPage, error) {
 	reader := w3utils.NewDetailedReader(parent, file)
@@ -41,13 +38,12 @@ func Parse(
 	params["_filename"] = filename
 	params["_filename.base"] = filepath.Base(filename)
 	parser := DocumentParser{
-		StripWhitespace: stripWhitespace,
-		Params:          params,
-		file:            file,
-		reader:          reader,
-		buffer:          []byte{},
-		line:            1,
-		openingTags:     []HunkLocation{},
+		Params:      params,
+		file:        file,
+		reader:      reader,
+		buffer:      []byte{},
+		line:        1,
+		openingTags: []HunkLocation{},
 	}
 	err := parser.Parse()
 	if err != nil {
@@ -186,12 +182,6 @@ func (parser *DocumentParser) appendBuffer() {
 }
 
 func (parser *DocumentParser) appendRaw(buffer []byte) {
-	if parser.StripWhitespace {
-		buffer = bytes.TrimSpace(buffer)
-		if len(buffer) == 0 {
-			return // skip
-		}
-	}
 	parser.page.Append(Hunk{
 		Kind:     HunkRaw,
 		Data:     buffer,
@@ -240,7 +230,7 @@ func (parser *DocumentParser) parseNestedDocument(tag Tag) (ParsedPage, error) {
 	}
 	defer file.Close()
 
-	return Parse(parser.reader, file, parser.StripWhitespace, tag.ArgsExcluding("path"))
+	return Parse(parser.reader, file, tag.ArgsExcluding("path"))
 }
 
 func (parse *DocumentParser) findMatchingOpeningTag(name string) HunkLocation {

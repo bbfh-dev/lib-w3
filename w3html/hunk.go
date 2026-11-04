@@ -1,6 +1,7 @@
 package w3html
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -101,4 +102,47 @@ func (hunk Hunk) Write(w io.Writer, indent uint) {
 	for _, child := range hunk.Children {
 		child.Write(w, indent)
 	}
+}
+
+func (hunk Hunk) InjectSlots() (map[string][]Hunk, error) {
+	slots := map[string][]Hunk{}
+
+	for _, child := range hunk.Children {
+		switch child.Kind {
+		case HunkTag:
+			tag := child.AsTag()
+			if tag.Name == "slot" {
+				name := tag.FindNamedArg("name", 0)
+				if name == "" {
+					return slots, errors.New(
+						"'slot' tag requires a 'name' argument. Example: {{ slot 'body' }}. If your intent was to place into 'default' slot, simply remove '{{ slot }}' tag alltogether",
+					)
+				}
+				slots[name] = append(slots[name], child.Children...)
+				continue
+			}
+			fallthrough
+		case HunkRaw:
+			if isWhitespace(child.AsRaw()) {
+				continue
+			}
+			fallthrough
+		default:
+			slots["default"] = append(slots["default"], child)
+		}
+	}
+
+	return slots, nil
+}
+
+// isWhitespace reports whether the buffer is purely whitespace.
+func isWhitespace(buffer []byte) bool {
+	for _, char := range buffer {
+		switch char {
+		case '\t', '\n', '\v', '\f', '\r', ' ':
+		default:
+			return false
+		}
+	}
+	return true
 }

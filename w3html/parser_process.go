@@ -76,13 +76,34 @@ func (parser *DocumentParser) processOpening(tag Tag, mark uint) error {
 }
 
 func (parser *DocumentParser) processClosing(opening HunkLocation) error {
-	tag := opening.Hunk().AsTag()
+	hunk := opening.Hunk()
+	tag := hunk.AsTag()
 
 	switch tag.Name {
 	case "extend":
 		nestedPage, err := parser.parseNestedDocument(tag)
 		if err != nil {
 			return err
+		}
+
+		injectSlots, err := hunk.InjectSlots()
+		if err != nil {
+			return err
+		}
+		for slotId, injectHunks := range injectSlots {
+			location, ok := nestedPage.Slots[slotId]
+			if !ok {
+				return fmt.Errorf(
+					"trying to inject into slot %q, but it was never defined in the extended document",
+					slotId,
+				)
+			}
+			location.Parent.Children[location.ChildIndex] = Hunk{
+				Kind:     HunkRoot,
+				Line:     location.Parent.Children[location.ChildIndex].Line,
+				Data:     nil,
+				Children: injectHunks,
+			}
 		}
 		opening.Parent.Children[opening.ChildIndex] = nestedPage.Root
 	}
