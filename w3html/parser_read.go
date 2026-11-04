@@ -96,14 +96,6 @@ func (parser *DocumentParser) readTagName() (string, error) {
 	}
 }
 
-type Argument struct {
-	Key, Value string
-}
-
-func (arg Argument) HasKey() bool {
-	return arg.Key != ""
-}
-
 func (parser *DocumentParser) readTagArgs() ([]Argument, error) {
 	var args = []Argument{}
 	var buffer = []rune{}

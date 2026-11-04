@@ -11,6 +11,10 @@ type Tag struct {
 	Args []Argument
 }
 
+type Argument struct {
+	Key, Value string
+}
+
 func (tag Tag) IsPaired() bool {
 	switch tag.Name {
 	case "extend", "if", "slot":
