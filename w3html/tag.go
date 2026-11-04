@@ -13,7 +13,7 @@ type Tag struct {
 
 func (tag Tag) IsPaired() bool {
 	switch tag.Name {
-	case "extend", "if", "slot":
+	case "extend", "if", "slot", "range":
 		return true
 	default:
 		return false

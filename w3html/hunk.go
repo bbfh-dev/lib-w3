@@ -17,6 +17,7 @@ const (
 	HunkRaw
 	HunkTag
 	HunkVariable
+	HunkLoop
 )
 
 func (enum HunkEnum) String() string {
@@ -31,6 +32,8 @@ func (enum HunkEnum) String() string {
 		return "HunkTag"
 	case HunkVariable:
 		return "HunkVariable"
+	case HunkLoop:
+		return "HunkLoop"
 	default:
 		return fmt.Sprintf("HunkEnum(%d)", enum)
 	}
@@ -71,6 +74,11 @@ func (hunk Hunk) AsTag() Tag {
 // AsVariable casts the [Hunk.Data] value that is expected when [Hunk.Kind] == [HunkVariable].
 func (hunk Hunk) AsVariable() string {
 	return hunk.Data.(string)
+}
+
+// AsLoop casts the [Hunk.Data] value that is expected when [Hunk.Kind] == [HunkLoop].
+func (hunk Hunk) AsLoop() StringPath {
+	return hunk.Data.(StringPath)
 }
 
 func (hunk Hunk) String() string {

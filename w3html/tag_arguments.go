@@ -56,8 +56,6 @@ func (arg Argument) Write(w io.Writer) {
 		fmt.Fprintf(w, "%f", arg.Data)
 	case ArgString:
 		fmt.Fprintf(w, "%q", arg.Data)
-	case ArgPath:
-		fmt.Fprintf(w, ".%s", arg.Data)
 	default:
 		fmt.Fprintf(w, "%s", arg.Data)
 	}
@@ -89,6 +87,10 @@ func (arg Argument) AsFloat() float64 {
 type StringPath []string
 
 func (path StringPath) String() string {
+	return "." + path.Flatten()
+}
+
+func (path StringPath) Flatten() string {
 	return strings.Join(path, ".")
 }
 

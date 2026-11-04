@@ -9,7 +9,7 @@ func (parser *DocumentParser) processOpening(tag Tag, mark uint) error {
 	if tag.IsPath() {
 		path := tag.Args[0].AsPath()
 		if isCompileTimeVariable(path) {
-			value, ok := parser.Params[path.String()]
+			value, ok := parser.Params[path.Flatten()]
 			if !ok {
 				return fmt.Errorf(
 					"unknown compile-time variable %q. Make sure you didn't mess up capitalization & the variable is set in the 'include' or 'extend' tag calling this file",
@@ -59,18 +59,22 @@ func (parser *DocumentParser) processOpening(tag Tag, mark uint) error {
 			)
 		}
 		return fmt.Errorf("unnamed tag must have a single path argument, but got %d", len(tag.Args))
-	}
 
-	parser.appendTag(tag)
-	if tag.IsPaired() {
-		parser.openingTags = append(parser.openingTags, HunkLocation{
-			Parent:     parser.page.Pivot(),
-			ChildIndex: parser.page.lastIndex,
-			Line:       parser.line,
-			ByteOffset: mark,
-		})
+	case "if", "extend", "slot", "range":
+		parser.appendTag(tag)
+		if tag.IsPaired() {
+			parser.openingTags = append(parser.openingTags, HunkLocation{
+				Parent:     parser.page.Pivot(),
+				ChildIndex: parser.page.lastIndex,
+				Line:       parser.line,
+				ByteOffset: mark,
+			})
+		}
+		return nil
+
+	default:
+		return fmt.Errorf("unknown tag %q", tag.Name)
 	}
-	return nil
 }
 
 func (parser *DocumentParser) processClosing(opening HunkLocation) error {
@@ -78,6 +82,7 @@ func (parser *DocumentParser) processClosing(opening HunkLocation) error {
 	tag := hunk.AsTag()
 
 	switch tag.Name {
+
 	case "extend":
 		nestedPage, err := parser.parseNestedDocument(tag)
 		if err != nil {
@@ -104,11 +109,23 @@ func (parser *DocumentParser) processClosing(opening HunkLocation) error {
 			}
 		}
 		opening.Parent.Children[opening.ChildIndex] = nestedPage.Root
+
+	case "range":
+		pathArg, err := tag.RequireNamedArg(ArgPath, "path", 0)
+		if err != nil {
+			return err
+		}
+		opening.Parent.Children[opening.ChildIndex] = Hunk{
+			Kind:     HunkLoop,
+			Line:     hunk.Line,
+			Data:     pathArg.AsPath(),
+			Children: hunk.Children,
+		}
 	}
 
 	return nil
 }
 
 func isCompileTimeVariable(path []string) bool {
-	return path[0] == strings.ToLower(path[0])
+	return len(path[0]) != 0 && path[0] == strings.ToLower(path[0])
 }

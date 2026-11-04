@@ -13,6 +13,12 @@
         Welcome {{ .User.Name() }}
     </header>
     {{ place "body" }}
+    <footer>
+        {{ range .Buttons }}
+        <label>{{ ..Name }}</label>
+        {{ include "parser_test.03" label="My Button" }}
+        {{ /range }}
+    </footer>
 </body>
 
 </html>
