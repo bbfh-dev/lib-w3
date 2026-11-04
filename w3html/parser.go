@@ -31,7 +31,7 @@ func Parse(
 	parent *w3utils.DetailedReader,
 	file *os.File,
 	params map[string]string,
-) (ParsedPage, error) {
+) (*DocumentParser, error) {
 	reader := w3utils.NewDetailedReader(parent, file)
 	filename := reader.Origin().FileName()
 	params["_filename"] = filename
@@ -47,16 +47,17 @@ func Parse(
 	err := parser.Parse()
 	if err != nil {
 		if _, ok := err.(w3errs.DocumentError); ok {
-			return ParsedPage{}, err
+			return nil, err
 		}
-		return ParsedPage{}, parser.reader.WrapError(parser.file.Name(), err)
+		return nil, parser.reader.WrapError(parser.file.Name(), err)
 	}
-	return parser.Result(), nil
+	return &parser, nil
 }
 
 func (parser *DocumentParser) Parse() error {
 	parser.page = ParsedPage{
-		Slots: map[string]HunkLocation{},
+		MentionedPaths: []StringPath{},
+		Slots:          map[string]HunkLocation{},
 		Root: Hunk{
 			Kind:     HunkRoot,
 			Line:     1,
@@ -228,7 +229,14 @@ func (parser *DocumentParser) parseNestedDocument(tag Tag) (ParsedPage, error) {
 	}
 	defer file.Close()
 
-	return Parse(parser.reader, file, tag.StringArgsExcluding("path"))
+	nestedParser, err := Parse(parser.reader, file, tag.StringArgsExcluding("path"))
+	if err != nil {
+		return ParsedPage{}, err
+	}
+	parser.page.MentionedPaths = append(
+		parser.page.MentionedPaths,
+		nestedParser.page.MentionedPaths...)
+	return nestedParser.Result(), nil
 }
 
 func (parse *DocumentParser) findMatchingOpeningTag(name string) HunkLocation {

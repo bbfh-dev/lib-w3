@@ -24,8 +24,9 @@ func (location HunkLocation) Hunk() *Hunk {
 }
 
 type ParsedPage struct {
-	Slots map[string]HunkLocation
-	Root  Hunk
+	MentionedPaths []StringPath
+	Slots          map[string]HunkLocation
+	Root           Hunk
 	// temporary, stores current hunk parents during parsing
 	breadcrumbs []*Hunk
 	lastHunk    *Hunk
@@ -105,13 +106,13 @@ func (page *ParsedPage) Place(slot string, replacement ...Hunk) error {
 	return nil
 }
 
-func (page *ParsedPage) String() string {
+func (page ParsedPage) String() string {
 	var builder strings.Builder
 	page.Write(&builder)
 	return builder.String()
 }
 
-func (page *ParsedPage) Write(w io.Writer) {
+func (page ParsedPage) Write(w io.Writer) {
 	fmt.Fprintln(w, strings.Repeat("—", 80))
 	page.Root.Write(w, 0)
 	fmt.Fprint(w, strings.Repeat("—", 80))

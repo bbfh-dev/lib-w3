@@ -232,6 +232,9 @@ func (parser *DocumentParser) readTagArgs() ([]Argument, error) {
 			if err != nil {
 				return args, fmt.Errorf("reading path: %w", err)
 			}
+			if !isCompileTimeVariable(path) {
+				parser.page.MentionedPaths = append(parser.page.MentionedPaths, path)
+			}
 			args = append(args, Argument{
 				Kind: ArgPath,
 				Key:  string(keyBuffer),

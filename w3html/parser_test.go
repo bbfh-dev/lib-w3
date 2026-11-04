@@ -13,6 +13,11 @@ import (
 )
 
 var expected = w3html.ParsedPage{
+	MentionedPaths: []w3html.StringPath{
+		{"Page", "String()"},
+		{"Index"},
+		{"User", "Name()"},
+	},
 	Slots: map[string]w3html.HunkLocation{
 		"default": {Parent: nil, ChildIndex: 1},
 	},
@@ -34,18 +39,18 @@ func TestParser(t *testing.T) {
 	assert.NilError(t, err)
 	defer file.Close()
 
-	page, err := w3html.Parse(nil, file, map[string]string{})
+	parser, err := w3html.Parse(nil, file, map[string]string{})
 	if err != nil {
 		w3errs.Write(err, os.Stderr, outputMode)
 		t.FailNow()
 	}
 
-	fmt.Println(page.String())
+	fmt.Println(parser.Result().String())
 
 	assert.DeepEqual(
 		t,
 		expected,
-		page,
+		parser.Result(),
 		cmpopts.IgnoreUnexported(w3html.ParsedPage{}),
 		cmpopts.IgnoreFields(w3html.HunkLocation{}, "Parent"),
 	)
