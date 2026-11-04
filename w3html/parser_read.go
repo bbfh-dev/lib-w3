@@ -118,6 +118,9 @@ func (parser *DocumentParser) readTagArgs() ([]Argument, error) {
 
 		switch char {
 		case '\'', '"', '`':
+			if len(buffer) != 0 {
+				return args, fmt.Errorf("unexpected %q in the middle of another value", char)
+			}
 			parser.reader.MarkHere()
 			arg, err := parser.readQuoted(char)
 			if err != nil {
@@ -128,6 +131,8 @@ func (parser *DocumentParser) readTagArgs() ([]Argument, error) {
 				Key:  string(keyBuffer),
 				Data: arg,
 			})
+			keyBuffer = []rune{}
+			buffer = []rune{}
 
 		case ' ':
 			parser.reader.MarkHere()
