@@ -64,7 +64,9 @@ func (parser *DocumentParser) processOpening(tag Tag, mark uint) error {
 		goto reappend
 
 	case "if":
-		// TODO: Add validation
+		if err := validateIfArguments(tag); err != nil {
+			return err
+		}
 		goto reappend
 
 	default:
@@ -135,4 +137,48 @@ func (parser *DocumentParser) processClosing(opening HunkLocation) error {
 
 func isCompileTimeVariable(path []string) bool {
 	return len(path[0]) != 0 && path[0] == strings.ToLower(path[0])
+}
+
+func validateIfArguments(tag Tag) error {
+	if len(tag.Args) == 0 {
+		return fmt.Errorf("empty if-statement")
+	}
+
+	expectOperation := false
+	for i, arg := range tag.Args {
+		if arg.Key != "" {
+			return fmt.Errorf(
+				"unexpected named argument in an if-statement: %q",
+				arg.String(),
+			)
+		}
+
+		if expectOperation {
+			if arg.Kind != ArgOperation {
+				return fmt.Errorf(
+					"expected operation in an if-statement, got %s (%q)",
+					arg.Kind,
+					arg.String(),
+				)
+			}
+		} else {
+			if arg.Kind == ArgOperation {
+				return fmt.Errorf(
+					"unexpected operation %q in an if-statement",
+					arg.String(),
+				)
+			}
+		}
+
+		if i == len(tag.Args)-1 && expectOperation {
+			return fmt.Errorf(
+				"if-statement cannot end with an operation: %q",
+				arg.String(),
+			)
+		}
+
+		expectOperation = !expectOperation
+	}
+
+	return nil
 }
