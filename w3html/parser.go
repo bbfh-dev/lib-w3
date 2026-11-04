@@ -114,10 +114,16 @@ func (parser *DocumentParser) Parse() error {
 			return fmt.Errorf("reading tag: %w", err)
 		}
 		if closing {
+			if !tag.IsPaired() {
+				parser.reader.MoveMarkTo(tagBeginning)
+				return fmt.Errorf("%q tag is not a closable tag", tag.Name)
+			}
+
 			openingTag := parser.findMatchingOpeningTag(tag.Name)
 			if openingTag.IsNull() {
 				return fmt.Errorf("tag %q was never opened", tag.Name)
 			}
+
 			line := parser.reader.Line
 			parser.reader.Line = openingTag.Line
 			if err := parser.processClosing(openingTag); err != nil {
@@ -128,6 +134,12 @@ func (parser *DocumentParser) Parse() error {
 				return fmt.Errorf("processing tag closing: %w", err)
 			}
 			parser.reader.Line = line
+
+			err := parser.page.OnLeaveTagBody(tag)
+			if err != nil {
+				parser.reader.MoveMarkTo(tagBeginning)
+				return err
+			}
 		} else {
 			if err := parser.processOpening(tag, tagBeginning); err != nil {
 				parser.reader.MoveMarkTo(tagBeginning)
@@ -136,22 +148,9 @@ func (parser *DocumentParser) Parse() error {
 				}
 				return fmt.Errorf("processing opening tag: %w", err)
 			}
-		}
-
-		// FIXME: this should be a part of the previous code, otherwise it gets replaced with Root and only then checks the closing
-		if tag.IsPaired() {
-			if closing {
-				err := parser.page.OnLeaveTagBody(tag)
-				if err != nil {
-					parser.reader.MoveMarkTo(tagBeginning)
-					return err
-				}
-			} else {
+			if tag.IsPaired() {
 				parser.page.OnEnterTagBody()
 			}
-		} else if closing {
-			parser.reader.MoveMarkTo(tagBeginning)
-			return fmt.Errorf("%q tag is not a closable tag", tag.Name)
 		}
 	}
 }

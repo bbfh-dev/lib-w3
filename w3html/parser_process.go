@@ -82,7 +82,8 @@ func (parser *DocumentParser) processClosing(opening HunkLocation) error {
 		if err != nil {
 			return err
 		}
-		opening.Parent.Children[opening.ChildIndex] = nestedPage.Root
+		fmt.Println(nestedPage)
+		// opening.Parent.Children[opening.ChildIndex] = nestedPage.Root
 	}
 
 	return nil
