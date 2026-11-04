@@ -120,6 +120,7 @@ func (reader *DetailedReader) WrapError(filename string, err error) w3errs.Docum
 		ContextLines: contextLines,
 		Highlight:    highlight,
 		Message:      err.Error(),
+		DrawArrow:    reader.cutLast == 0,
 	}
 }
 

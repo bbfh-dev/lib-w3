@@ -43,6 +43,7 @@ type DocumentError struct {
 	ContextLines []string
 	Highlight    string
 	Message      string
+	DrawArrow    bool
 }
 
 func (err DocumentError) Error() string {
@@ -90,15 +91,19 @@ func (err DocumentError) Write(file *os.File, mode libclog.OutputModeEnum) error
 	} else {
 		length = len(highlightedLines[len(highlightedLines)-1])
 	}
-	printer.Colored(
-		libclog.ColorBrightBlack,
-		"\n     │ ",
-	)
-	printer.Coloredf(
-		libclog.ColorBrightRed,
-		"%s↑\n",
-		strings.Repeat(" ", length-1),
-	)
+	if err.DrawArrow {
+		printer.Colored(
+			libclog.ColorBrightBlack,
+			"\n     │ ",
+		)
+		printer.Coloredf(
+			libclog.ColorBrightRed,
+			"%s↑\n",
+			strings.Repeat(" ", max(0, length-1)),
+		)
+	} else {
+		printer.Write("\n")
+	}
 	printer.Coloredf(libclog.ColorBrightBlack, "─────┴%s\n", strings.Repeat("─", 30))
 
 	return printer.ErrorsJoined()
