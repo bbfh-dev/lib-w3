@@ -81,12 +81,6 @@ func (hunk Hunk) AsLoop() StringPath {
 	return hunk.Data.(StringPath)
 }
 
-func (hunk Hunk) String() string {
-	var builder strings.Builder
-	hunk.Write(&builder, 0)
-	return builder.String()
-}
-
 func (hunk Hunk) Write(w io.Writer, indent uint) {
 	indentString := strings.Repeat("    ", int(indent))
 	data := hunk.Data
