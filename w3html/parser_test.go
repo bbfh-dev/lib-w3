@@ -268,10 +268,14 @@ func (u user) Name() string {
 	return "Hi"
 }
 
+type button struct {
+	Name string
+}
+
 type PageData struct {
 	Page    page
 	Index   int
-	Buttons []string
+	Buttons []button
 	User    user
 }
 

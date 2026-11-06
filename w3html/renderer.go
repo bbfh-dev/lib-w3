@@ -35,11 +35,10 @@ func Bake[T any](page ParsedPage) (*Renderer[T], error) {
 
 func bake[T any](page *ParsedPage, rType reflect.Type) (*Renderer[T], error) {
 	for _, path := range page.MentionedPaths {
-		index, err := resolve(rType, path, 0)
+		_, err := resolve(rType, path, 0)
 		if err != nil {
 			return nil, err
 		}
-		fmt.Printf("DEBUG: %v → %#v\n", index, read(reflect.ValueOf(*new(T)), index))
 	}
 
 	return nil, nil
@@ -65,6 +64,26 @@ func resolve(rType reflect.Type, path StringPath, i int) ([]int, error) {
 			return append([]int{methodOffset + method.Index}, index...), nil
 		}
 		return []int{methodOffset + method.Index}, nil
+	}
+
+	if before, ok := strings.CutSuffix(segment, "[]"); ok {
+		field, ok := rType.FieldByName(before)
+		if !ok {
+			return nil, fmt.Errorf(
+				"document tries to access array field %q, but %q is not present in type %q",
+				path.Flatten(),
+				before,
+				rType.Name(),
+			)
+		}
+		if len(path) > i+1 {
+			index, err := resolve(field.Type.Elem(), path, i+1)
+			if err != nil {
+				return nil, err
+			}
+			return append(field.Index, index...), nil
+		}
+		return field.Index, nil
 	}
 
 	field, ok := rType.FieldByName(segment)
