@@ -108,10 +108,10 @@ func (parser *DocumentParser) Parse() error {
 			parser.writeRune(char)
 			continue
 		}
+		// at this point it's expected to be a tag
 		parser.flush()
 		parser.line = parser.reader.Line
 
-		// at this point it's expected to be a tag
 		tag, closing, err := parser.readTag()
 		if err != nil {
 			return fmt.Errorf("reading tag: %w", err)
