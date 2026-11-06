@@ -144,7 +144,15 @@ func (parser *DocumentParser) processClosing(opening HunkLocation) error {
 				continue
 			}
 
-			if child.Kind == HunkRaw && opening.Parent.Children[i-1].Kind == HunkRaw {
+			if child.Kind != HunkRaw {
+				continue
+			}
+
+			if isWhitespace(child.AsRaw()) {
+				continue
+			}
+
+			if opening.Parent.Children[i-1].Kind == HunkRaw {
 				merged[len(merged)-1].Data = append(
 					merged[len(merged)-1].Data.([]byte),
 					child.AsRaw()...)
