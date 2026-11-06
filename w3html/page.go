@@ -3,8 +3,6 @@ package w3html
 import (
 	"fmt"
 	"io"
-	"maps"
-	"slices"
 	"strings"
 )
 
@@ -84,26 +82,6 @@ func (page *ParsedPage) append(hunk Hunk) {
 
 	// for everything else
 	pivot.Children = append(pivot.Children, hunk)
-}
-
-func (page *ParsedPage) Place(slot string, replacement ...Hunk) error {
-	location, ok := page.Slots[slot]
-	if !ok {
-		return fmt.Errorf(
-			"trying to inject into an undefined slot named %q. Defined slots are: [%s]",
-			slot,
-			strings.Join(slices.Collect(maps.Keys(page.Slots)), ", "),
-		)
-	}
-
-	// we subtract 1 from capacity, because one of the children is the placeholder.
-	children := make([]Hunk, 0, len(location.Parent.Children)+len(replacement)-1)
-	children = append(children, location.Parent.Children[:location.ChildIndex]...)
-	children = append(children, replacement...)
-	children = append(children, location.Parent.Children[location.ChildIndex+1:]...)
-	location.Parent.Children = children
-	// TODO: Add merge logic from [ParsedPage.Append]
-	return nil
 }
 
 func (page ParsedPage) String() string {
