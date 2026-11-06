@@ -121,3 +121,18 @@ func read(rValue reflect.Value, path []int) any {
 	}
 	return out
 }
+
+type StructPath []PathSegment
+
+type AccessEnum uint8
+
+const (
+	AccessField AccessEnum = iota
+	AccessArray
+	AccessMethod
+)
+
+type PathSegment struct {
+	Kind  AccessEnum
+	Index uint
+}
