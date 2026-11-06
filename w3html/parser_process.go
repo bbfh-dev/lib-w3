@@ -106,6 +106,7 @@ func (parser *DocumentParser) processClosing(opening HunkLocation) error {
 			return err
 		}
 
+		// FIXME: empty location.Parent.Children crashes
 		injectSlots, err := hunk.InjectSlots()
 		if err != nil {
 			return err
@@ -130,35 +131,7 @@ func (parser *DocumentParser) processClosing(opening HunkLocation) error {
 				}
 			}
 		}
-		if len(opening.Parent.Children) == 1 && opening.Parent.Kind == HunkRoot {
-			// inline when possible
-			opening.Parent.Children = nestedPage.Root.Children
-		} else {
-			opening.Parent.Children[opening.ChildIndex] = nestedPage.Root
-		}
-		// redo raw hunk merging due to previous inlining
-		merged := make([]Hunk, 0, len(opening.Parent.Children))
-		for i, child := range opening.Parent.Children {
-			if len(merged) == 0 {
-				merged = append(merged, child)
-				continue
-			}
-
-			if child.Kind != HunkRaw {
-				continue
-			}
-
-			if isWhitespace(child.AsRaw()) {
-				continue
-			}
-
-			if opening.Parent.Children[i-1].Kind == HunkRaw {
-				merged[len(merged)-1].Data = append(
-					merged[len(merged)-1].Data.([]byte),
-					child.AsRaw()...)
-			}
-		}
-		opening.Parent.Children = merged
+		opening.Parent.Children[opening.ChildIndex] = nestedPage.Root
 
 	case "range":
 		parser.scopes = parser.scopes[:len(parser.scopes)-1]
