@@ -97,11 +97,8 @@ func (hunk Hunk) Write(w io.Writer, indent uint) {
 		data,
 		libclog.AnsiReset,
 	)
-	if !hunk.Kind.IsPseudo() {
-		indent++
-	}
 	for _, child := range hunk.Children {
-		child.Write(w, indent)
+		child.Write(w, indent+1)
 	}
 }
 
