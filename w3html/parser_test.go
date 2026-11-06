@@ -18,7 +18,7 @@ var expected = w3html.ParsedPage{
 		{"Index"},
 		{"User", "Name()"},
 		{"Buttons"},
-		{"", "Name"},
+		{"Buttons[]", "Name"},
 	},
 	Slots: map[string]w3html.HunkLocation{
 		"default": {Parent: nil, ChildIndex: 1},
@@ -187,7 +187,7 @@ var expected = w3html.ParsedPage{
 							{
 								Kind:     w3html.HunkVariable,
 								Line:     18,
-								Data:     w3html.StringPath{"", "Name"},
+								Data:     w3html.StringPath{"Buttons[]", "Name"},
 								Children: nil,
 							},
 							{
@@ -269,9 +269,10 @@ func (u user) Name() string {
 }
 
 type PageData struct {
-	Page  page
-	Index int
-	User  user
+	Page    page
+	Index   int
+	Buttons []string
+	User    user
 }
 
 func TestRenderer(t *testing.T) {

@@ -20,6 +20,7 @@ type DocumentParser struct {
 	line        uint
 	page        ParsedPage
 	openingTags []HunkLocation
+	scopes      []StringPath
 }
 
 type OpeningTag struct {
@@ -44,6 +45,7 @@ func Parse(
 		buffer:      []byte{},
 		line:        1,
 		openingTags: []HunkLocation{},
+		scopes:      []StringPath{},
 	}
 	err := parser.Parse()
 	if err != nil {

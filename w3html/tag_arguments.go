@@ -94,6 +94,12 @@ func (path StringPath) Flatten() string {
 	return strings.Join(path, ".")
 }
 
+func (path StringPath) ToScope() StringPath {
+	copy := path
+	copy[len(copy)-1] = copy[len(copy)-1] + "[]"
+	return copy
+}
+
 func (arg Argument) AsPath() StringPath {
 	return arg.Data.(StringPath)
 }

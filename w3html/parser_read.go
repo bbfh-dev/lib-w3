@@ -300,7 +300,16 @@ func (parser *DocumentParser) readPath() (StringPath, error) {
 
 		switch char {
 		case ' ':
-			return StringPath(strings.Split(string(buffer), ".")), nil
+			path := StringPath(strings.Split(string(buffer), "."))
+			modified := make(StringPath, 0, len(path))
+			for _, segment := range path {
+				if segment == "" {
+					modified = append(modified, "Buttons[]")
+				} else {
+					modified = append(modified, segment)
+				}
+			}
+			return modified, nil
 
 		case '(':
 			parser.reader.MarkHere()

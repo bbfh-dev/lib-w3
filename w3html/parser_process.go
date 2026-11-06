@@ -60,7 +60,15 @@ func (parser *DocumentParser) processOpening(tag Tag, mark uint) error {
 		}
 		return fmt.Errorf("unnamed tag must have a single path argument, but got %d", len(tag.Args))
 
-	case "extend", "slot", "range":
+	case "extend", "slot":
+		goto reappend
+
+	case "range":
+		pathArg, err := tag.RequireNamedArg(ArgPath, "path", 0)
+		if err != nil {
+			return err
+		}
+		parser.scopes = append(parser.scopes, pathArg.AsPath())
 		goto reappend
 
 	case "if":
@@ -120,6 +128,7 @@ func (parser *DocumentParser) processClosing(opening HunkLocation) error {
 		opening.Parent.Children[opening.ChildIndex] = nestedPage.Root
 
 	case "range":
+		parser.scopes = parser.scopes[:len(parser.scopes)-1]
 		pathArg, err := tag.RequireNamedArg(ArgPath, "path", 0)
 		if err != nil {
 			return err
