@@ -53,32 +53,35 @@ func (enum HunkEnum) IsPseudo() bool {
 
 // ————————————————————————————————
 
-// Hunk represents a snippet of the document.
-type Hunk struct {
-	Kind     HunkEnum
-	Line     uint
-	Data     any
-	Children []Hunk
+type InlineHunk struct {
+	Kind HunkEnum
+	Data any
 }
 
 // AsRaw casts the [Hunk.Data] value that is expected when [Hunk.Kind] == [HunkRaw].
-func (hunk Hunk) AsRaw() []byte {
+func (hunk InlineHunk) AsRaw() []byte {
 	return hunk.Data.([]byte)
 }
 
 // AsTag casts the [Hunk.Data] value that is expected when [Hunk.Kind] == [HunkTag].
-func (hunk Hunk) AsTag() Tag {
+func (hunk InlineHunk) AsTag() Tag {
 	return hunk.Data.(Tag)
 }
 
 // AsVariable casts the [Hunk.Data] value that is expected when [Hunk.Kind] == [HunkVariable].
-func (hunk Hunk) AsVariable() string {
+func (hunk InlineHunk) AsVariable() string {
 	return hunk.Data.(string)
 }
 
 // AsLoop casts the [Hunk.Data] value that is expected when [Hunk.Kind] == [HunkLoop].
-func (hunk Hunk) AsLoop() StringPath {
+func (hunk InlineHunk) AsLoop() StringPath {
 	return hunk.Data.(StringPath)
+}
+
+type Hunk struct {
+	InlineHunk
+	Line     uint
+	Children []Hunk
 }
 
 func (hunk Hunk) Write(w io.Writer, indent uint) {
