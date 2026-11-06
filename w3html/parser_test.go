@@ -1,6 +1,7 @@
 package w3html_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -251,4 +252,38 @@ func TestParser(t *testing.T) {
 		cmpopts.IgnoreUnexported(w3html.ParsedPage{}),
 		cmpopts.IgnoreFields(w3html.HunkLocation{}, "Parent"),
 	)
+}
+
+type page struct {
+}
+
+func (p page) String() string {
+	return "Hello World!"
+}
+
+type user struct {
+}
+
+func (u user) Name() string {
+	return "Hi"
+}
+
+type PageData struct {
+	Page  page
+	Index int
+	User  user
+}
+
+func TestRenderer(t *testing.T) {
+	file, err := os.OpenFile("parser_test.01.html", os.O_RDONLY, os.ModePerm)
+	assert.NilError(t, err)
+	defer file.Close()
+
+	parser, err := w3html.Parse(nil, file, map[string]string{})
+	assert.NilError(t, err)
+
+	renderer, err := w3html.Bake[PageData](parser.Result())
+	assert.NilError(t, err)
+
+	fmt.Println(renderer)
 }
