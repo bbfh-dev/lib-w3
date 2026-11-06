@@ -31,6 +31,25 @@ type ParsedPage struct {
 	lastIndex   uint
 }
 
+func (page ParsedPage) Hunks() []InlineHunk {
+	hunks := make([]InlineHunk, 0, len(page.Root.Children))
+	var visit func(Hunk)
+	visit = func(hunk Hunk) {
+		hunks = append(hunks, InlineHunk{
+			Kind: hunk.Kind,
+			Data: hunk.Data,
+		})
+
+		for _, child := range hunk.Children {
+			visit(child)
+		}
+	}
+	for _, hunk := range page.Root.Children {
+		visit(hunk)
+	}
+	return hunks
+}
+
 // Pivot returns the current [Hunk] that should be appended to.
 func (page *ParsedPage) Pivot() *Hunk {
 	if len(page.breadcrumbs) == 0 {
