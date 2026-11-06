@@ -159,6 +159,7 @@ func (parser *DocumentParser) Parse() error {
 }
 
 func (parser *DocumentParser) Result() ParsedPage {
+	// TODO: flatten the tree
 	return parser.page
 }
 

@@ -304,7 +304,8 @@ func (parser *DocumentParser) readPath() (StringPath, error) {
 			modified := make(StringPath, 0, len(path))
 			for _, segment := range path {
 				if segment == "" {
-					modified = append(modified, "Buttons[]")
+					// FIXME: don't hardcode this
+					modified = append(modified, "Data[]")
 				} else {
 					modified = append(modified, segment)
 				}

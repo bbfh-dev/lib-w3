@@ -21,7 +21,7 @@ type TestCase struct {
 // TODO: Fix indentation / whitespace
 var TestCases = []TestCase{
 	{
-		Name:     "OnlyRaw",
+		Name:     "Extend_OnlyRaw",
 		Filename: "01_only_raw.html",
 		Expected: w3html.ParsedPage{
 			MentionedPaths: []w3html.StringPath{},
@@ -60,6 +60,20 @@ var TestCases = []TestCase{
 			},
 		},
 	},
+	{
+		Name:     "Extend_Nested",
+		Filename: "02_nested_extend.html",
+		Expected: w3html.ParsedPage{
+			MentionedPaths: []w3html.StringPath{},
+			Slots:          map[string]w3html.HunkLocation{},
+			Root: w3html.Hunk{
+				Kind:     w3html.HunkRoot,
+				Line:     1,
+				Data:     nil,
+				Children: []w3html.Hunk{},
+			},
+		},
+	},
 }
 
 func TestParser(t *testing.T) {
@@ -79,7 +93,7 @@ func TestParser(t *testing.T) {
 			parser, err := w3html.ParseDocument(file)
 			if err != nil {
 				w3errs.Write(err, os.Stderr, outputMode)
-				t.FailNow()
+				tt.FailNow()
 				return
 			}
 
@@ -88,7 +102,7 @@ func TestParser(t *testing.T) {
 			}
 
 			assert.DeepEqual(
-				t,
+				tt,
 				testCase.Expected,
 				parser.Result(),
 				cmpopts.IgnoreUnexported(w3html.ParsedPage{}),
