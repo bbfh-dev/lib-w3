@@ -118,14 +118,39 @@ func (parser *DocumentParser) processClosing(opening HunkLocation) error {
 					slotId,
 				)
 			}
-			location.Parent.Children[location.ChildIndex] = Hunk{
-				Kind:     HunkRoot,
-				Line:     location.Parent.Children[location.ChildIndex].Line,
-				Data:     nil,
-				Children: injectHunks,
+			if len(injectHunks) == 1 {
+				// inline when possible
+				location.Parent.Children[location.ChildIndex] = injectHunks[0]
+			} else {
+				location.Parent.Children[location.ChildIndex] = Hunk{
+					Kind:     HunkRoot,
+					Line:     location.Parent.Children[location.ChildIndex].Line,
+					Data:     nil,
+					Children: injectHunks,
+				}
 			}
 		}
-		opening.Parent.Children[opening.ChildIndex] = nestedPage.Root
+		if len(opening.Parent.Children) == 1 && opening.Parent.Kind == HunkRoot {
+			// inline when possible
+			opening.Parent.Children = nestedPage.Root.Children
+		} else {
+			opening.Parent.Children[opening.ChildIndex] = nestedPage.Root
+		}
+		// redo raw hunk merging due to previous inlining
+		merged := make([]Hunk, 0, len(opening.Parent.Children))
+		for i, child := range opening.Parent.Children {
+			if len(merged) == 0 {
+				merged = append(merged, child)
+				continue
+			}
+
+			if child.Kind == HunkRaw && opening.Parent.Children[i-1].Kind == HunkRaw {
+				merged[len(merged)-1].Data = append(
+					merged[len(merged)-1].Data.([]byte),
+					child.AsRaw()...)
+			}
+		}
+		opening.Parent.Children = merged
 
 	case "range":
 		parser.scopes = parser.scopes[:len(parser.scopes)-1]
