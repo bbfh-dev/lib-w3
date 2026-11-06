@@ -8,85 +8,74 @@ import (
 	libclog "codeberg.org/bbfh/lib-clog"
 )
 
-// HunkEnum represents the datatype of [Hunk.Data].
-type HunkEnum uint8
+var NoNodeLocation = NodeLocation{Parent: nil}
 
-const (
-	HunkRoot HunkEnum = iota
-	HunkPlaceholder
-	HunkRaw
-	HunkTag
-	HunkVariable
-	HunkLoop
-)
-
-func (enum HunkEnum) String() string {
-	switch enum {
-	case HunkRoot:
-		return "HunkRoot"
-	case HunkPlaceholder:
-		return "HunkPlaceholder"
-	case HunkRaw:
-		return "HunkRaw"
-	case HunkTag:
-		return "HunkTag"
-	case HunkVariable:
-		return "HunkVariable"
-	case HunkLoop:
-		return "HunkLoop"
-	default:
-		return fmt.Sprintf("HunkEnum(%d)", enum)
-	}
+type NodeLocation struct {
+	Parent     *TreeNode
+	ChildIndex uint
+	Line       uint
+	ByteOffset uint
 }
 
-// IsPseudo returns whether the [HunkEnum] is a pseudo hunk.
-//
-// A pseudo hunk doesn't increment indentation and doesn't have any contents.
-func (enum HunkEnum) IsPseudo() bool {
-	switch enum {
-	case HunkRoot, HunkPlaceholder:
-		return true
-	default:
-		return false
-	}
+func (location NodeLocation) IsNull() bool {
+	return location.Parent == nil
+}
+
+func (location NodeLocation) Pointer() *TreeNode {
+	return &location.Parent.Children[location.ChildIndex]
 }
 
 // ————————————————————————————————
 
-type InlineHunk struct {
-	Kind HunkEnum
+// read-only
+type NodeEnum uint8
+
+const (
+	NodeRoot NodeEnum = iota
+	NodePlaceholder
+	NodeHunk
+	NodeTag
+)
+
+func (enum NodeEnum) String() string {
+	switch enum {
+	case NodeRoot:
+		return "NodeRoot"
+	case NodePlaceholder:
+		return "NodePlaceholder"
+	case NodeHunk:
+		return "NodeRaw"
+	case NodeTag:
+		return "NodeTag"
+	default:
+		return fmt.Sprintf("NodeEnum(%d)", enum)
+	}
+}
+
+type Node struct {
+	Kind NodeEnum
 	Data any
 }
 
-// AsRaw casts the [Hunk.Data] value that is expected when [Hunk.Kind] == [HunkRaw].
-func (hunk InlineHunk) AsRaw() []byte {
-	return hunk.Data.([]byte)
+// AsRaw casts the [Node.Data] value that is expected when [Node.Kind] == [NodeHunk].
+func (node Node) AsRaw() []byte {
+	return node.Data.([]byte)
 }
 
-// AsTag casts the [Hunk.Data] value that is expected when [Hunk.Kind] == [HunkTag].
-func (hunk InlineHunk) AsTag() Tag {
-	return hunk.Data.(Tag)
+// AsTag casts the [Node.Data] value that is expected when [Node.Kind] == [NodeTag].
+func (node Node) AsTag() Tag {
+	return node.Data.(Tag)
 }
 
-// AsVariable casts the [Hunk.Data] value that is expected when [Hunk.Kind] == [HunkVariable].
-func (hunk InlineHunk) AsVariable() string {
-	return hunk.Data.(string)
+type TreeNode struct {
+	Node
+	SourceCodeLine uint
+	Children       []TreeNode
 }
 
-// AsLoop casts the [Hunk.Data] value that is expected when [Hunk.Kind] == [HunkLoop].
-func (hunk InlineHunk) AsLoop() StringPath {
-	return hunk.Data.(StringPath)
-}
-
-type Hunk struct {
-	InlineHunk
-	Line     uint
-	Children []Hunk
-}
-
-func (hunk Hunk) Write(w io.Writer, indent uint) {
+func (node TreeNode) Write(w io.Writer, indent uint) {
 	indentString := strings.Repeat("    ", int(indent))
-	data := hunk.Data
+	data := node.Data
 	if data == nil {
 		data = "(empty)"
 	}
@@ -94,26 +83,25 @@ func (hunk Hunk) Write(w io.Writer, indent uint) {
 		w,
 		"%s— %s —%s\n%[1]s%[4]s%[5]s%[6]s\n",
 		indentString,
-		hunk.Kind,
+		node.Kind,
 		strings.Repeat("—", 30),
 		libclog.AnsiColor(libclog.ColorBrightBlack),
 		data,
 		libclog.AnsiReset,
 	)
-	for _, child := range hunk.Children {
+	for _, child := range node.Children {
 		child.Write(w, indent+1)
 	}
 }
 
-func (hunk Hunk) InjectSlots() (map[string][]Hunk, error) {
-	slots := map[string][]Hunk{}
-
+func (hunk TreeNode) ExtractInjectSlots() (map[string][]TreeNode, error) {
+	slots := map[string][]TreeNode{}
 	for _, child := range hunk.Children {
 		switch child.Kind {
-		case HunkTag:
+		case NodeTag:
 			tag := child.AsTag()
-			if tag.Name == "slot" {
-				nameArg, err := tag.RequireNamedArg(ArgString, "name", 0)
+			if tag.Kind.Equal(IdSlot) {
+				nameArg, err := tag.FindArgStrict(ArgString, "name", 0)
 				if err != nil {
 					return slots, fmt.Errorf(
 						"%w. Example: {{ slot 'body' }}. If your intent was to place into 'default' slot, simply remove '{{ slot }}' tag alltogether",
@@ -125,7 +113,7 @@ func (hunk Hunk) InjectSlots() (map[string][]Hunk, error) {
 				continue
 			}
 			fallthrough
-		case HunkRaw:
+		case NodeHunk:
 			if isWhitespace(child.AsRaw()) {
 				continue
 			}
@@ -134,7 +122,6 @@ func (hunk Hunk) InjectSlots() (map[string][]Hunk, error) {
 			slots["default"] = append(slots["default"], child)
 		}
 	}
-
 	return slots, nil
 }
 
