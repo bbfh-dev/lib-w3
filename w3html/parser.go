@@ -29,6 +29,10 @@ type OpeningTag struct {
 	Line uint
 }
 
+func ParseDocument(file *os.File) (*DocumentParser, error) {
+	return Parse(nil, file, map[string]string{})
+}
+
 func Parse(
 	parent *w3utils.DetailedReader,
 	file *os.File,
