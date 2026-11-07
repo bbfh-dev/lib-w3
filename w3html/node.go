@@ -53,6 +53,22 @@ type Node struct {
 	Data any
 }
 
+func (node Node) Write(w io.Writer) {
+	data := node.Data
+	if data == nil {
+		data = "(empty)"
+	}
+	fmt.Fprintf(
+		w,
+		"— %s —%s\n%s%s%s\n",
+		node.Kind,
+		strings.Repeat("—", 30),
+		libclog.AnsiColor(libclog.ColorBrightBlack),
+		data,
+		libclog.AnsiReset,
+	)
+}
+
 // AsRaw casts the [Node.Data] value that is expected when [Node.Kind] == [NodeHunk].
 func (node Node) AsHunk() []byte {
 	return node.Data.([]byte)
