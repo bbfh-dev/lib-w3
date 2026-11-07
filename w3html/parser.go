@@ -12,13 +12,12 @@ import (
 )
 
 type Parser struct {
-	Params       map[string]string
-	file         w3utils.FileLike
-	reader       *internal.DocumentReader
-	hunkBuffer   []byte
-	line         uint
-	swallowSpace bool
-	ctx          *ParserContext
+	Params     map[string]string
+	file       w3utils.FileLike
+	reader     *internal.DocumentReader
+	hunkBuffer []byte
+	line       uint
+	ctx        *ParserContext
 }
 
 // NewParser creates a parser. For parsing nested documents refer to [Parser.NewParser].
@@ -40,12 +39,11 @@ func newParser(
 	params["_filename"] = file.Name()
 	params["_filename.base"] = filepath.Base(file.Name())
 	return &Parser{
-		Params:       params,
-		file:         file,
-		reader:       reader,
-		hunkBuffer:   []byte{},
-		line:         1,
-		swallowSpace: true,
+		Params:     params,
+		file:       file,
+		reader:     reader,
+		hunkBuffer: []byte{},
+		line:       1,
 		ctx: &ParserContext{
 			AccessPaths: []AccessPath{},
 			PlacedSlots: map[string]NodeLocation{},
@@ -73,6 +71,7 @@ func (parser *Parser) Parse() (ParsedPage, error) {
 }
 
 func (parser *Parser) parse() error {
+	swallowSpace := true
 	for {
 		char, err := parser.reader.Read()
 		if err != nil {
@@ -83,18 +82,18 @@ func (parser *Parser) parse() error {
 			return err
 		}
 
-		if parser.swallowSpace {
+		if swallowSpace {
 			if unicode.IsSpace(char) {
 				continue
 			}
-			parser.swallowSpace = false
+			swallowSpace = false
 		}
 
 		if char != '{' {
 			// not a tag
 			parser.writeRune(char)
 			if char == '\n' {
-				parser.swallowSpace = true
+				swallowSpace = true
 			}
 			continue
 		}
@@ -126,7 +125,7 @@ func (parser *Parser) parse() error {
 		if err != nil {
 			return fmt.Errorf("reading tag: %w", err)
 		}
-		parser.swallowSpace = true
+		swallowSpace = true
 
 		if closing {
 			if !tag.Kind.IsPaired {
