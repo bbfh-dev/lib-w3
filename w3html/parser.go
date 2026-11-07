@@ -3,6 +3,7 @@ package w3html
 import (
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"unicode"
 
@@ -11,12 +12,16 @@ import (
 	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
+// FileOpener is called whenever [Parser] tries to open another file.
+type FileOpener func(absPath string) (w3utils.FileLike, error)
+
 type Parser struct {
 	Params     map[string]string
 	reader     *internal.DocumentReader
 	hunkBuffer []byte
 	line       uint
 	ctx        *ParserContext
+	fileOpener FileOpener
 }
 
 // NewParser creates a parser. For parsing nested documents refer to [Parser.NewParser].
@@ -60,7 +65,17 @@ func newParser(
 			lastAddedNode:      nil,
 			lastAddedNodeIndex: 0,
 		},
+		fileOpener: func(absPath string) (w3utils.FileLike, error) {
+			return os.OpenFile(absPath, os.O_RDONLY, os.ModePerm)
+		},
 	}
+}
+
+// WithFileOpener replaces the default [FileOpener].
+// Refer to [FileOpener] documentation.
+func (parser *Parser) WithFileOpener(fileOpener FileOpener) *Parser {
+	parser.fileOpener = fileOpener
+	return parser
 }
 
 func (parser *Parser) Parse() (ParsedPage, error) {
