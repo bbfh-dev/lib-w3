@@ -7,10 +7,9 @@ import (
 )
 
 type ParserContext struct {
-	AccessPaths        []AccessPath
-	PlacedSlots        map[string]NodeLocation
 	Root               TreeNode
 	breadcrumbs        []NodeLocation
+	out                ParsedPage
 	lastAddedNode      *TreeNode
 	lastAddedNodeIndex uint
 }

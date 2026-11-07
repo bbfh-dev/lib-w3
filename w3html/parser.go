@@ -43,8 +43,6 @@ func newParser(
 		hunkBuffer: []byte{},
 		line:       1,
 		ctx: &ParserContext{
-			AccessPaths: []AccessPath{},
-			PlacedSlots: map[string]NodeLocation{},
 			Root: TreeNode{
 				Node: Node{
 					Kind: NodeRoot,
@@ -52,6 +50,11 @@ func newParser(
 				},
 				SourceCodeLine: 1,
 				Children:       []TreeNode{},
+			},
+			out: ParsedPage{
+				AccessPaths: []AccessPath{},
+				PlacedSlots: map[string]NodeLocation{},
+				Nodes:       nil,
 			},
 			breadcrumbs:        []NodeLocation{},
 			lastAddedNode:      nil,
@@ -182,11 +185,9 @@ type ParsedPage struct {
 }
 
 func (parser *Parser) ToParsedPage() ParsedPage {
-	nodes := []Node{}
-
 	var visit func(TreeNode)
 	visit = func(treeNode TreeNode) {
-		nodes = append(nodes, treeNode.Node)
+		parser.ctx.out.Nodes = append(parser.ctx.out.Nodes, treeNode.Node)
 		for _, child := range treeNode.Children {
 			visit(child)
 		}
@@ -195,9 +196,5 @@ func (parser *Parser) ToParsedPage() ParsedPage {
 		visit(child)
 	}
 
-	return ParsedPage{
-		AccessPaths: parser.ctx.AccessPaths,
-		PlacedSlots: parser.ctx.PlacedSlots,
-		Nodes:       nodes,
-	}
+	return parser.ctx.out
 }
