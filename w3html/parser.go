@@ -17,7 +17,6 @@ type Parser struct {
 	reader       *internal.DocumentReader
 	hunkBuffer   []byte
 	line         uint
-	openingTags  []NodeLocation
 	swallowSpace bool
 	ctx          *ParserContext
 }
@@ -46,7 +45,6 @@ func newParser(
 		reader:       reader,
 		hunkBuffer:   []byte{},
 		line:         1,
-		openingTags:  []NodeLocation{},
 		swallowSpace: true,
 		ctx: &ParserContext{
 			AccessPaths: []AccessPath{},
@@ -164,7 +162,7 @@ func (parser *Parser) parse() error {
 			continue
 		}
 
-		err = parser.handleOpeningTag(tag, tagBeginning)
+		err = parser.handleOpeningTag(tag)
 		if err != nil {
 			parser.reader.HighlightSince(tagBeginning)
 			if _, ok := err.(w3errs.DocumentError); ok {

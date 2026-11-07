@@ -47,7 +47,7 @@ func (parser *Parser) writeRune(char rune) {
 }
 
 func (parser *Parser) findMatchingOpeningTag(closing TagEnum) (NodeLocation, bool) {
-	if len(parser.openingTags) == 0 {
+	if len(parser.ctx.breadcrumbs) == 0 {
 		return NodeLocation{}, false
 	}
 
@@ -65,5 +65,5 @@ func (parser *Parser) findMatchingOpeningTag(closing TagEnum) (NodeLocation, boo
 		return visit(openingTags[:last])
 	}
 
-	return visit(parser.openingTags)
+	return visit(parser.ctx.breadcrumbs)
 }
