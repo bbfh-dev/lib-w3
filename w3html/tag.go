@@ -11,7 +11,7 @@ type TagEnum struct {
 	// Allowed chars: /[a-z_0-9]+/.
 	// Namespace is empty for built-in w3 tags
 	Namespace string
-	// Id is a unique /[a-z_]+/ identifier
+	// Id is a unique /[a-z_0-9]+/ identifier
 	Id string
 	// IsPaired indicates whether tag has a closing counterpart
 	IsPaired bool

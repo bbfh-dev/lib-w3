@@ -1,8 +1,9 @@
 package w3html_test
 
 import (
-	"fmt"
+	"io"
 	"os"
+	"strings"
 	"testing"
 
 	libclog "codeberg.org/bbfh/lib-clog"
@@ -13,67 +14,44 @@ import (
 )
 
 type TestCase struct {
-	Name     string
-	Filename string
+	File     MockFile
 	Expected w3html.ParsedPage
 }
 
-// TODO: Fix indentation / whitespace
 var TestCases = []TestCase{
 	{
-		Name:     "Extend_OnlyRaw",
-		Filename: "01_only_raw.html",
+		File: MockFile{
+			Filename: "Extend_RawOnly",
+			Contents: `{{ extend "Extend_RawOnly_1" }}
+							{{ extend "Extend_RawOnly_2" }}
+								<span>Hello World!</span>
+							{{ /extend }}
+						{{ /extend }}`,
+		},
 		Expected: w3html.ParsedPage{
-			MentionedPaths: []w3html.StringPath{},
-			Slots:          map[string]w3html.NodeLocation{},
-			Root: w3html.Node{
-				Kind: w3html.NodeRoot,
-				Line: 1,
-				Data: nil,
-				Children: []w3html.Node{
-					{
-						Kind: w3html.NodeHunk,
-						Line: 1,
-						Data: []byte(`<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World! inside 01_only_raw.html</title>
-</head>
-
-<body>
-    
-<main>
-    Hello World!
-</main>
-
-</body>
-
-</html>
-
-`),
-						Children: nil,
-					},
-				},
-			},
+			AccessPaths: []w3html.AccessPath{},
+			PlacedSlots: map[string]w3html.NodeLocation{},
+			Nodes:       []w3html.Node{},
 		},
 	},
-	{
-		Name:     "Extend_Nested",
-		Filename: "02_nested_extend.html",
-		Expected: w3html.ParsedPage{
-			MentionedPaths: []w3html.StringPath{},
-			Slots:          map[string]w3html.NodeLocation{},
-			Root: w3html.Node{
-				Kind:     w3html.NodeRoot,
-				Line:     1,
-				Data:     nil,
-				Children: []w3html.Node{},
-			},
-		},
-	},
+}
+
+type MockFile struct {
+	Filename string
+	Contents string
+	reader   io.Reader
+}
+
+func (file *MockFile) Init() {
+	file.reader = strings.NewReader(file.Contents)
+}
+
+func (file *MockFile) Name() string {
+	return file.Filename
+}
+
+func (file *MockFile) Read(dest []byte) (int, error) {
+	return file.reader.Read(dest)
 }
 
 func TestParser(t *testing.T) {
@@ -85,12 +63,10 @@ func TestParser(t *testing.T) {
 	printResult := os.Getenv("DEBUG") == "1"
 
 	for _, testCase := range TestCases {
-		t.Run(testCase.Name, func(tt *testing.T) {
-			file, err := os.OpenFile(testCase.Filename, os.O_RDONLY, os.ModePerm)
-			assert.NilError(t, err)
-			defer file.Close()
-
-			parser, err := w3html.ParseDocument(file)
+		testCase.File.Init()
+		t.Run(testCase.File.Name(), func(tt *testing.T) {
+			parser := w3html.NewParser(&testCase.File, map[string]string{})
+			result, err := parser.Parse()
 			if err != nil {
 				w3errs.Write(err, os.Stderr, outputMode)
 				tt.FailNow()
@@ -98,13 +74,15 @@ func TestParser(t *testing.T) {
 			}
 
 			if printResult {
-				fmt.Println(parser.Result().String())
+				for _, node := range result.Nodes {
+					node.Write(tt.Output())
+				}
 			}
 
 			assert.DeepEqual(
 				tt,
 				testCase.Expected,
-				parser.Result(),
+				result,
 				cmpopts.IgnoreUnexported(w3html.ParsedPage{}),
 				cmpopts.IgnoreFields(w3html.NodeLocation{}, "Parent"),
 			)
