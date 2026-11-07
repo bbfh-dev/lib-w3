@@ -13,7 +13,6 @@ import (
 
 type Parser struct {
 	Params     map[string]string
-	file       w3utils.FileLike
 	reader     *internal.DocumentReader
 	hunkBuffer []byte
 	line       uint
@@ -40,7 +39,6 @@ func newParser(
 	params["_filename.base"] = filepath.Base(file.Name())
 	return &Parser{
 		Params:     params,
-		file:       file,
 		reader:     reader,
 		hunkBuffer: []byte{},
 		line:       1,
