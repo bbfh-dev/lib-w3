@@ -50,6 +50,10 @@ func (file *MockFile) Name() string {
 	return file.Filename
 }
 
+func (file *MockFile) Close() error {
+	return nil
+}
+
 func (file *MockFile) Read(dest []byte) (int, error) {
 	return file.reader.Read(dest)
 }

@@ -29,11 +29,6 @@ func NewParser(file w3utils.FileLike, params map[string]string) *Parser {
 	return newParser(nil, file, params)
 }
 
-// NewParser creates a new nested parser.
-func (parser *Parser) NewParser(file w3utils.FileLike, params map[string]string) *Parser {
-	return newParser(parser.reader, file, params)
-}
-
 func newParser(
 	parent *internal.DocumentReader,
 	file w3utils.FileLike,

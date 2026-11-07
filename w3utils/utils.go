@@ -23,6 +23,7 @@ func IsStateModifyingMethod(method string) bool {
 type FileLike interface {
 	io.Reader
 	Name() string
+	Close() error
 }
 
 // HasName represents types whose name are known without reflection.

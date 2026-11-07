@@ -1,6 +1,12 @@
 package w3html
 
-import "unicode/utf8"
+import (
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"unicode/utf8"
+)
 
 func (parser *Parser) flushHunkBuffer() {
 	if len(parser.hunkBuffer) != 0 {
@@ -66,4 +72,47 @@ func (parser *Parser) findMatchingOpeningTag(closing TagEnum) (NodeLocation, boo
 	}
 
 	return visit(parser.ctx.breadcrumbs)
+}
+
+func (parser *Parser) ParseNested(tag Tag) (ParsedPage, error) {
+	pathArg, ok := tag.FindArg("path", 0)
+	if !ok {
+		return ParsedPage{}, errors.New(
+			"'path' argument is required, but is missing. It should point to another document relatively to this file. '.html' can be ommited",
+		)
+	}
+	var path string
+	switch pathArg.Kind {
+	case ArgString:
+		path = pathArg.AsString()
+	case ArgFormatString:
+		panic("TODO")
+	default:
+		return ParsedPage{}, fmt.Errorf(
+			"'path' argument must be 'String' or 'FormatString', but got %q",
+			pathArg.Kind,
+		)
+	}
+
+	path = filepath.Join(filepath.Dir(parser.reader.Filename()), path)
+	file, err := parser.fileOpener(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			file, err = parser.fileOpener(path + ".html")
+			if err != nil {
+				return ParsedPage{}, err
+			}
+		} else {
+			return ParsedPage{}, err
+		}
+	}
+	defer file.Close()
+
+	nestedParser := newParser(parser.reader, file, tag.ToParams("path"))
+	result, err := nestedParser.Parse()
+	if err != nil {
+		return ParsedPage{}, err
+	}
+	parser.ctx.out.AccessPaths = append(parser.ctx.out.AccessPaths, result.AccessPaths...)
+	return result, nil
 }
