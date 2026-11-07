@@ -59,7 +59,7 @@ func newParser(
 				SourceCodeLine: 1,
 				Children:       []TreeNode{},
 			},
-			breadcrumbs:        []*TreeNode{},
+			breadcrumbs:        []NodeLocation{},
 			lastAddedNode:      nil,
 			lastAddedNodeIndex: 0,
 		},
@@ -173,7 +173,7 @@ func (parser *Parser) parse() error {
 			return fmt.Errorf("handling opening tag: %w", err)
 		}
 		if tag.Kind.IsPaired {
-			parser.ctx.OnEnterTagBody()
+			parser.ctx.OnEnterTagBody(tagBeginning)
 		}
 	}
 }

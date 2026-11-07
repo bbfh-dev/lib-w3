@@ -10,7 +10,7 @@ type ParserContext struct {
 	AccessPaths        []AccessPath
 	PlacedSlots        map[string]NodeLocation
 	Root               TreeNode
-	breadcrumbs        []*TreeNode
+	breadcrumbs        []NodeLocation
 	lastAddedNode      *TreeNode
 	lastAddedNodeIndex uint
 }
@@ -31,12 +31,17 @@ func (ctx *ParserContext) Pivot() *TreeNode {
 	if len(ctx.breadcrumbs) == 0 {
 		return &ctx.Root
 	} else {
-		return ctx.breadcrumbs[len(ctx.breadcrumbs)-1]
+		return ctx.breadcrumbs[len(ctx.breadcrumbs)-1].Pointer()
 	}
 }
 
-func (ctx *ParserContext) OnEnterTagBody() {
-	ctx.breadcrumbs = append(ctx.breadcrumbs, ctx.lastAddedNode)
+func (ctx *ParserContext) OnEnterTagBody(mark uint) {
+	ctx.breadcrumbs = append(ctx.breadcrumbs, NodeLocation{
+		Parent:       ctx.Pivot(),
+		ChildIndex:   ctx.lastAddedNodeIndex,
+		Line:         ctx.lastAddedNode.SourceCodeLine,
+		ReaderOffset: mark,
+	})
 }
 
 func (ctx *ParserContext) OnLeaveTagBody(tag Tag) error {
@@ -47,7 +52,7 @@ func (ctx *ParserContext) OnLeaveTagBody(tag Tag) error {
 		)
 	}
 
-	last := ctx.breadcrumbs[len(ctx.breadcrumbs)-1].AsTag()
+	last := ctx.breadcrumbs[len(ctx.breadcrumbs)-1].Pointer().AsTag()
 	if !last.Kind.Equal(tag.Kind) {
 		return fmt.Errorf(
 			"found closing tag for %q, but %q tag must be closed first!",
