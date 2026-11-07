@@ -165,6 +165,9 @@ func (parser *Parser) readTagArgs() ([]Argument, error) {
 
 		switch firstChar {
 
+		case ' ':
+			// skip
+
 		case '}':
 			char, err := parser.reader.Read()
 			if err != nil {
@@ -179,7 +182,7 @@ func (parser *Parser) readTagArgs() ([]Argument, error) {
 			contents, err := parser.readQuoted(firstChar)
 			if err != nil {
 				parser.reader.HighlightSince(mark)
-				return args, fmt.Errorf("reading quoted string: %q", err)
+				return args, fmt.Errorf("reading quoted string: %w", err)
 			}
 			args = append(args, Argument{
 				Kind: ArgString,
@@ -192,7 +195,7 @@ func (parser *Parser) readTagArgs() ([]Argument, error) {
 			_, err := parser.readKeyword('t', 'r', 'u', 'e')
 			if err != nil {
 				parser.reader.HighlightSince(mark)
-				return args, fmt.Errorf("reading keyword: %q", err)
+				return args, fmt.Errorf("reading keyword: %w", err)
 			}
 			args = append(args, Argument{
 				Kind: ArgBool,
@@ -204,13 +207,106 @@ func (parser *Parser) readTagArgs() ([]Argument, error) {
 			_, err := parser.readKeyword('f', 'a', 'l', 's', 'e')
 			if err != nil {
 				parser.reader.HighlightSince(mark)
-				return args, fmt.Errorf("reading keyword: %q", err)
+				return args, fmt.Errorf("reading keyword: %w", err)
 			}
 			args = append(args, Argument{
 				Kind: ArgBool,
 				Key:  key,
 				Data: false,
 			})
+
+		case '&':
+			_, err := parser.readKeyword('&', '&')
+			if err != nil {
+				parser.reader.HighlightSince(mark)
+				return args, fmt.Errorf("reading keyword: %w", err)
+			}
+			args = append(args, Argument{
+				Kind: ArgOperation,
+				Key:  key,
+				Data: OpLogicAnd,
+			})
+
+		case '|':
+			_, err := parser.readKeyword('|', '|')
+			if err != nil {
+				parser.reader.HighlightSince(mark)
+				return args, fmt.Errorf("reading keyword: %w", err)
+			}
+			args = append(args, Argument{
+				Kind: ArgOperation,
+				Key:  key,
+				Data: OpLogicOr,
+			})
+
+		case '!':
+			_, err := parser.readKeyword('!', '=')
+			if err != nil {
+				parser.reader.HighlightSince(mark)
+				return args, fmt.Errorf("reading keyword: %w", err)
+			}
+			args = append(args, Argument{
+				Kind: ArgOperation,
+				Key:  key,
+				Data: OpNotEquals,
+			})
+
+		case '=':
+			_, err := parser.readKeyword('=', '=')
+			if err != nil {
+				parser.reader.HighlightSince(mark)
+				return args, fmt.Errorf("reading keyword: %w", err)
+			}
+			args = append(args, Argument{
+				Kind: ArgOperation,
+				Key:  key,
+				Data: OpEquals,
+			})
+
+		case '>':
+			nextChar, err := parser.reader.Read()
+			if err != nil {
+				parser.reader.HighlightSince(mark)
+				return args, fmt.Errorf("reading inequality sign: %w", err)
+			}
+			if nextChar != '=' {
+				parser.reader.Unread()
+				args = append(args, Argument{
+					Kind: ArgOperation,
+					Key:  key,
+					Data: OpMoreThanStrict,
+				})
+				continue
+			}
+			args = append(args, Argument{
+				Kind: ArgOperation,
+				Key:  key,
+				Data: OpMoreThan,
+			})
+
+		case '<':
+			nextChar, err := parser.reader.Read()
+			if err != nil {
+				parser.reader.HighlightSince(mark)
+				return args, fmt.Errorf("reading inequality sign: %w", err)
+			}
+			if nextChar != '=' {
+				parser.reader.Unread()
+				args = append(args, Argument{
+					Kind: ArgOperation,
+					Key:  key,
+					Data: OpLessThanStrict,
+				})
+				continue
+			}
+			args = append(args, Argument{
+				Kind: ArgOperation,
+				Key:  key,
+				Data: OpLessThan,
+			})
+
+		case '.':
+			panic("TODO")
 		}
 	}
 }
@@ -317,8 +413,52 @@ func (parser *Parser) readKeyword(firstChar rune, chars ...rune) (string, error)
 	return string(buffer), nil
 }
 
+func (parser *Parser) readAccessPath() (AccessPath, error) {
+	path := AccessPath{}
+	buffer := []rune{}
+
+	for {
+		char, err := parser.reader.Read()
+		if err != nil {
+			return path, err
+		}
+
+		if isAccessPathCharset(char) {
+			buffer = append(buffer, char)
+			continue
+		}
+
+		switch char {
+
+		case ' ', '}':
+			parser.reader.Unread()
+			if len(buffer) != 0 {
+				return append(path, PathSegment{Word: string(buffer)}), nil
+			}
+			return path, nil
+
+		case '.':
+			if len(buffer) == 0 {
+				// TODO: here
+			}
+			path = append(path, PathSegment{
+				Word:     string(buffer),
+				IsArray:  false,
+				IsMethod: false,
+			})
+		}
+	}
+}
+
 func isArgKeyCharset(char rune) bool {
 	return (char >= 'a' && char <= 'z') || char == '_'
+}
+
+func isAccessPathCharset(char rune) bool {
+	return (char >= 'a' && char <= 'z') ||
+		(char >= 'A' && char <= 'Z') ||
+		(char >= '0' && char <= '9') ||
+		char == '_'
 }
 
 func isDigit(char rune) bool {
