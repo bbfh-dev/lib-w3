@@ -95,6 +95,9 @@ func (parser *Parser) parse() error {
 		if char != '{' {
 			// not a tag
 			parser.writeRune(char)
+			if char == '\n' {
+				parser.swallowSpace = true
+			}
 			continue
 		}
 
