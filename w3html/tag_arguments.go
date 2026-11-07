@@ -212,20 +212,39 @@ func (fragment formatFragment) String() string {
 
 // ————————————————————————————————
 
-type AccessPath []string
+type AccessPath []PathSegment
+
+type PathSegment struct {
+	Word     string
+	IsArray  bool
+	IsMethod bool
+}
+
+func (segment PathSegment) IsLowercase() bool {
+	return segment.Word == strings.ToLower(segment.Word)
+}
 
 func (path AccessPath) String() string {
 	return "." + path.Flatten()
 }
 
 func (path AccessPath) Flatten() string {
-	return strings.Join(path, ".")
+	if len(path) == 0 {
+		return ""
+	}
+	var builder strings.Builder
+	builder.WriteString(path[0].Word)
+	for _, segment := range path[1:] {
+		builder.WriteRune('.')
+		builder.WriteString(segment.Word)
+	}
+	return builder.String()
 }
 
-func (path AccessPath) isCompileTime() bool {
+func (path AccessPath) IsCompileTime() bool {
 	return len(path) != 0 &&
-		len(path[0]) != 0 &&
-		path[0] == strings.ToLower(path[0])
+		len(path[0].Word) != 0 &&
+		path[0].IsLowercase()
 }
 
 // ————————————————————————————————
