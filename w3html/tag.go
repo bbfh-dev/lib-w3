@@ -1,25 +1,24 @@
 package w3html
 
 import (
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
 )
 
-var ErrCallDefaultHandler = errors.New("")
-
+// TagEnum can be used to define custom tags by appending to [RegisteredTags].
 type TagEnum struct {
-	// Namespace is empty for built-in W3 tags
+	// Allowed chars: /[a-z_0-9]+/.
+	// Namespace is empty for built-in w3 tags
 	Namespace string
 	// Id is a unique /[a-z_]+/ identifier
 	Id string
 	// IsPaired indicates whether tag has a closing counterpart
 	IsPaired bool
-	// Handle gets called by the [Parser] when the tag is encountered.
+	// Handler gets called by the [Parser] when the tag is encountered.
 	//
 	// For [TagEnum.IsPaired] it is always called on the closing tag.
-	Handle func(parser *Parser, tag Tag) error
+	Handler func(parser *Parser, tag Tag) error
 }
 
 func (enum TagEnum) String() string {
@@ -33,15 +32,27 @@ func (enum TagEnum) Equal(other TagEnum) bool {
 	return enum.Namespace == other.Namespace && enum.Id == other.Id
 }
 
-var (
-	IdExtend   = TagEnum{IsPaired: true, Id: "extend"}
-	IdIf       = TagEnum{IsPaired: true, Id: "if"}
-	IdSlot     = TagEnum{IsPaired: true, Id: "slot"}
-	IdRange    = TagEnum{IsPaired: true, Id: "range"}
-	IdInclude  = TagEnum{IsPaired: false, Id: "include"}
-	IdPlace    = TagEnum{IsPaired: false, Id: "place"}
-	IdVariable = TagEnum{IsPaired: false, Id: ""}
-)
+var IdSlot = TagEnum{IsPaired: true, Id: "slot", Handler: nil}
+
+var RegisteredTags = []TagEnum{
+	{IsPaired: true, Id: "extend", Handler: nil},
+	{IsPaired: true, Id: "if", Handler: nil},
+	IdSlot,
+	{IsPaired: true, Id: "range", Handler: nil},
+	{IsPaired: false, Id: "include", Handler: nil},
+	{IsPaired: false, Id: "place", Handler: nil},
+	{IsPaired: false, Id: "", Handler: nil},
+}
+
+func ResolveTag(namespace, id string) (TagEnum, bool) {
+	query := TagEnum{Namespace: namespace, Id: id}
+	for _, enum := range RegisteredTags {
+		if enum.Equal(query) {
+			return enum, true
+		}
+	}
+	return query, false
+}
 
 type Tag struct {
 	Kind      TagEnum

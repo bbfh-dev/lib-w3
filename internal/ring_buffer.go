@@ -4,29 +4,29 @@ const ringBufferCapacity = 1024
 
 // A ring buffer with fixed capacity of 1024 elements.
 // Refer to [NewRingBuffer].
-type RingBuffer[T any] struct {
+type RingBuffer1024[T any] struct {
 	array   [ringBufferCapacity]T
 	current uint
 	next    uint
 	size    uint
 }
 
-func NewRingBuffer[T any]() *RingBuffer[T] {
-	return &RingBuffer[T]{
+func NewRingBuffer1024[T any]() *RingBuffer1024[T] {
+	return &RingBuffer1024[T]{
 		array: [ringBufferCapacity]T{},
 		next:  0,
 		size:  0,
 	}
 }
 
-func (buffer *RingBuffer[T]) Push(value T) {
+func (buffer *RingBuffer1024[T]) Push(value T) {
 	buffer.current = buffer.next
 	buffer.next = (buffer.next + 1) % ringBufferCapacity
 	buffer.array[buffer.current] = value
 	buffer.size = min(buffer.size+1, ringBufferCapacity)
 }
 
-func (buffer *RingBuffer[T]) Dump() []T {
+func (buffer *RingBuffer1024[T]) Dump() []T {
 	result := make([]T, 0, buffer.size)
 	var start uint = 0
 	if buffer.size == ringBufferCapacity {

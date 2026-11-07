@@ -25,14 +25,14 @@ var TestCases = []TestCase{
 		Filename: "01_only_raw.html",
 		Expected: w3html.ParsedPage{
 			MentionedPaths: []w3html.StringPath{},
-			Slots:          map[string]w3html.HunkLocation{},
-			Root: w3html.Hunk{
-				Kind: w3html.HunkRoot,
+			Slots:          map[string]w3html.NodeLocation{},
+			Root: w3html.Node{
+				Kind: w3html.NodeRoot,
 				Line: 1,
 				Data: nil,
-				Children: []w3html.Hunk{
+				Children: []w3html.Node{
 					{
-						Kind: w3html.HunkRaw,
+						Kind: w3html.NodeHunk,
 						Line: 1,
 						Data: []byte(`<!DOCTYPE html>
 <html lang="en">
@@ -65,12 +65,12 @@ var TestCases = []TestCase{
 		Filename: "02_nested_extend.html",
 		Expected: w3html.ParsedPage{
 			MentionedPaths: []w3html.StringPath{},
-			Slots:          map[string]w3html.HunkLocation{},
-			Root: w3html.Hunk{
-				Kind:     w3html.HunkRoot,
+			Slots:          map[string]w3html.NodeLocation{},
+			Root: w3html.Node{
+				Kind:     w3html.NodeRoot,
 				Line:     1,
 				Data:     nil,
-				Children: []w3html.Hunk{},
+				Children: []w3html.Node{},
 			},
 		},
 	},
@@ -106,7 +106,7 @@ func TestParser(t *testing.T) {
 				testCase.Expected,
 				parser.Result(),
 				cmpopts.IgnoreUnexported(w3html.ParsedPage{}),
-				cmpopts.IgnoreFields(w3html.HunkLocation{}, "Parent"),
+				cmpopts.IgnoreFields(w3html.NodeLocation{}, "Parent"),
 			)
 		})
 	}

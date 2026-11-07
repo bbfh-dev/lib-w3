@@ -11,14 +11,10 @@ import (
 var NoNodeLocation = NodeLocation{Parent: nil}
 
 type NodeLocation struct {
-	Parent     *TreeNode
-	ChildIndex uint
-	Line       uint
-	ByteOffset uint
-}
-
-func (location NodeLocation) IsNull() bool {
-	return location.Parent == nil
+	Parent       *TreeNode
+	ChildIndex   uint
+	Line         uint
+	ReaderOffset uint
 }
 
 func (location NodeLocation) Pointer() *TreeNode {
@@ -58,7 +54,7 @@ type Node struct {
 }
 
 // AsRaw casts the [Node.Data] value that is expected when [Node.Kind] == [NodeHunk].
-func (node Node) AsRaw() []byte {
+func (node Node) AsHunk() []byte {
 	return node.Data.([]byte)
 }
 
@@ -114,7 +110,7 @@ func (hunk TreeNode) ExtractInjectSlots() (map[string][]TreeNode, error) {
 			}
 			fallthrough
 		case NodeHunk:
-			if isWhitespace(child.AsRaw()) {
+			if isWhitespace(child.AsHunk()) {
 				continue
 			}
 			fallthrough
