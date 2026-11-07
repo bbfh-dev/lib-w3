@@ -2,11 +2,11 @@ package internal
 
 import (
 	"bufio"
-	"os"
 	"slices"
 	"strings"
 
 	"codeberg.org/bbfh/lib-w3/w3errs"
+	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
 type DocumentReader struct {
@@ -21,7 +21,7 @@ type DocumentReader struct {
 	showArrow      bool
 }
 
-func NewDocumentReader(parent *DocumentReader, file *os.File) *DocumentReader {
+func NewDocumentReader(parent *DocumentReader, file w3utils.FileLike) *DocumentReader {
 	return &DocumentReader{
 		Line:           1,
 		parent:         parent,

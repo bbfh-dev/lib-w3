@@ -3,17 +3,17 @@ package w3html
 import (
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"unicode"
 
 	"codeberg.org/bbfh/lib-w3/internal"
 	"codeberg.org/bbfh/lib-w3/w3errs"
+	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
 type Parser struct {
 	Params       map[string]string
-	file         *os.File
+	file         w3utils.FileLike
 	reader       *internal.DocumentReader
 	hunkBuffer   []byte
 	line         uint
@@ -23,16 +23,20 @@ type Parser struct {
 }
 
 // NewParser creates a parser. For parsing nested documents refer to [Parser.NewParser].
-func NewParser(file *os.File, params map[string]string) *Parser {
+func NewParser(file w3utils.FileLike, params map[string]string) *Parser {
 	return newParser(nil, file, params)
 }
 
 // NewParser creates a new nested parser.
-func (parser *Parser) NewParser(file *os.File, params map[string]string) *Parser {
+func (parser *Parser) NewParser(file w3utils.FileLike, params map[string]string) *Parser {
 	return newParser(parser.reader, file, params)
 }
 
-func newParser(parent *internal.DocumentReader, file *os.File, params map[string]string) *Parser {
+func newParser(
+	parent *internal.DocumentReader,
+	file w3utils.FileLike,
+	params map[string]string,
+) *Parser {
 	reader := internal.NewDocumentReader(parent, file)
 	params["_filename"] = file.Name()
 	params["_filename.base"] = filepath.Base(file.Name())
