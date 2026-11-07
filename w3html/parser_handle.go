@@ -12,11 +12,19 @@ func (parser *Parser) handleOpeningTag(tag Tag, mark uint) error {
 		return nil
 	}
 
-	return tag.Kind.Handler(parser, tag)
+	return parser.handleTag(tag)
 }
 
 func (parser *Parser) handleClosingTag(opening NodeLocation) error {
 	hunk := opening.Pointer()
 	tag := hunk.AsTag()
-	return tag.Kind.Handler(parser, tag)
+	return parser.handleTag(tag)
+}
+
+func (parser *Parser) handleTag(tag Tag) error {
+	handler := tag.Kind.Handler
+	if handler == nil {
+		return nil
+	}
+	return handler(parser, tag)
 }
