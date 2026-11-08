@@ -73,6 +73,17 @@ func (parser *Parser) WithFileOpener(fileOpener FileOpener) *Parser {
 	return parser
 }
 
+func (parser *Parser) Param(path string) (string, error) {
+	value, ok := parser.Params[path]
+	if !ok {
+		return value, fmt.Errorf(
+			"unknown compile-time variable %q. Make sure you didn't mess up capitalization & the variable is set in the 'include' or 'extend' tag calling this file",
+			path,
+		)
+	}
+	return value, nil
+}
+
 func (parser *Parser) Parse() (ParsedPage, error) {
 	err := parser.parse()
 	if err != nil {

@@ -68,12 +68,9 @@ var IdVariable = TagEnum{
 		}
 		path := arg.AsPath()
 		if path.IsCompileTime() {
-			value, ok := parser.Params[path.Flatten()]
-			if !ok {
-				return fmt.Errorf(
-					"unknown compile-time variable %q. Make sure you didn't mess up capitalization & the variable is set in the 'include' or 'extend' tag calling this file",
-					path,
-				)
+			value, err := parser.Param(path.Flatten())
+			if err != nil {
+				return err
 			}
 			parser.appendHunk([]byte(value))
 		} else {
