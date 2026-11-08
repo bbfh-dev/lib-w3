@@ -14,8 +14,9 @@ import (
 )
 
 type TestCase struct {
-	File     MockFile
-	Expected w3html.ParsedPage
+	File        MockFile
+	ExpectError func(err w3errs.DocumentError) bool
+	Expected    w3html.ParsedPage
 }
 
 var TestCases = []TestCase{
@@ -24,6 +25,7 @@ var TestCases = []TestCase{
 			Filename: "Simple_CompileTimeVariables",
 			Contents: `<span>Hello World! from {{ ._filename.base }}</span>`,
 		},
+		ExpectError: nil,
 		Expected: w3html.ParsedPage{
 			AccessPaths: []w3html.AccessPath{},
 			PlacedSlots: map[string]w3html.NodeLocation{},
@@ -31,6 +33,34 @@ var TestCases = []TestCase{
 				{
 					Kind: w3html.NodeHunk,
 					Data: []byte("<span>Hello World! from Simple_CompileTimeVariables</span>"),
+				},
+			},
+		},
+	},
+	{
+		File: MockFile{
+			Filename: "Simple_CompileTimeVariables_NeverClosed",
+			Contents: `<span>Hello World! from {{ ._filename.base`,
+		},
+		ExpectError: func(err w3errs.DocumentError) bool {
+			return err.CallStack[len(err.CallStack)-1].Line == 1 &&
+				strings.HasSuffix(err.Message, "reading access path: EOF")
+		},
+		Expected: w3html.ParsedPage{},
+	},
+	{
+		File: MockFile{
+			Filename: "Simple_SingleBraces",
+			Contents: `{ this should stay as text }`,
+		},
+		ExpectError: nil,
+		Expected: w3html.ParsedPage{
+			AccessPaths: []w3html.AccessPath{},
+			PlacedSlots: map[string]w3html.NodeLocation{},
+			Nodes: []w3html.Node{
+				{
+					Kind: w3html.NodeHunk,
+					Data: []byte("{ this should stay as text }"),
 				},
 			},
 		},
@@ -73,9 +103,22 @@ func TestParser(t *testing.T) {
 			parser := w3html.NewParser(&testCase.File, map[string]string{})
 			result, err := parser.Parse()
 			if err != nil {
-				w3errs.Write(err, os.Stderr, outputMode)
-				tt.FailNow()
-				return
+				if testCase.ExpectError == nil {
+					w3errs.Write(err, os.Stderr, outputMode)
+					tt.FailNow()
+					return
+				} else {
+					if derr, ok := err.(w3errs.DocumentError); ok {
+						if testCase.ExpectError(derr) {
+							return
+						} else {
+							w3errs.Write(err, os.Stderr, outputMode)
+							tt.FailNow()
+						}
+					} else {
+						tt.Fatalf("error is not a document error: %s", err.Error())
+					}
+				}
 			}
 
 			if printResult {
