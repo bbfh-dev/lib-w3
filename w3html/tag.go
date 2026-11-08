@@ -86,7 +86,7 @@ var RegisteredTags = []TagEnum{
 		IsPaired: true,
 		Id:       "extend",
 		Arguments: []ArgumentDefinition{
-			{Name: ArgNamePath, Kind: ArgMatchAnyString, IsOptional: false},
+			{Name: ArgNamePath, Kind: ArgString, IsOptional: false},
 			{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
 		},
 		Handler: nil,
@@ -109,7 +109,7 @@ var RegisteredTags = []TagEnum{
 		IsPaired: false,
 		Id:       "include",
 		Arguments: []ArgumentDefinition{
-			{Name: ArgNamePath, Kind: ArgMatchAnyString, IsOptional: false},
+			{Name: ArgNamePath, Kind: ArgString, IsOptional: false},
 			{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
 		},
 		Handler: nil,
