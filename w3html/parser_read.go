@@ -1,7 +1,6 @@
 package w3html
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -40,10 +39,6 @@ func (parser *Parser) readTag() (tag Tag, closing bool, err error) {
 			parser.reader.HighlightSince(mark)
 			return Tag{}, false, fmt.Errorf("reading name: %w", err)
 		}
-		if id == "" {
-			parser.reader.HighlightSince(mark)
-			return Tag{}, false, errors.New("name cannot be empty")
-		}
 		var ok bool
 		enum, ok = ResolveTag(namespace, id)
 		if !ok {
@@ -54,6 +49,8 @@ func (parser *Parser) readTag() (tag Tag, closing bool, err error) {
 				RegisteredTags,
 			)
 		}
+	} else {
+		enum = IdVariable
 	}
 
 	args, err := parser.readTagArgs()
@@ -306,7 +303,17 @@ func (parser *Parser) readTagArgs() ([]Argument, error) {
 			})
 
 		case '.':
-			panic("TODO")
+			path, err := parser.readAccessPath()
+			if err != nil {
+				parser.reader.HighlightSince(mark)
+				return args, fmt.Errorf("reading access path: %w", err)
+			}
+			args = append(args, Argument{
+				Kind: ArgPath,
+				Key:  key,
+				Data: path,
+			})
+			key = ""
 		}
 	}
 }
@@ -416,6 +423,7 @@ func (parser *Parser) readKeyword(firstChar rune, chars ...rune) (string, error)
 func (parser *Parser) readAccessPath() (AccessPath, error) {
 	path := AccessPath{}
 	buffer := []rune{}
+	suffix_written := false
 
 	for {
 		char, err := parser.reader.Read()
@@ -424,6 +432,12 @@ func (parser *Parser) readAccessPath() (AccessPath, error) {
 		}
 
 		if isAccessPathCharset(char) {
+			if suffix_written {
+				return path, fmt.Errorf(
+					"path segment already ended with '()' or '[]', but found %q right after",
+					char,
+				)
+			}
 			buffer = append(buffer, char)
 			continue
 		}
@@ -437,11 +451,36 @@ func (parser *Parser) readAccessPath() (AccessPath, error) {
 			}
 			return path, nil
 
+		case '(':
+			_, err := parser.readKeyword('(', ')')
+			if err != nil {
+				return path, fmt.Errorf("reading keyword: %w", err)
+			}
+			buffer = append(buffer, '(', ')')
+			suffix_written = true
+
+		case '[':
+			_, err := parser.readKeyword('[', ']')
+			if err != nil {
+				return path, fmt.Errorf("reading keyword: %w", err)
+			}
+			buffer = append(buffer, '[', ']')
+			suffix_written = true
+
 		case '.':
 			if len(buffer) == 0 {
-				// TODO: here
+				if len(path) == 0 {
+					path = append(path, parser.ctx.Scope()...)
+					continue
+				}
+				return path, fmt.Errorf("unexpected third '.' in the beginning of the path")
 			}
 			path = append(path, PathSegment(buffer))
+			buffer = []rune{}
+			suffix_written = false
+
+		default:
+			return path, fmt.Errorf("unexpected character %q", char)
 		}
 	}
 }

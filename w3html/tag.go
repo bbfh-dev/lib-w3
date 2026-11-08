@@ -55,6 +55,18 @@ var IdSlot = TagEnum{
 	Handler:   nil,
 }
 
+var IdVariable = TagEnum{
+	IsPaired: false,
+	Id:       "",
+	Arguments: []ArgumentDefinition{
+		{Name: "path", Kind: ArgPath, IsOptional: false},
+	},
+	Handler: func(parser *Parser, tag Tag) error {
+		parser.appendTag(tag)
+		return nil
+	},
+}
+
 var RegisteredTags = []TagEnum{
 	IdSlot,
 	{
@@ -97,14 +109,7 @@ var RegisteredTags = []TagEnum{
 		},
 		Handler: nil,
 	},
-	{
-		IsPaired: false,
-		Id:       "",
-		Arguments: []ArgumentDefinition{
-			{Name: "path", Kind: ArgPath, IsOptional: false},
-		},
-		Handler: nil,
-	},
+	IdVariable,
 }
 
 func ResolveTag(namespace, id string) (TagEnum, bool) {
