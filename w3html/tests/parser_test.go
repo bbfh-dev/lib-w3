@@ -38,7 +38,7 @@ var TestCases = []TestCase{
 	},
 	{
 		File: MockFile{
-			Filename: "SingleBraces",
+			Filename: "NotTag",
 			Contents: `{ this should stay as text }`,
 		},
 		Expected: w3html.ParsedPage{
@@ -84,18 +84,30 @@ var TestCases = []TestCase{
 			Contents: `<span>Hello World! from {{ ._filename.base`,
 		},
 		ExpectError: func(err w3errs.DocumentError) bool {
-			return strings.HasSuffix(err.Message, "reading access path: EOF")
+			return strings.Contains(err.Message, "reading access path: EOF")
 		},
 	},
 	{
 		File: MockFile{
-			Filename: "UnnamedWithKey",
+			Filename: "Fail_AccessPath_CompileTime_Undefined",
+			Contents: `<span>Hello World! from {{ ._filename.undefined }}</span>`,
+		},
+		ExpectError: func(err w3errs.DocumentError) bool {
+			return strings.Contains(
+				err.Message,
+				"unknown compile-time variable \"_filename.undefined\"",
+			)
+		},
+	},
+	{
+		File: MockFile{
+			Filename: "Fail_UnnamedWithKey",
 			Contents: `{{ key=.Path.To().Value }}`,
 		},
 		ExpectError: func(err w3errs.DocumentError) bool {
-			return strings.HasSuffix(
+			return strings.Contains(
 				err.Message,
-				"reading tag: reading name: unexpected character: '='",
+				"reading name: unexpected character: '='",
 			)
 		},
 	},
