@@ -12,7 +12,7 @@ func (parser *Parser) handleOpeningTag(tag Tag) error {
 	}
 
 	if tag.Kind.IsPaired {
-		parser.appendTag(tag)
+		parser.AppendTag(tag)
 		return nil
 	}
 

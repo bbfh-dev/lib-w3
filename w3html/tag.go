@@ -72,9 +72,9 @@ var IdVariable = TagEnum{
 			if err != nil {
 				return err
 			}
-			parser.appendHunk([]byte(value))
+			parser.AppendHunk([]byte(value))
 		} else {
-			parser.appendTag(tag)
+			parser.AppendTag(tag)
 		}
 		return nil
 	},
@@ -121,7 +121,7 @@ func init() {
 					return err
 				}
 				for _, child := range nestedPage.Nodes {
-					parser.ctx.Append(TreeNode{
+					parser.Append(TreeNode{
 						Node:           child,
 						SourceCodeLine: 1,
 						Children:       nil,
