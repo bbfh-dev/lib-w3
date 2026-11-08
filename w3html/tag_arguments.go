@@ -291,6 +291,10 @@ type Operation struct {
 	Validator  func(a, b Argument) error
 }
 
+func (op Operation) String() string {
+	return op.Token
+}
+
 var (
 	OpEquals = Operation{
 		Token:      "==",
