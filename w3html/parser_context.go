@@ -85,3 +85,18 @@ func (ctx *ParserContext) append(hunk TreeNode) {
 	// for everything else
 	pivot.Children = append(pivot.Children, hunk)
 }
+
+// Scope returns the current nested [AccessPath], which should be prepended to all local paths.
+func (ctx *ParserContext) Scope() AccessPath {
+	scope := AccessPath{}
+	for _, location := range ctx.breadcrumbs {
+		tag := location.Pointer().AsTag()
+		if tag.Kind.DefinesArg(ArgNameScope) {
+			value, err := tag.FindArgNamed(ArgNameScope)
+			if err == nil {
+				scope = append(scope, value.AsPath()...)
+			}
+		}
+	}
+	return scope
+}

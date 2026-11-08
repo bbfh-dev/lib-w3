@@ -39,6 +39,15 @@ func (enum TagEnum) Equal(other TagEnum) bool {
 	return enum.Namespace == other.Namespace && enum.Id == other.Id
 }
 
+func (enum TagEnum) DefinesArg(name string) bool {
+	for _, arg := range enum.Arguments {
+		if arg.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 var IdSlot = TagEnum{
 	IsPaired:  true,
 	Id:        "slot",
