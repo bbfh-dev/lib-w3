@@ -25,7 +25,6 @@ var TestCases = []TestCase{
 			Filename: "AccessPath_CompileTime",
 			Contents: `<span>Hello World! from {{ ._filename.base }}</span>`,
 		},
-		ExpectError: nil,
 		Expected: w3html.ParsedPage{
 			AccessPaths: []w3html.AccessPath{},
 			PlacedSlots: map[string]w3html.NodeLocation{},
@@ -39,20 +38,9 @@ var TestCases = []TestCase{
 	},
 	{
 		File: MockFile{
-			Filename: "AccessPath_CompileTime_NeverClosed",
-			Contents: `<span>Hello World! from {{ ._filename.base`,
-		},
-		ExpectError: func(err w3errs.DocumentError) bool {
-			return strings.HasSuffix(err.Message, "reading access path: EOF")
-		},
-		Expected: w3html.ParsedPage{},
-	},
-	{
-		File: MockFile{
 			Filename: "SingleBraces",
 			Contents: `{ this should stay as text }`,
 		},
-		ExpectError: nil,
 		Expected: w3html.ParsedPage{
 			AccessPaths: []w3html.AccessPath{},
 			PlacedSlots: map[string]w3html.NodeLocation{},
@@ -66,10 +54,9 @@ var TestCases = []TestCase{
 	},
 	{
 		File: MockFile{
-			Filename: "Tag_Variable",
+			Filename: "Variable",
 			Contents: `{{ .Path.To.Value() }}`,
 		},
-		ExpectError: nil,
 		Expected: w3html.ParsedPage{
 			AccessPaths: []w3html.AccessPath{},
 			PlacedSlots: map[string]w3html.NodeLocation{},
@@ -90,9 +77,19 @@ var TestCases = []TestCase{
 			},
 		},
 	},
+	// ————————————————————————————————
 	{
 		File: MockFile{
-			Filename: "Tag_Generic_NoName",
+			Filename: "Fail_NeverClosed",
+			Contents: `<span>Hello World! from {{ ._filename.base`,
+		},
+		ExpectError: func(err w3errs.DocumentError) bool {
+			return strings.HasSuffix(err.Message, "reading access path: EOF")
+		},
+	},
+	{
+		File: MockFile{
+			Filename: "UnnamedWithKey",
 			Contents: `{{ key=.Path.To().Value }}`,
 		},
 		ExpectError: func(err w3errs.DocumentError) bool {
@@ -101,7 +98,6 @@ var TestCases = []TestCase{
 				"reading tag: reading name: unexpected character: '='",
 			)
 		},
-		Expected: w3html.ParsedPage{},
 	},
 }
 
