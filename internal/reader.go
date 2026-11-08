@@ -84,6 +84,9 @@ func (reader *DocumentReader) Unread() {
 }
 
 func (reader *DocumentReader) Here() uint {
+	if reader.head != 0 {
+		return reader.head - 1
+	}
 	return reader.head
 }
 
