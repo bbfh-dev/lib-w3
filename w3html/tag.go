@@ -59,10 +59,26 @@ var IdVariable = TagEnum{
 	IsPaired: false,
 	Id:       "",
 	Arguments: []ArgumentDefinition{
-		{Name: "path", Kind: ArgPath, IsOptional: false},
+		{Name: ArgNamePath, Kind: ArgPath, IsOptional: false},
 	},
 	Handler: func(parser *Parser, tag Tag) error {
-		parser.appendTag(tag)
+		arg, err := tag.FindArgNamed(ArgNamePath)
+		if err != nil {
+			return err
+		}
+		path := arg.AsPath()
+		if path.IsCompileTime() {
+			value, ok := parser.Params[path.Flatten()]
+			if !ok {
+				return fmt.Errorf(
+					"unknown compile-time variable %q. Make sure you didn't mess up capitalization & the variable is set in the 'include' or 'extend' tag calling this file",
+					path,
+				)
+			}
+			parser.appendHunk([]byte(value))
+		} else {
+			parser.appendTag(tag)
+		}
 		return nil
 	},
 }
