@@ -103,6 +103,7 @@ func (reader *DocumentReader) WrapError(err error) w3errs.DocumentError {
 	highlight := string(context[highlightStart:])
 
 	context = context[:length]
+	context = []rune(strings.ReplaceAll(string(context), "\t", " "))
 	contextTail := string(lastLines(context, 4))
 	contextTail = strings.TrimSuffix(contextTail, highlight)
 	contextLines := strings.Split(contextTail, "\n")
