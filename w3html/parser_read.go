@@ -565,6 +565,7 @@ func (parser *Parser) readAccessPath() (AccessPath, error) {
 		case '.':
 			if len(buffer) == 0 {
 				if len(path) == 0 {
+					path = append(path, parser.Scope...)
 					path = append(path, parser.ctx.Scope()...)
 					continue
 				}

@@ -25,6 +25,7 @@ type TestCase struct {
 var Files = map[string]string{
 	"include.1": "<span>\n\tHello World!\n</span>",
 	"include.2": "{{ include 'include.2' }}",
+	"include.3": "{{ .Root }}{{ ..This() }}",
 	"extend.1":  "<section>\n\t{{ place 'default' }}\n</section>",
 }
 
@@ -98,6 +99,52 @@ var TestCases = []TestCase{
 				{
 					Kind: w3html.NodeHunk,
 					Data: []byte("<div>\n<span>\nHello World!\n</span></div>"),
+				},
+			},
+		},
+	},
+	{
+		File: MockFile{
+			Filename: "Include_Scope",
+			Contents: "<div>\n{{ include 'include.3' .My.Scope }}\n</div>",
+		},
+		Expected: w3html.ParsedPage{
+			AccessPaths: []w3html.AccessPath{},
+			PlacedSlots: map[string]w3html.NodeLocation{},
+			Nodes: []w3html.Node{
+				{
+					Kind: w3html.NodeHunk,
+					Data: []byte("<div>\n"),
+				},
+				{
+					Kind: w3html.NodeTag,
+					Data: w3html.Tag{
+						Kind: w3html.IdVariable,
+						Arguments: []w3html.Argument{
+							{
+								Kind: w3html.ArgPath,
+								Key:  "",
+								Data: w3html.AccessPath{"Root"},
+							},
+						},
+					},
+				},
+				{
+					Kind: w3html.NodeTag,
+					Data: w3html.Tag{
+						Kind: w3html.IdVariable,
+						Arguments: []w3html.Argument{
+							{
+								Kind: w3html.ArgPath,
+								Key:  "",
+								Data: w3html.AccessPath{"My", "Scope", "This()"},
+							},
+						},
+					},
+				},
+				{
+					Kind: w3html.NodeHunk,
+					Data: []byte("</div>"),
 				},
 			},
 		},

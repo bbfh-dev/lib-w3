@@ -28,6 +28,7 @@ type ParserApi interface {
 }
 
 type Parser struct {
+	Scope      AccessPath
 	Params     map[string]string
 	reader     *internal.DocumentReader
 	hunkBuffer []byte
@@ -50,6 +51,7 @@ func newParser(
 	params["_filename"] = file.Name()
 	params["_filename.base"] = filepath.Base(file.Name())
 	return &Parser{
+		Scope:      AccessPath{},
 		Params:     params,
 		reader:     reader,
 		hunkBuffer: []byte{},

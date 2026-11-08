@@ -103,6 +103,13 @@ func (parser *Parser) ParseNested(tag Tag) (ParsedPage, error) {
 	defer file.Close()
 
 	nestedParser := newParser(parser.reader, file, tag.ToParams("path"))
+
+	nestedParser.Scope = parser.Scope
+	scopeArg, err := tag.FindArgNamed(ArgNameScope)
+	if err == nil {
+		nestedParser.Scope = append(nestedParser.Scope, scopeArg.AsPath()...)
+	}
+
 	result, err := nestedParser.Parse()
 	if err != nil {
 		return ParsedPage{}, err
