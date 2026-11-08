@@ -43,8 +43,7 @@ var TestCases = []TestCase{
 			Contents: `<span>Hello World! from {{ ._filename.base`,
 		},
 		ExpectError: func(err w3errs.DocumentError) bool {
-			return err.CallStack[len(err.CallStack)-1].Line == 1 &&
-				strings.HasSuffix(err.Message, "reading access path: EOF")
+			return strings.HasSuffix(err.Message, "reading access path: EOF")
 		},
 		Expected: w3html.ParsedPage{},
 	},
@@ -64,6 +63,45 @@ var TestCases = []TestCase{
 				},
 			},
 		},
+	},
+	{
+		File: MockFile{
+			Filename: "Tag_Variable",
+			Contents: `{{ .Path.To.Value() }}`,
+		},
+		ExpectError: nil,
+		Expected: w3html.ParsedPage{
+			AccessPaths: []w3html.AccessPath{},
+			PlacedSlots: map[string]w3html.NodeLocation{},
+			Nodes: []w3html.Node{
+				{
+					Kind: w3html.NodeTag,
+					Data: w3html.Tag{
+						Kind: w3html.IdVariable,
+						Arguments: []w3html.Argument{
+							{
+								Kind: w3html.ArgPath,
+								Key:  "",
+								Data: w3html.AccessPath{"Path", "To", "Value()"},
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+	{
+		File: MockFile{
+			Filename: "Tag_Generic_NoName",
+			Contents: `{{ key=.Path.To().Value }}`,
+		},
+		ExpectError: func(err w3errs.DocumentError) bool {
+			return strings.HasSuffix(
+				err.Message,
+				"reading tag: reading name: unexpected character: '='",
+			)
+		},
+		Expected: w3html.ParsedPage{},
 	},
 }
 

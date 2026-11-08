@@ -44,7 +44,7 @@ func (parser *Parser) readTag() (tag Tag, closing bool, err error) {
 		if !ok {
 			parser.reader.HighlightSince(mark)
 			return Tag{}, false, fmt.Errorf(
-				"undefined tag %q. Currently defined tags: [%s]",
+				"undefined tag %q. Currently defined tags: %s",
 				enum,
 				RegisteredTags,
 			)
@@ -117,6 +117,8 @@ func (parser *Parser) readTagName() (namespace string, id string, err error) {
 			parser.reader.Unread()
 			return namespace, builder.String(), nil
 		}
+
+		return "", "", fmt.Errorf("unexpected character: %q", char)
 	}
 }
 
