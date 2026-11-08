@@ -21,17 +21,18 @@ type TestCase struct {
 var TestCases = []TestCase{
 	{
 		File: MockFile{
-			Filename: "Extend_RawOnly",
-			Contents: `{{ extend "Extend_RawOnly_1" }}
-							{{ extend "Extend_RawOnly_2" }}
-								<span>Hello World!</span>
-							{{ /extend }}
-						{{ /extend }}`,
+			Filename: "Simple_CompileTimeVariables",
+			Contents: `<span>Hello World! from {{ ._filename.base }}</span>`,
 		},
 		Expected: w3html.ParsedPage{
 			AccessPaths: []w3html.AccessPath{},
 			PlacedSlots: map[string]w3html.NodeLocation{},
-			Nodes:       []w3html.Node{},
+			Nodes: []w3html.Node{
+				{
+					Kind: w3html.NodeHunk,
+					Data: []byte("<span>Hello World! from Simple_CompileTimeVariables</span>"),
+				},
+			},
 		},
 	},
 }
