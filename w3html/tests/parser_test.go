@@ -22,7 +22,7 @@ type TestCase struct {
 var TestCases = []TestCase{
 	{
 		File: MockFile{
-			Filename: "Simple_CompileTimeVariables",
+			Filename: "AccessPath_CompileTime",
 			Contents: `<span>Hello World! from {{ ._filename.base }}</span>`,
 		},
 		ExpectError: nil,
@@ -32,14 +32,14 @@ var TestCases = []TestCase{
 			Nodes: []w3html.Node{
 				{
 					Kind: w3html.NodeHunk,
-					Data: []byte("<span>Hello World! from Simple_CompileTimeVariables</span>"),
+					Data: []byte("<span>Hello World! from AccessPath_CompileTime</span>"),
 				},
 			},
 		},
 	},
 	{
 		File: MockFile{
-			Filename: "Simple_CompileTimeVariables_NeverClosed",
+			Filename: "AccessPath_CompileTime_NeverClosed",
 			Contents: `<span>Hello World! from {{ ._filename.base`,
 		},
 		ExpectError: func(err w3errs.DocumentError) bool {
@@ -50,7 +50,7 @@ var TestCases = []TestCase{
 	},
 	{
 		File: MockFile{
-			Filename: "Simple_SingleBraces",
+			Filename: "SingleBraces",
 			Contents: `{ this should stay as text }`,
 		},
 		ExpectError: nil,
