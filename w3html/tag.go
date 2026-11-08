@@ -80,49 +80,66 @@ var IdVariable = TagEnum{
 	},
 }
 
-var RegisteredTags = []TagEnum{
-	IdSlot,
-	{
-		IsPaired: true,
-		Id:       "extend",
-		Arguments: []ArgumentDefinition{
-			{Name: ArgNamePath, Kind: ArgString, IsOptional: false},
-			{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
+var RegisteredTags = []TagEnum{}
+
+func init() {
+	RegisteredTags = []TagEnum{
+		IdSlot,
+		{
+			IsPaired: true,
+			Id:       "extend",
+			Arguments: []ArgumentDefinition{
+				{Name: ArgNamePath, Kind: ArgString, IsOptional: false},
+				{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
+			},
+			Handler: nil,
 		},
-		Handler: nil,
-	},
-	{
-		IsPaired:  true,
-		Id:        "if",
-		Arguments: SkipArgumentCheck,
-		Handler:   nil,
-	},
-	{
-		IsPaired: true,
-		Id:       "range",
-		Arguments: []ArgumentDefinition{
-			{Name: ArgNameScope, Kind: ArgPath, IsOptional: false},
+		{
+			IsPaired:  true,
+			Id:        "if",
+			Arguments: SkipArgumentCheck,
+			Handler:   nil,
 		},
-		Handler: nil,
-	},
-	{
-		IsPaired: false,
-		Id:       "include",
-		Arguments: []ArgumentDefinition{
-			{Name: ArgNamePath, Kind: ArgString, IsOptional: false},
-			{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
+		{
+			IsPaired: true,
+			Id:       "range",
+			Arguments: []ArgumentDefinition{
+				{Name: ArgNameScope, Kind: ArgPath, IsOptional: false},
+			},
+			Handler: nil,
 		},
-		Handler: nil,
-	},
-	{
-		IsPaired: false,
-		Id:       "place",
-		Arguments: []ArgumentDefinition{
-			{Name: ArgNameSlotId, Kind: ArgString, IsOptional: false},
+		{
+			IsPaired: false,
+			Id:       "include",
+			Arguments: []ArgumentDefinition{
+				{Name: ArgNamePath, Kind: ArgString, IsOptional: false},
+				{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
+			},
+			Handler: func(parser *Parser, tag Tag) error {
+				nestedPage, err := parser.ParseNested(tag)
+				if err != nil {
+					return err
+				}
+				for _, child := range nestedPage.Nodes {
+					parser.ctx.Append(TreeNode{
+						Node:           child,
+						SourceCodeLine: 1,
+						Children:       nil,
+					})
+				}
+				return nil
+			},
 		},
-		Handler: nil,
-	},
-	IdVariable,
+		{
+			IsPaired: false,
+			Id:       "place",
+			Arguments: []ArgumentDefinition{
+				{Name: ArgNameSlotId, Kind: ArgString, IsOptional: false},
+			},
+			Handler: nil,
+		},
+		IdVariable,
+	}
 }
 
 func ResolveTag(namespace, id string) (TagEnum, bool) {

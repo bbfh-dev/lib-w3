@@ -1,14 +1,17 @@
 package w3html_test
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	libclog "codeberg.org/bbfh/lib-clog"
 	"codeberg.org/bbfh/lib-w3/w3errs"
 	"codeberg.org/bbfh/lib-w3/w3html"
+	"codeberg.org/bbfh/lib-w3/w3utils"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/assert"
 )
@@ -17,6 +20,11 @@ type TestCase struct {
 	File        MockFile
 	ExpectError func(err w3errs.DocumentError) bool
 	Expected    w3html.ParsedPage
+}
+
+var Files = map[string]string{
+	"include.1": "<span>\n\tHello World!\n</span>",
+	"include.2": "{{ include 'include.2' }}",
 }
 
 var TestCases = []TestCase{
@@ -77,6 +85,22 @@ var TestCases = []TestCase{
 			},
 		},
 	},
+	{
+		File: MockFile{
+			Filename: "Include",
+			Contents: "<div>\n{{ include 'include.1' }}\n</div>",
+		},
+		Expected: w3html.ParsedPage{
+			AccessPaths: []w3html.AccessPath{},
+			PlacedSlots: map[string]w3html.NodeLocation{},
+			Nodes: []w3html.Node{
+				{
+					Kind: w3html.NodeHunk,
+					Data: []byte("<div>\n<span>\nHello World!\n</span></div>"),
+				},
+			},
+		},
+	},
 	// ————————————————————————————————
 	{
 		File: MockFile{
@@ -108,6 +132,18 @@ var TestCases = []TestCase{
 			return strings.Contains(
 				err.Message,
 				"reading name: unexpected character: '='",
+			)
+		},
+	},
+	{
+		File: MockFile{
+			Filename: "Fail_IncludeRecursive",
+			Contents: "<div>\n{{ include 'include.2' }}\n</div>",
+		},
+		ExpectError: func(err w3errs.DocumentError) bool {
+			return strings.Contains(
+				err.Message,
+				"trying to parse the same document recursively",
 			)
 		},
 	},
@@ -147,6 +183,20 @@ func TestParser(t *testing.T) {
 		testCase.File.Init()
 		t.Run(testCase.File.Name(), func(tt *testing.T) {
 			parser := w3html.NewParser(&testCase.File, map[string]string{})
+			parser.WithFileOpener(func(absPath string) (w3utils.FileLike, error) {
+				path := filepath.Base(absPath)
+				contents, ok := Files[path]
+				if !ok {
+					return nil, fmt.Errorf("%s: no such file is supplied by the test file", path)
+				}
+				file := MockFile{
+					Filename: path,
+					Contents: contents,
+				}
+				file.Init()
+				return &file, nil
+			})
+
 			result, err := parser.Parse()
 			if err != nil {
 				if testCase.ExpectError == nil {

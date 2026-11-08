@@ -1,7 +1,7 @@
 package w3html
 
 import (
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
 	"unicode/utf8"
@@ -78,20 +78,13 @@ func (parser *Parser) ParseNested(tag Tag) (ParsedPage, error) {
 	if err != nil {
 		return ParsedPage{}, err
 	}
-	var path string
-	switch pathArg.Kind {
-	case ArgString:
-		path = pathArg.AsString()
-	case ArgFormatString:
-		panic("TODO")
-	default:
-		return ParsedPage{}, fmt.Errorf(
-			"'path' argument must be 'String' or 'FormatString', but got %q",
-			pathArg.Kind,
-		)
-	}
+	path := pathArg.AsString()
 
 	path = filepath.Join(filepath.Dir(parser.reader.Filename()), path)
+	if path == parser.reader.Filename() {
+		return ParsedPage{}, errors.New("trying to parse the same document recursively")
+	}
+
 	file, err := parser.fileOpener(path)
 	if err != nil {
 		if os.IsNotExist(err) {
