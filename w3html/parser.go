@@ -152,6 +152,7 @@ func (parser *Parser) parse() error {
 		if closing {
 			if !tag.Kind.IsPaired {
 				parser.reader.HighlightSince(tagBeginning)
+				parser.reader.HideArrow()
 				return fmt.Errorf("%q tag is not a paired tag", tag.Kind)
 			}
 
@@ -166,6 +167,7 @@ func (parser *Parser) parse() error {
 			err := parser.ctx.OnLeaveTagBody(tag)
 			if err != nil {
 				parser.reader.HighlightSince(tagBeginning)
+				parser.reader.HideArrow()
 				return err
 			}
 
@@ -174,6 +176,7 @@ func (parser *Parser) parse() error {
 			err = parser.handleClosingTag(openingTag)
 			if err != nil {
 				parser.reader.HighlightSince(tagBeginning)
+				parser.reader.HideArrow()
 				if _, ok := err.(w3errs.DocumentError); ok {
 					return err
 				}
@@ -184,6 +187,7 @@ func (parser *Parser) parse() error {
 			err = parser.handleOpeningTag(tag)
 			if err != nil {
 				parser.reader.HighlightSince(tagBeginning)
+				parser.reader.HideArrow()
 				if _, ok := err.(w3errs.DocumentError); ok {
 					return err
 				}
