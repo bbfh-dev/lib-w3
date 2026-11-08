@@ -40,7 +40,7 @@ func (enum NodeEnum) String() string {
 	case NodePlaceholder:
 		return "NodePlaceholder"
 	case NodeHunk:
-		return "NodeRaw"
+		return "NodeHunk"
 	case NodeTag:
 		return "NodeTag"
 	default:
@@ -69,7 +69,7 @@ func (node Node) Write(w io.Writer) {
 	)
 }
 
-// AsRaw casts the [Node.Data] value that is expected when [Node.Kind] == [NodeHunk].
+// AsHunk casts the [Node.Data] value that is expected when [Node.Kind] == [NodeHunk].
 func (node Node) AsHunk() []byte {
 	return node.Data.([]byte)
 }
