@@ -25,7 +25,7 @@ type TestCase struct {
 var Files = map[string]string{
 	"include.1": "<span>\n\tHello World!\n</span>",
 	"include.2": "{{ include 'include.2' }}",
-	"include.3": "{{ .Root }}{{ include 'include.4' .Nested }}",
+	"include.3": "{{ .Root }}{{ include 'include.4' ..Nested }}",
 	"include.4": "{{ ..This() }}",
 	"extend.1":  "<section>\n\t{{ place 'default' }}\n</section>",
 }
@@ -69,7 +69,9 @@ var TestCases = []TestCase{
 			Contents: `{{ .Path.To.Value() }}`,
 		},
 		Expected: w3html.ParsedPage{
-			AccessPaths: []w3html.AccessPath{},
+			AccessPaths: []w3html.AccessPath{
+				{"Path", "To", "Value()"},
+			},
 			PlacedSlots: map[string]w3html.NodeLocation{},
 			Nodes: []w3html.Node{
 				{
@@ -110,7 +112,12 @@ var TestCases = []TestCase{
 			Contents: "<div>\n{{ include 'include.3' .My.Scope }}\n</div>",
 		},
 		Expected: w3html.ParsedPage{
-			AccessPaths: []w3html.AccessPath{},
+			AccessPaths: []w3html.AccessPath{
+				{"My", "Scope"},
+				{"Root"},
+				{"My", "Scope", "Nested"},
+				{"My", "Scope", "Nested", "This()"},
+			},
 			PlacedSlots: map[string]w3html.NodeLocation{},
 			Nodes: []w3html.Node{
 				{
@@ -158,10 +165,7 @@ var TestCases = []TestCase{
 		Expected: w3html.ParsedPage{
 			AccessPaths: []w3html.AccessPath{},
 			PlacedSlots: map[string]w3html.NodeLocation{
-				"default": {
-					ChildIndex: 1,
-					Line:       2,
-				},
+				"default": {ChildIndex: 1, Line: 2},
 			},
 			Nodes: []w3html.Node{
 				{

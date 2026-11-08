@@ -16,19 +16,19 @@ func (parser *Parser) handleOpeningTag(tag Tag) error {
 		return nil
 	}
 
-	return parser.handleTag(tag)
+	return parser.handleTag(nil, tag)
 }
 
 func (parser *Parser) handleClosingTag(opening NodeLocation) error {
-	hunk := opening.Pointer()
-	tag := hunk.AsTag()
-	return parser.handleTag(tag)
+	node := opening.Pointer()
+	tag := node.AsTag()
+	return parser.handleTag(node, tag)
 }
 
-func (parser *Parser) handleTag(tag Tag) error {
+func (parser *Parser) handleTag(node *TreeNode, tag Tag) error {
 	handler := tag.Kind.Handler
 	if handler == nil {
 		return nil
 	}
-	return handler(parser, tag)
+	return handler(parser, node, tag)
 }

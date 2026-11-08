@@ -18,8 +18,10 @@ type TagEnum struct {
 	IsPaired bool
 	// Handler gets called by the [Parser] when the tag is encountered.
 	//
+	// [TreeNode] argument is 'nil' for tags with [TagEnum.IsPaired] == false
+	//
 	// For [TagEnum.IsPaired] it is always called on the closing tag.
-	Handler func(parser ParserApi, tag Tag) error
+	Handler func(parser ParserApi, node *TreeNode, tag Tag) error
 	// Arguments defines [Argument] that will be validated.
 	//
 	// Set to 'nil' (or [SkipArgumentCheck]) to skip argument validation.
@@ -61,7 +63,7 @@ var IdVariable = TagEnum{
 	Arguments: []ArgumentDefinition{
 		{Name: ArgNamePath, Kind: ArgPath, IsOptional: false},
 	},
-	Handler: func(parser ParserApi, tag Tag) error {
+	Handler: func(parser ParserApi, node *TreeNode, tag Tag) error {
 		arg, err := tag.FindArgNamed(ArgNamePath)
 		if err != nil {
 			return err
@@ -115,7 +117,7 @@ func init() {
 				{Name: ArgNamePath, Kind: ArgString, IsOptional: false},
 				{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
 			},
-			Handler: func(parser ParserApi, tag Tag) error {
+			Handler: func(parser ParserApi, node *TreeNode, tag Tag) error {
 				nestedPage, err := parser.ParseNested(tag)
 				if err != nil {
 					return err
@@ -136,7 +138,7 @@ func init() {
 			Arguments: []ArgumentDefinition{
 				{Name: ArgNameSlotId, Kind: ArgString, IsOptional: false},
 			},
-			Handler: func(parser ParserApi, tag Tag) error {
+			Handler: func(parser ParserApi, node *TreeNode, tag Tag) error {
 				slotIdArg, err := tag.FindArgNamed(ArgNameSlotId)
 				if err != nil {
 					return err

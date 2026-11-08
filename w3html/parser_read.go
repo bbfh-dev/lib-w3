@@ -337,6 +337,9 @@ func (parser *Parser) readTagArgs() ([]Argument, error) {
 				parser.reader.HighlightSince(mark)
 				return args, fmt.Errorf("reading access path: %w", err)
 			}
+			if !path.IsCompileTime() {
+				parser.ctx.out.AccessPaths = append(parser.ctx.out.AccessPaths, path)
+			}
 			args = append(args, Argument{
 				Kind: ArgPath,
 				Key:  key,
@@ -440,6 +443,7 @@ func (parser *Parser) readFormatString() (FormatString, error) {
 					})
 				}
 			} else {
+				parser.ctx.out.AccessPaths = append(parser.ctx.out.AccessPaths, path)
 				out = append(out, formatFragment{
 					Kind: FragmentPath,
 					Data: path,
