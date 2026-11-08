@@ -433,7 +433,7 @@ func (parser *Parser) readAccessPath() (AccessPath, error) {
 		case ' ', '}':
 			parser.reader.Unread()
 			if len(buffer) != 0 {
-				return append(path, PathSegment{Word: string(buffer)}), nil
+				return append(path, PathSegment(buffer)), nil
 			}
 			return path, nil
 
@@ -441,11 +441,7 @@ func (parser *Parser) readAccessPath() (AccessPath, error) {
 			if len(buffer) == 0 {
 				// TODO: here
 			}
-			path = append(path, PathSegment{
-				Word:     string(buffer),
-				IsArray:  false,
-				IsMethod: false,
-			})
+			path = append(path, PathSegment(buffer))
 		}
 	}
 }

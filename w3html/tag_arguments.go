@@ -239,14 +239,25 @@ func (fragment formatFragment) String() string {
 
 type AccessPath []PathSegment
 
-type PathSegment struct {
-	Word     string
-	IsArray  bool
-	IsMethod bool
-}
+type PathSegment string
 
 func (segment PathSegment) IsLowercase() bool {
-	return segment.Word == strings.ToLower(segment.Word)
+	return string(segment) == strings.ToLower(string(segment))
+}
+
+func (segment PathSegment) IsArray() bool {
+	return strings.HasSuffix(string(segment), "[]")
+}
+
+func (segment PathSegment) IsMethod() bool {
+	return strings.HasSuffix(string(segment), "()")
+}
+
+func (segment PathSegment) Clean() string {
+	value := string(segment)
+	value = strings.TrimSuffix(value, "()")
+	value = strings.TrimSuffix(value, "[]")
+	return value
 }
 
 func (path AccessPath) String() string {
@@ -258,17 +269,17 @@ func (path AccessPath) Flatten() string {
 		return ""
 	}
 	var builder strings.Builder
-	builder.WriteString(path[0].Word)
+	builder.WriteString(string(path[0]))
 	for _, segment := range path[1:] {
 		builder.WriteRune('.')
-		builder.WriteString(segment.Word)
+		builder.WriteString(string(segment))
 	}
 	return builder.String()
 }
 
 func (path AccessPath) IsCompileTime() bool {
 	return len(path) != 0 &&
-		len(path[0].Word) != 0 &&
+		len(path[0]) != 0 &&
 		path[0].IsLowercase()
 }
 
