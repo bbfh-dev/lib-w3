@@ -19,6 +19,8 @@ type FileOpener func(absPath string) (w3utils.FileLike, error)
 type ParserApi interface {
 	ParseNested(tag Tag) (ParsedPage, error)
 	Param(name string) (string, error)
+	SaveSlot(slotId string, location NodeLocation)
+	LastAddedNode() NodeLocation
 	AppendHunk(buffer []byte)
 	AppendPlaceholder()
 	AppendTag(tag Tag)
@@ -92,6 +94,19 @@ func (parser *Parser) Param(path string) (string, error) {
 		)
 	}
 	return value, nil
+}
+
+func (parser *Parser) SaveSlot(slotId string, location NodeLocation) {
+	parser.ctx.out.PlacedSlots[slotId] = location
+}
+
+func (parser *Parser) LastAddedNode() NodeLocation {
+	return NodeLocation{
+		Parent:       parser.ctx.Pivot(),
+		ChildIndex:   parser.ctx.lastAddedNodeIndex,
+		Line:         parser.ctx.lastAddedNode.SourceCodeLine,
+		ReaderOffset: parser.reader.Here(),
+	}
 }
 
 func (parser *Parser) Parse() (ParsedPage, error) {

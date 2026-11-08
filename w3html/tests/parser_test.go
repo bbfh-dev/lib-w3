@@ -25,6 +25,7 @@ type TestCase struct {
 var Files = map[string]string{
 	"include.1": "<span>\n\tHello World!\n</span>",
 	"include.2": "{{ include 'include.2' }}",
+	"extend.1":  "<section>\n\t{{ place 'default' }}\n</section>",
 }
 
 var TestCases = []TestCase{
@@ -97,6 +98,35 @@ var TestCases = []TestCase{
 				{
 					Kind: w3html.NodeHunk,
 					Data: []byte("<div>\n<span>\nHello World!\n</span></div>"),
+				},
+			},
+		},
+	},
+	{
+		File: MockFile{
+			Filename: "Place",
+			Contents: "<div>\n{{ place 'default' }}\n</div>",
+		},
+		Expected: w3html.ParsedPage{
+			AccessPaths: []w3html.AccessPath{},
+			PlacedSlots: map[string]w3html.NodeLocation{
+				"default": {
+					ChildIndex: 1,
+					Line:       2,
+				},
+			},
+			Nodes: []w3html.Node{
+				{
+					Kind: w3html.NodeHunk,
+					Data: []byte("<div>\n"),
+				},
+				{
+					Kind: w3html.NodePlaceholder,
+					Data: nil,
+				},
+				{
+					Kind: w3html.NodeHunk,
+					Data: []byte("</div>"),
 				},
 			},
 		},
@@ -228,7 +258,7 @@ func TestParser(t *testing.T) {
 				testCase.Expected,
 				result,
 				cmpopts.IgnoreUnexported(w3html.ParsedPage{}),
-				cmpopts.IgnoreFields(w3html.NodeLocation{}, "Parent"),
+				cmpopts.IgnoreFields(w3html.NodeLocation{}, "Parent", "ReaderOffset"),
 			)
 		})
 	}

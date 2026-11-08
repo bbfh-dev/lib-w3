@@ -136,7 +136,16 @@ func init() {
 			Arguments: []ArgumentDefinition{
 				{Name: ArgNameSlotId, Kind: ArgString, IsOptional: false},
 			},
-			Handler: nil,
+			Handler: func(parser ParserApi, tag Tag) error {
+				slotIdArg, err := tag.FindArgNamed(ArgNameSlotId)
+				if err != nil {
+					return err
+				}
+				slotId := slotIdArg.AsString()
+				parser.AppendPlaceholder()
+				parser.SaveSlot(slotId, parser.LastAddedNode())
+				return nil
+			},
 		},
 		IdVariable,
 	}
