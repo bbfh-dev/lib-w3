@@ -1,6 +1,16 @@
 package w3html
 
 func (parser *Parser) handleOpeningTag(tag Tag) error {
+	for i, definedArg := range tag.Kind.Arguments {
+		if definedArg.IsOptional {
+			break
+		}
+		_, err := tag.FindArgStrict(uint(i))
+		if err != nil {
+			return err
+		}
+	}
+
 	if tag.Kind.IsPaired {
 		parser.appendTag(tag)
 		return nil

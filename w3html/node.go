@@ -113,7 +113,7 @@ func (hunk TreeNode) ExtractInjectSlots() (map[string][]TreeNode, error) {
 		case NodeTag:
 			tag := child.AsTag()
 			if tag.Kind.Equal(IdSlot) {
-				nameArg, err := tag.FindArgStrict(ArgString, "name", 0)
+				nameArg, err := tag.FindArgNamed(ArgNameSlotId)
 				if err != nil {
 					return slots, fmt.Errorf(
 						"%w. Example: {{ slot 'body' }}. If your intent was to place into 'default' slot, simply remove '{{ slot }}' tag alltogether",

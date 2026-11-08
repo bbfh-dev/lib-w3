@@ -3,6 +3,7 @@ package w3html
 import (
 	"fmt"
 	"io"
+	"math"
 	"slices"
 	"strings"
 )
@@ -18,6 +19,8 @@ const (
 	ArgFloat
 	ArgBool
 	ArgPath
+	ArgMatchAnyString = math.MaxUint8 - 1
+	ArgMatchAny       = math.MaxUint8
 )
 
 func (enum ArgumentEnum) String() string {
@@ -36,6 +39,10 @@ func (enum ArgumentEnum) String() string {
 		return "Boolean"
 	case ArgPath:
 		return "Path"
+	case ArgMatchAnyString:
+		return "String/FormatString"
+	case ArgMatchAny:
+		return "*"
 	default:
 		return fmt.Sprintf("ArgumentEnum(%d)", enum)
 	}
@@ -49,6 +56,24 @@ func (enum ArgumentEnum) IsNumeric() bool {
 	default:
 		return false
 	}
+}
+
+// ————————————————————————————————
+
+const (
+	ArgNamePath   = "path"
+	ArgNameScope  = "scope"
+	ArgNameSlotId = "slot_id"
+)
+
+var NoArguments = []ArgumentDefinition{}
+var SkipArgumentCheck []ArgumentDefinition = nil
+
+type ArgumentDefinition struct {
+	Name string
+	Kind ArgumentEnum
+	// Important: all optional arguments must be at the end to prevent mistakes.
+	IsOptional bool
 }
 
 // ————————————————————————————————

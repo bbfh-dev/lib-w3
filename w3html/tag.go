@@ -2,6 +2,7 @@ package w3html
 
 import (
 	"fmt"
+	"math"
 	"slices"
 	"strings"
 )
@@ -19,6 +20,12 @@ type TagEnum struct {
 	//
 	// For [TagEnum.IsPaired] it is always called on the closing tag.
 	Handler func(parser *Parser, tag Tag) error
+	// Arguments defines [Argument] that will be validated.
+	//
+	// Set to 'nil' (or [SkipArgumentCheck]) to skip argument validation.
+	//
+	// If this [Tag] defines a new [AccessPath] variable scope, provide an argument named [ArgNameScope].
+	Arguments []ArgumentDefinition
 }
 
 func (enum TagEnum) String() string {
@@ -32,16 +39,63 @@ func (enum TagEnum) Equal(other TagEnum) bool {
 	return enum.Namespace == other.Namespace && enum.Id == other.Id
 }
 
-var IdSlot = TagEnum{IsPaired: true, Id: "slot", Handler: nil}
+var IdSlot = TagEnum{
+	IsPaired:  true,
+	Id:        "slot",
+	Arguments: NoArguments,
+	Handler:   nil,
+}
 
 var RegisteredTags = []TagEnum{
-	{IsPaired: true, Id: "extend", Handler: nil},
-	{IsPaired: true, Id: "if", Handler: nil},
 	IdSlot,
-	{IsPaired: true, Id: "range", Handler: nil},
-	{IsPaired: false, Id: "include", Handler: nil},
-	{IsPaired: false, Id: "place", Handler: nil},
-	{IsPaired: false, Id: "", Handler: nil},
+	{
+		IsPaired: true,
+		Id:       "extend",
+		Arguments: []ArgumentDefinition{
+			{Name: ArgNamePath, Kind: ArgMatchAnyString, IsOptional: false},
+			{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
+		},
+		Handler: nil,
+	},
+	{
+		IsPaired:  true,
+		Id:        "if",
+		Arguments: SkipArgumentCheck,
+		Handler:   nil,
+	},
+	{
+		IsPaired: true,
+		Id:       "range",
+		Arguments: []ArgumentDefinition{
+			{Name: ArgNameScope, Kind: ArgPath, IsOptional: false},
+		},
+		Handler: nil,
+	},
+	{
+		IsPaired: false,
+		Id:       "include",
+		Arguments: []ArgumentDefinition{
+			{Name: ArgNamePath, Kind: ArgMatchAnyString, IsOptional: false},
+			{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
+		},
+		Handler: nil,
+	},
+	{
+		IsPaired: false,
+		Id:       "place",
+		Arguments: []ArgumentDefinition{
+			{Name: ArgNameSlotId, Kind: ArgString, IsOptional: false},
+		},
+		Handler: nil,
+	},
+	{
+		IsPaired: false,
+		Id:       "",
+		Arguments: []ArgumentDefinition{
+			{Name: "path", Kind: ArgPath, IsOptional: false},
+		},
+		Handler: nil,
+	},
 }
 
 func ResolveTag(namespace, id string) (TagEnum, bool) {
@@ -74,37 +128,69 @@ func (tag Tag) String() string {
 	return builder.String()
 }
 
-func (tag Tag) FindArg(name string, index uint) (Argument, bool) {
+func (tag Tag) FindArg(index uint) (Argument, bool) {
 	if len(tag.Arguments) == 0 {
 		return Argument{}, false
 	}
+	required := tag.Kind.Arguments[index]
 
 	for _, arg := range tag.Arguments {
-		if arg.Key == name {
+		if arg.Key == required.Name {
 			return arg, true
 		}
 	}
 
 	lastIndex := uint(len(tag.Arguments) - 1)
-	return tag.Arguments[min(index, lastIndex)], true
+	if lastIndex < index {
+		return Argument{}, false
+	}
+	return tag.Arguments[index], true
 }
 
-func (tag Tag) FindArgStrict(kind ArgumentEnum, name string, index uint) (Argument, error) {
-	arg, ok := tag.FindArg(name, index)
+func (tag Tag) FindArgNamed(name string) (Argument, error) {
+	var index uint = math.MaxUint8
+	for i, arg := range tag.Kind.Arguments {
+		if arg.Name == name {
+			index = uint(i)
+			break
+		}
+	}
+	if index == math.MaxUint8 {
+		return Argument{}, fmt.Errorf(
+			"couldn't find argument %q in definition of tag %q",
+			name,
+			tag.Kind,
+		)
+	}
+	return tag.FindArgStrict(index)
+}
+
+func (tag Tag) FindArgStrict(index uint) (Argument, error) {
+	required := tag.Kind.Arguments[index]
+	arg, ok := tag.FindArg(index)
 	if !ok {
 		return arg, fmt.Errorf(
 			"%q tag requires %q argument of type %q",
 			tag.Kind.String(),
-			name,
-			kind,
+			required.Name,
+			required.Kind,
 		)
 	}
-	if arg.Kind != kind {
+	var predicate bool
+	switch required.Kind {
+	case ArgMatchAny:
+		predicate = true
+	case ArgMatchAnyString:
+		predicate = arg.Kind == ArgString || arg.Kind == ArgFormatString
+	default:
+		predicate = arg.Kind == required.Kind
+	}
+	if !predicate {
 		return arg, fmt.Errorf(
 			"%q tag requires %q argument to be %q, but got %q instead",
 			tag.Kind.String(),
-			name,
-			kind,
+			required.Name,
+			required.Kind,
 			arg.Kind,
 		)
 	}

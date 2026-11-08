@@ -169,19 +169,18 @@ func (parser *Parser) parse() error {
 				return fmt.Errorf("handling tag closing: %w", err)
 			}
 			parser.reader.Line = restoreLine
-			continue
-		}
-
-		err = parser.handleOpeningTag(tag)
-		if err != nil {
-			parser.reader.HighlightSince(tagBeginning)
-			if _, ok := err.(w3errs.DocumentError); ok {
-				return err
+		} else {
+			err = parser.handleOpeningTag(tag)
+			if err != nil {
+				parser.reader.HighlightSince(tagBeginning)
+				if _, ok := err.(w3errs.DocumentError); ok {
+					return err
+				}
+				return fmt.Errorf("handling opening tag: %w", err)
 			}
-			return fmt.Errorf("handling opening tag: %w", err)
-		}
-		if tag.Kind.IsPaired {
-			parser.ctx.OnEnterTagBody(tagBeginning)
+			if tag.Kind.IsPaired {
+				parser.ctx.OnEnterTagBody(tagBeginning)
+			}
 		}
 	}
 }

@@ -1,7 +1,6 @@
 package w3html
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -75,11 +74,9 @@ func (parser *Parser) findMatchingOpeningTag(closing TagEnum) (NodeLocation, boo
 }
 
 func (parser *Parser) ParseNested(tag Tag) (ParsedPage, error) {
-	pathArg, ok := tag.FindArg("path", 0)
-	if !ok {
-		return ParsedPage{}, errors.New(
-			"'path' argument is required, but is missing. It should point to another document relatively to this file. '.html' can be ommited",
-		)
+	pathArg, err := tag.FindArgNamed(ArgNamePath)
+	if err != nil {
+		return ParsedPage{}, err
 	}
 	var path string
 	switch pathArg.Kind {
