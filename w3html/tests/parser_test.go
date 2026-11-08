@@ -25,7 +25,8 @@ type TestCase struct {
 var Files = map[string]string{
 	"include.1": "<span>\n\tHello World!\n</span>",
 	"include.2": "{{ include 'include.2' }}",
-	"include.3": "{{ .Root }}{{ ..This() }}",
+	"include.3": "{{ .Root }}{{ include 'include.4' .Nested }}",
+	"include.4": "{{ ..This() }}",
 	"extend.1":  "<section>\n\t{{ place 'default' }}\n</section>",
 }
 
@@ -137,7 +138,7 @@ var TestCases = []TestCase{
 							{
 								Kind: w3html.ArgPath,
 								Key:  "",
-								Data: w3html.AccessPath{"My", "Scope", "This()"},
+								Data: w3html.AccessPath{"My", "Scope", "Nested", "This()"},
 							},
 						},
 					},

@@ -15,6 +15,10 @@ import (
 // FileOpener is called whenever [Parser] tries to open another file.
 type FileOpener func(absPath string) (w3utils.FileLike, error)
 
+var defaultFileOpener FileOpener = func(absPath string) (w3utils.FileLike, error) {
+	return os.OpenFile(absPath, os.O_RDONLY, os.ModePerm)
+}
+
 // ParserApi is used to provide access to specific [Parser] methods for [TagEnum.Handler].
 type ParserApi interface {
 	ParseNested(tag Tag) (ParsedPage, error)
@@ -74,9 +78,7 @@ func newParser(
 			lastAddedNode:      nil,
 			lastAddedNodeIndex: 0,
 		},
-		fileOpener: func(absPath string) (w3utils.FileLike, error) {
-			return os.OpenFile(absPath, os.O_RDONLY, os.ModePerm)
-		},
+		fileOpener: defaultFileOpener,
 	}
 }
 
