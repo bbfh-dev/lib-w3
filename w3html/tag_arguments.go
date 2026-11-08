@@ -229,7 +229,7 @@ func (fragment formatFragment) String() string {
 	case FragmentString:
 		return fragment.Data.(string)
 	case FragmentPath:
-		return "{" + fragment.Data.(AccessPath).String() + "}"
+		return "{" + fragment.Data.(AccessPath).Flatten() + "}"
 	default:
 		return "{<?>}"
 	}

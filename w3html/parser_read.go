@@ -188,6 +188,33 @@ func (parser *Parser) readTagArgs() ([]Argument, error) {
 			})
 			key = ""
 
+		case '`':
+			formatString, err := parser.readFormatString()
+			if err != nil {
+				parser.reader.HighlightSince(mark)
+				return args, fmt.Errorf("reading format string: %w", err)
+			}
+			if len(formatString) == 0 {
+				args = append(args, Argument{
+					Kind: ArgString,
+					Key:  key,
+					Data: "",
+				})
+			} else if len(formatString) == 1 && formatString[0].Kind == FragmentString {
+				args = append(args, Argument{
+					Kind: ArgString,
+					Key:  key,
+					Data: formatString[0].Data,
+				})
+			} else {
+				args = append(args, Argument{
+					Kind: ArgFormatString,
+					Key:  key,
+					Data: formatString,
+				})
+			}
+			key = ""
+
 		case 't':
 			_, err := parser.readKeyword('t', 'r', 'u', 'e')
 			if err != nil {
@@ -354,6 +381,72 @@ func (parser *Parser) readQuoted(quote rune) (string, error) {
 			return string(buffer), nil
 		case '\n':
 			return string(buffer), fmt.Errorf("unexpected new line inside of a quoted string")
+		default:
+			buffer = append(buffer, char)
+		}
+	}
+}
+
+func (parser *Parser) readFormatString() (FormatString, error) {
+	out := FormatString{}
+	var buffer = []rune{}
+
+	for {
+		char, err := parser.reader.Read()
+		if err != nil {
+			return nil, err
+		}
+
+		switch char {
+
+		case '`':
+			if len(buffer) != 0 {
+				if len(out) != 0 && out[0].Kind == FragmentString {
+					out[len(out)-1].Data = out[len(out)-1].Data.(string) + string(buffer)
+				} else {
+					out = append(out, formatFragment{
+						Kind: FragmentString,
+						Data: string(buffer),
+					})
+				}
+			}
+			return out, nil
+
+		case '{':
+			path, err := parser.readAccessPath()
+			if err != nil {
+				return nil, fmt.Errorf("reading path: %w", err)
+			}
+			nextChar, err := parser.reader.Read()
+			if err != nil {
+				return nil, err
+			}
+			if nextChar != '}' {
+				return nil, fmt.Errorf("expected '}' after path, but got %q", nextChar)
+			}
+			if path.IsCompileTime() {
+				value, err := parser.Param(path.Flatten())
+				if err != nil {
+					return nil, err
+				}
+				if len(out) != 0 && out[0].Kind == FragmentString {
+					out[len(out)-1].Data = out[len(out)-1].Data.(string) + value
+				} else {
+					out = append(out, formatFragment{
+						Kind: FragmentString,
+						Data: value,
+					})
+				}
+			} else {
+				out = append(out, formatFragment{
+					Kind: FragmentPath,
+					Data: path,
+				})
+			}
+
+		case '\n':
+			return nil, fmt.Errorf("unexpected new line inside of a format string")
+
 		default:
 			buffer = append(buffer, char)
 		}
