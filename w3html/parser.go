@@ -15,6 +15,16 @@ import (
 // FileOpener is called whenever [Parser] tries to open another file.
 type FileOpener func(absPath string) (w3utils.FileLike, error)
 
+// ParserApi is used to provide access to specific [Parser] methods for [TagEnum.Handler].
+type ParserApi interface {
+	ParseNested(tag Tag) (ParsedPage, error)
+	Param(name string) (string, error)
+	AppendHunk(buffer []byte)
+	AppendPlaceholder()
+	AppendTag(tag Tag)
+	Append(node TreeNode)
+}
+
 type Parser struct {
 	Params     map[string]string
 	reader     *internal.DocumentReader
