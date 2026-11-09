@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"unicode"
 
 	"codeberg.org/bbfh/lib-w3/internal"
@@ -32,34 +33,37 @@ type ParserApi interface {
 }
 
 type Parser struct {
-	Scope      AccessPath
-	Params     map[string]string
-	reader     *internal.DocumentReader
-	hunkBuffer []byte
-	line       uint
-	ctx        *ParserContext
-	fileOpener FileOpener
+	Scope        AccessPath
+	Params       map[string]string
+	PageDataType reflect.Type
+	reader       *internal.DocumentReader
+	hunkBuffer   []byte
+	line         uint
+	ctx          *ParserContext
+	fileOpener   FileOpener
 }
 
 // NewParser creates a parser. For parsing nested documents refer to [Parser.NewParser].
-func NewParser(file w3utils.FileLike, params map[string]string) *Parser {
-	return newParser(nil, file, params)
+func NewParser[T any](file w3utils.FileLike, params map[string]string) *Parser {
+	return newParser(nil, file, params, reflect.TypeOf(*new(T)))
 }
 
 func newParser(
 	parent *internal.DocumentReader,
 	file w3utils.FileLike,
 	params map[string]string,
+	data reflect.Type,
 ) *Parser {
 	reader := internal.NewDocumentReader(parent, file)
 	params["_filename"] = file.Name()
 	params["_filename.base"] = filepath.Base(file.Name())
 	return &Parser{
-		Scope:      AccessPath{},
-		Params:     params,
-		reader:     reader,
-		hunkBuffer: []byte{},
-		line:       1,
+		Scope:        AccessPath{},
+		Params:       params,
+		PageDataType: data,
+		reader:       reader,
+		hunkBuffer:   []byte{},
+		line:         1,
 		ctx: &ParserContext{
 			Root: TreeNode{
 				Node: Node{

@@ -183,6 +183,25 @@ var TestCases = []TestCase{
 			},
 		},
 	},
+	// {
+	// 	File: MockFile{
+	// 		Filename: "If",
+	// 		Contents: "{{ if .Value == 1 && .Bool }}Hi!{{ /if }}",
+	// 	},
+	// 	Expected: w3html.ParsedPage{
+	// 		AccessPaths: []w3html.AccessPath{
+	// 			{"Value"},
+	// 			{"Bool"},
+	// 		},
+	// 		PlacedSlots: map[string]w3html.NodeLocation{},
+	// 		Nodes: []w3html.Node{
+	// 			{
+	// 				Kind: w3html.NodeHunk,
+	// 				Data: []byte("Hi!"),
+	// 			},
+	// 		},
+	// 	},
+	// },
 	// ————————————————————————————————
 	{
 		File: MockFile{
@@ -253,6 +272,9 @@ func (file *MockFile) Read(dest []byte) (int, error) {
 	return file.reader.Read(dest)
 }
 
+type PageData struct {
+}
+
 func TestParser(t *testing.T) {
 	outputMode := libclog.OutputAuto
 	if os.Getenv("COLOR") == "1" {
@@ -264,7 +286,7 @@ func TestParser(t *testing.T) {
 	for _, testCase := range TestCases {
 		testCase.File.Init()
 		t.Run(testCase.File.Name(), func(tt *testing.T) {
-			parser := w3html.NewParser(&testCase.File, map[string]string{})
+			parser := w3html.NewParser[PageData](&testCase.File, map[string]string{})
 			parser.WithFileOpener(func(absPath string) (w3utils.FileLike, error) {
 				path := filepath.Base(absPath)
 				contents, ok := Files[path]

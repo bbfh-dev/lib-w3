@@ -102,7 +102,7 @@ func (parser *Parser) ParseNested(tag Tag) (ParsedPage, error) {
 	}
 	defer file.Close()
 
-	nestedParser := newParser(parser.reader, file, tag.ToParams("path"))
+	nestedParser := newParser(parser.reader, file, tag.ToParams("path"), parser.PageDataType)
 	nestedParser.fileOpener = parser.fileOpener
 
 	scopeArg, err := tag.FindArgNamed(ArgNameScope)
