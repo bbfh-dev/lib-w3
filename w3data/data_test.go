@@ -16,17 +16,22 @@ type A struct {
 
 func (a A) D() []E {
 	return []E{
-		{F: true},
-		{F: false},
+		{Id: "first", F: true},
+		{Id: "second", F: false},
 	}
 }
 
 type E struct {
+	Embeded
 	F bool
 }
 
 func (e E) G() bool {
 	return !e.F
+}
+
+type Embeded struct {
+	Id string
 }
 
 var Instance = A{
@@ -77,7 +82,7 @@ var WalkTestCases = []WalkTestCase{
 				Iterate: false,
 			},
 		},
-		Expected: []any{[]E{{F: true}, {F: false}}},
+		Expected: []any{[]E{{Id: "first", F: true}, {Id: "second", F: false}}},
 	},
 	{
 		Path: w3data.Path{
@@ -88,7 +93,7 @@ var WalkTestCases = []WalkTestCase{
 				Iterate: true,
 			},
 		},
-		Expected: []any{E{F: true}, E{F: false}},
+		Expected: []any{E{Id: "first", F: true}, E{Id: "second", F: false}},
 	},
 	{
 		Path: w3data.Path{
@@ -100,7 +105,7 @@ var WalkTestCases = []WalkTestCase{
 			},
 			{
 				Word:    "F",
-				Index:   0,
+				Index:   1,
 				Call:    false,
 				Iterate: false,
 			},
@@ -123,6 +128,29 @@ var WalkTestCases = []WalkTestCase{
 			},
 		},
 		Expected: []any{false, true},
+	},
+	{
+		Path: w3data.Path{
+			{
+				Word:    "D",
+				Index:   0,
+				Call:    true,
+				Iterate: true,
+			},
+			{
+				Word:    "Value",
+				Index:   0,
+				Call:    false,
+				Iterate: false,
+			},
+			{
+				Word:    "Id",
+				Index:   0,
+				Call:    false,
+				Iterate: false,
+			},
+		},
+		Expected: []any{"first", "second"},
 	},
 }
 
