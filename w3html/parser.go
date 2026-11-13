@@ -3,9 +3,12 @@ package w3html
 import (
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
+	"strings"
 	"unicode"
 
 	"codeberg.org/bbfh/lib-w3/internal"
@@ -97,8 +100,9 @@ func (parser *Parser) Param(path string) (string, error) {
 	value, ok := parser.Params[path]
 	if !ok {
 		return value, fmt.Errorf(
-			"unknown compile-time variable %q. Make sure you didn't mess up capitalization & the variable is set in the 'include' or 'extend' tag calling this file",
+			"unknown compile-time variable %q. Make sure you didn't mess up capitalization & the variable is set in the 'include' or 'extend' tag calling this file. Available parameters are: [%s]",
 			path,
+			strings.Join(slices.Collect(maps.Keys(parser.Params)), ", "),
 		)
 	}
 	return value, nil
