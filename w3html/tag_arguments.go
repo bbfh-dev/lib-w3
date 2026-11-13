@@ -239,36 +239,6 @@ func (fragment formatFragment) String() string {
 
 // ————————————————————————————————
 
-type Path []PathSegment
-
-func (path Path) String() string {
-	if len(path) == 0 {
-		return ""
-	}
-	var builder strings.Builder
-	for _, segment := range path {
-		builder.WriteRune('.')
-		builder.WriteString(string(segment.Word))
-	}
-	return builder.String()
-}
-
-type SegmentEnum uint8
-
-const (
-	SegField SegmentEnum = iota
-	SegMethod
-	SegArray
-)
-
-type PathSegment struct {
-	Kind  SegmentEnum
-	Word  string
-	Index uint
-}
-
-// ————————————————————————————————
-
 type Operation struct {
 	Token      string
 	Comparator func(a, b Argument) bool
