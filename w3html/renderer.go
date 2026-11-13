@@ -32,6 +32,7 @@ func Bake(page ParsedPage) Renderable {
 	pipeline := Renderer{}
 	for _, node := range page.Nodes {
 		switch node.Kind {
+
 		case NodeHunk:
 			if len(pipeline) != 0 {
 				if step, ok := pipeline[len(pipeline)-1].(HunkRenderStep); ok {
@@ -40,6 +41,10 @@ func Bake(page ParsedPage) Renderable {
 				}
 			}
 			pipeline = append(pipeline, HunkRenderStep(node.AsHunk()))
+
+		case NodeTag:
+
+		default:
 		}
 	}
 

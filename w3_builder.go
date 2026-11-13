@@ -7,6 +7,7 @@ import (
 
 	"codeberg.org/bbfh/lib-w3/internal"
 	"codeberg.org/bbfh/lib-w3/w3errs"
+	"codeberg.org/bbfh/lib-w3/w3utils"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -102,7 +103,7 @@ func (builder *Builder) Build() (*Engine, error) {
 func (builder *Builder) MustBuild() *Engine {
 	engine, err := builder.Build()
 	if err != nil {
-		Logger.Fatal("%s", err.Error())
+		w3utils.Logger.Fatal("%s", err.Error())
 		os.Exit(1)
 	}
 	return engine
@@ -110,7 +111,7 @@ func (builder *Builder) MustBuild() *Engine {
 
 func defaultErrorHandler(ctx *Context, err w3errs.HttpError) {
 	if err.StatusCode >= 500 {
-		Logger.Error(
+		w3utils.Logger.Error(
 			"%s %q → %s",
 			ctx.Request.Method,
 			ctx.Request.URL,

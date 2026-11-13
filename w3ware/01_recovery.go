@@ -10,6 +10,7 @@ import (
 	libw3 "codeberg.org/bbfh/lib-w3"
 	"codeberg.org/bbfh/lib-w3/internal"
 	"codeberg.org/bbfh/lib-w3/w3errs"
+	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
 type recovery struct{}
@@ -35,9 +36,9 @@ func (middleware *recovery) Handle(ctx *libw3.Context) {
 			}
 
 			if isBrokenPipe {
-				libw3.Logger.Error("[Recovery] %s", recovery)
+				w3utils.Logger.Error("[Recovery] %s", recovery)
 			} else {
-				libw3.Logger.Error(
+				w3utils.Logger.Error(
 					"(Recovered) %s\n\n[Request]\n%s[Stack Trace]\n%s",
 					recovery,
 					internal.DumpRequest(ctx.Request),

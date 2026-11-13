@@ -6,6 +6,7 @@ import (
 	"codeberg.org/bbfh/lib-w3/internal"
 	"codeberg.org/bbfh/lib-w3/w3errs"
 	"codeberg.org/bbfh/lib-w3/w3store"
+	"codeberg.org/bbfh/lib-w3/w3utils"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -19,7 +20,7 @@ type Engine struct {
 }
 
 func (engine *Engine) ListenAndServe(addr string) error {
-	Logger.Info("Listening and serving on %s", addr)
+	w3utils.Logger.Info("Listening and serving on %s", addr)
 	return http.ListenAndServe(addr, engine.router)
 }
 
@@ -52,7 +53,12 @@ func (engine *Engine) newEndpoint(
 	suitable.Sort()
 	handlers := append(suitable.Handlers(), handler)
 
-	Logger.Debug("New endpoint: %s %q using:\n\t%s → (Handler)", method, path, suitable.String())
+	w3utils.Logger.Debug(
+		"New endpoint: %s %q using:\n\t%s → (Handler)",
+		method,
+		path,
+		suitable.String(),
+	)
 
 	engine.router.Handle(
 		method,

@@ -8,6 +8,7 @@ import (
 
 	"codeberg.org/bbfh/lib-w3/w3errs"
 	"codeberg.org/bbfh/lib-w3/w3store"
+	"codeberg.org/bbfh/lib-w3/w3utils"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -93,7 +94,7 @@ func (ctx *Context) Set[T any](holder w3store.Holder[T], value T) {
 // Any middleware should expose those at the top-level.
 func (ctx *Context) Get[T any](holder w3store.Holder[T]) (T, bool) {
 	if int(holder) >= len(ctx.store) {
-		Logger.Error("Context.Get(): Trying to access out-of-bounds store")
+		w3utils.Logger.Error("Context.Get(): Trying to access out-of-bounds store")
 		goto return_empty
 	}
 

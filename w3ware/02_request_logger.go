@@ -14,7 +14,7 @@ var RequestLogger = &requestLogger{}
 func (middleware *requestLogger) Handle(ctx *libw3.Context) {
 	start := time.Now()
 	ctx.ContinueChain()
-	libw3.Logger.HttpRequest(ctx.Request, start, ctx.Writer.StatusCode)
+	w3utils.Logger.HttpRequest(ctx.Request, start, ctx.Writer.StatusCode)
 }
 
 func (middleware *requestLogger) Priority() int8 {
@@ -25,7 +25,7 @@ var printedWarning bool
 
 func (middleware *requestLogger) Init() (keep bool) {
 	if !printedWarning {
-		libw3.Logger.Warn(
+		w3utils.Logger.Warn(
 			"Using %q middleware should not be done in production due to performance concerns",
 			w3utils.GetName(middleware),
 		)

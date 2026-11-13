@@ -1,4 +1,4 @@
-package libw3
+package w3utils
 
 import (
 	"os"
