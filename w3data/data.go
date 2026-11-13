@@ -63,6 +63,13 @@ func (segment Segment) DataType() reflect.Type {
 	return segment.dataType
 }
 
+func (segment Segment) Equal(other Segment) bool {
+	return segment.Word == other.Word &&
+		segment.Index == other.Index &&
+		segment.Call == other.Call &&
+		segment.Iterate == other.Iterate
+}
+
 // ClearParserMetadata is a workaround for weird Go behavior during tests.
 func (segment *Segment) ClearParserMetadata() {
 	segment.dataType = nil

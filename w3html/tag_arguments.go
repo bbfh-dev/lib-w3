@@ -195,7 +195,7 @@ func (arg Argument) Equal(other Argument) bool {
 	case ArgOperation:
 		return arg.AsOperation().Token == other.AsOperation().Token
 	case ArgPath:
-		return slices.Equal(arg.AsPath(), other.AsPath())
+		return slices.EqualFunc(arg.AsPath(), other.AsPath(), w3data.Segment.Equal)
 	default:
 		return arg.Data == other.Data
 	}
