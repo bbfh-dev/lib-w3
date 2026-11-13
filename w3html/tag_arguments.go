@@ -191,6 +191,7 @@ func (arg Argument) Equal(other Argument) bool {
 	}
 	switch arg.Kind {
 	case ArgFormatString:
+		// TODO: Use EqualFunc()
 		return slices.Equal(arg.AsFormatString(), other.AsFormatString())
 	case ArgOperation:
 		return arg.AsOperation().Token == other.AsOperation().Token

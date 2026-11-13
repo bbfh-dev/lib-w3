@@ -343,6 +343,20 @@ type ScopeData struct {
 	Nested ToData
 }
 
+func MockFileOpener(absPath string) (w3utils.FileLike, error) {
+	path := filepath.Base(absPath)
+	contents, ok := Files[path]
+	if !ok {
+		return nil, fmt.Errorf("%s: no such file is supplied by the test file", path)
+	}
+	file := MockFile{
+		Filename: path,
+		Contents: contents,
+	}
+	file.Init()
+	return &file, nil
+}
+
 func TestParser(t *testing.T) {
 	outputMode := libclog.OutputAuto
 	if os.Getenv("COLOR") == "1" {
@@ -355,19 +369,7 @@ func TestParser(t *testing.T) {
 		testCase.File.Init()
 		t.Run(testCase.File.Name(), func(tt *testing.T) {
 			parser := w3html.NewParser[PageData](&testCase.File, map[string]string{})
-			parser.WithFileOpener(func(absPath string) (w3utils.FileLike, error) {
-				path := filepath.Base(absPath)
-				contents, ok := Files[path]
-				if !ok {
-					return nil, fmt.Errorf("%s: no such file is supplied by the test file", path)
-				}
-				file := MockFile{
-					Filename: path,
-					Contents: contents,
-				}
-				file.Init()
-				return &file, nil
-			})
+			parser.WithFileOpener(MockFileOpener)
 
 			result, err := parser.Parse()
 			if err != nil {
