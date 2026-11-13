@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"codeberg.org/bbfh/lib-w3/w3data"
 )
 
 type ParserContext struct {
@@ -87,8 +89,8 @@ func (ctx *ParserContext) append(hunk TreeNode) {
 }
 
 // Scope returns the current nested [AccessPath], which should be prepended to all local paths.
-func (ctx *ParserContext) Scope() AccessPath {
-	scope := AccessPath{}
+func (ctx *ParserContext) Scope() w3data.Path {
+	scope := w3data.Path{}
 	for _, location := range ctx.breadcrumbs {
 		tag := location.Pointer().AsTag()
 		if tag.Kind.DefinesArg(ArgNameScope) {

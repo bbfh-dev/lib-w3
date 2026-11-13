@@ -6,6 +6,8 @@ import (
 	"math"
 	"slices"
 	"strings"
+
+	"codeberg.org/bbfh/lib-w3/w3data"
 )
 
 // read-only
@@ -175,8 +177,8 @@ func (arg Argument) AsBool() bool {
 	return arg.Data.(bool)
 }
 
-func (arg Argument) AsPath() AccessPath {
-	return arg.Data.(AccessPath)
+func (arg Argument) AsPath() w3data.Path {
+	return arg.Data.(w3data.Path)
 }
 
 func (arg Argument) AsOperation() Operation {
@@ -229,7 +231,7 @@ func (fragment formatFragment) String() string {
 	case FragmentString:
 		return fragment.Data.(string)
 	case FragmentPath:
-		return "{" + fragment.Data.(AccessPath).Flatten() + "}"
+		return "{" + fragment.Data.(w3data.Path).Flatten() + "}"
 	default:
 		return "{<?>}"
 	}
@@ -237,50 +239,32 @@ func (fragment formatFragment) String() string {
 
 // ————————————————————————————————
 
-type AccessPath []PathSegment
+type Path []PathSegment
 
-type PathSegment string
-
-func (segment PathSegment) IsLowercase() bool {
-	return string(segment) == strings.ToLower(string(segment))
-}
-
-func (segment PathSegment) IsArray() bool {
-	return strings.HasSuffix(string(segment), "[]")
-}
-
-func (segment PathSegment) IsMethod() bool {
-	return strings.HasSuffix(string(segment), "()")
-}
-
-func (segment PathSegment) Clean() string {
-	value := string(segment)
-	value = strings.TrimSuffix(value, "()")
-	value = strings.TrimSuffix(value, "[]")
-	return value
-}
-
-func (path AccessPath) String() string {
-	return "." + path.Flatten()
-}
-
-func (path AccessPath) Flatten() string {
+func (path Path) String() string {
 	if len(path) == 0 {
 		return ""
 	}
 	var builder strings.Builder
-	builder.WriteString(string(path[0]))
-	for _, segment := range path[1:] {
+	for _, segment := range path {
 		builder.WriteRune('.')
-		builder.WriteString(string(segment))
+		builder.WriteString(string(segment.Word))
 	}
 	return builder.String()
 }
 
-func (path AccessPath) IsCompileTime() bool {
-	return len(path) != 0 &&
-		len(path[0]) != 0 &&
-		path[0].IsLowercase()
+type SegmentEnum uint8
+
+const (
+	SegField SegmentEnum = iota
+	SegMethod
+	SegArray
+)
+
+type PathSegment struct {
+	Kind  SegmentEnum
+	Word  string
+	Index uint
 }
 
 // ————————————————————————————————

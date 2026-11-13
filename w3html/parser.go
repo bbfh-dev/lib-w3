@@ -9,6 +9,7 @@ import (
 	"unicode"
 
 	"codeberg.org/bbfh/lib-w3/internal"
+	"codeberg.org/bbfh/lib-w3/w3data"
 	"codeberg.org/bbfh/lib-w3/w3errs"
 	"codeberg.org/bbfh/lib-w3/w3utils"
 )
@@ -33,7 +34,7 @@ type ParserApi interface {
 }
 
 type Parser struct {
-	Scope        AccessPath
+	Scope        w3data.Path
 	Params       map[string]string
 	PageDataType reflect.Type
 	reader       *internal.DocumentReader
@@ -58,7 +59,7 @@ func newParser(
 	params["_filename"] = file.Name()
 	params["_filename.base"] = filepath.Base(file.Name())
 	return &Parser{
-		Scope:        AccessPath{},
+		Scope:        w3data.Path{},
 		Params:       params,
 		PageDataType: data,
 		reader:       reader,
@@ -74,7 +75,6 @@ func newParser(
 				Children:       []TreeNode{},
 			},
 			out: ParsedPage{
-				AccessPaths: []AccessPath{},
 				PlacedSlots: map[string]NodeLocation{},
 				Nodes:       nil,
 			},
@@ -236,7 +236,6 @@ func (parser *Parser) parse() error {
 // ————————————————————————————————
 
 type ParsedPage struct {
-	AccessPaths []AccessPath
 	PlacedSlots map[string]NodeLocation
 	Nodes       []Node
 }

@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+
+	"codeberg.org/bbfh/lib-w3/w3data"
 )
 
 func (parser *Parser) readTag() (tag Tag, closing bool, err error) {
@@ -332,13 +334,10 @@ func (parser *Parser) readTagArgs() ([]Argument, error) {
 			})
 
 		case '.':
-			path, err := parser.readAccessPath()
+			path, err := parser.readPath()
 			if err != nil {
 				parser.reader.HighlightSince(mark)
 				return args, fmt.Errorf("reading access path: %w", err)
-			}
-			if !path.IsCompileTime() {
-				parser.ctx.out.AccessPaths = append(parser.ctx.out.AccessPaths, path)
 			}
 			args = append(args, Argument{
 				Kind: ArgPath,
@@ -418,7 +417,7 @@ func (parser *Parser) readFormatString() (FormatString, error) {
 			return out, nil
 
 		case '{':
-			path, err := parser.readAccessPath()
+			path, err := parser.readPath()
 			if err != nil {
 				return nil, fmt.Errorf("reading path: %w", err)
 			}
@@ -443,7 +442,6 @@ func (parser *Parser) readFormatString() (FormatString, error) {
 					})
 				}
 			} else {
-				parser.ctx.out.AccessPaths = append(parser.ctx.out.AccessPaths, path)
 				out = append(out, formatFragment{
 					Kind: FragmentPath,
 					Data: path,
@@ -519,10 +517,11 @@ func (parser *Parser) readKeyword(firstChar rune, chars ...rune) (string, error)
 	return string(buffer), nil
 }
 
-func (parser *Parser) readAccessPath() (AccessPath, error) {
-	path := AccessPath{}
+func (parser *Parser) readPath() (w3data.Path, error) {
+	path := w3data.Path{}
 	buffer := []rune{}
-	suffix_written := false
+	segment := w3data.Segment{Call: false, Iterate: false}
+	dataType := parser.PageDataType
 
 	for {
 		char, err := parser.reader.Read()
@@ -531,7 +530,7 @@ func (parser *Parser) readAccessPath() (AccessPath, error) {
 		}
 
 		if isAccessPathCharset(char) {
-			if suffix_written {
+			if segment.Call || segment.Iterate {
 				return path, fmt.Errorf(
 					"path segment already ended with '()' or '[]', but found %q right after",
 					char,
@@ -546,38 +545,52 @@ func (parser *Parser) readAccessPath() (AccessPath, error) {
 		case ' ', '}':
 			parser.reader.Unread()
 			if len(buffer) != 0 {
-				return append(path, PathSegment(buffer)), nil
+				segment.Word = string(buffer)
+				segments, err := w3data.GetPath(dataType, segment)
+				if err != nil {
+					return path, err
+				}
+				return append(path, segments...), nil
 			}
 			return path, nil
 
 		case '(':
+			if segment.Iterate {
+				return path, fmt.Errorf("unexpected %q after '[]'", char)
+			}
 			_, err := parser.readKeyword('(', ')')
 			if err != nil {
 				return path, fmt.Errorf("reading keyword: %w", err)
 			}
-			buffer = append(buffer, '(', ')')
-			suffix_written = true
+			segment.Call = true
 
 		case '[':
 			_, err := parser.readKeyword('[', ']')
 			if err != nil {
 				return path, fmt.Errorf("reading keyword: %w", err)
 			}
-			buffer = append(buffer, '[', ']')
-			suffix_written = true
+			segment.Iterate = true
 
 		case '.':
 			if len(buffer) == 0 {
 				if len(path) == 0 {
 					path = append(path, parser.Scope...)
 					path = append(path, parser.ctx.Scope()...)
+					dataType = path[len(path)-1].DataType()
 					continue
 				}
-				return path, fmt.Errorf("unexpected third '.' in the beginning of the path")
+				return path, fmt.Errorf("unexpected '.' in the middle of the path")
 			}
-			path = append(path, PathSegment(buffer))
+			segment.Word = string(buffer)
+			segments, err := w3data.GetPath(dataType, segment)
+			if err != nil {
+				return path, err
+			}
+			dataType = segments[len(segments)-1].DataType()
+			path = append(path, segments...)
 			buffer = []rune{}
-			suffix_written = false
+			segment.Call = false
+			segment.Iterate = false
 
 		default:
 			return path, fmt.Errorf("unexpected character %q", char)

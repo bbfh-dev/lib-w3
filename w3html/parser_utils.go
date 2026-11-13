@@ -110,10 +110,5 @@ func (parser *Parser) ParseNested(tag Tag) (ParsedPage, error) {
 		nestedParser.Scope = append(nestedParser.Scope, scopeArg.AsPath()...)
 	}
 
-	result, err := nestedParser.Parse()
-	if err != nil {
-		return ParsedPage{}, err
-	}
-	parser.ctx.out.AccessPaths = append(parser.ctx.out.AccessPaths, result.AccessPaths...)
-	return result, nil
+	return nestedParser.Parse()
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"codeberg.org/bbfh/lib-w3/w3data"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/assert"
 )
 
@@ -197,4 +198,24 @@ func TestWalk(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetPath(t *testing.T) {
+	path, err := w3data.GetPath(
+		reflect.TypeOf(Instance),
+		w3data.Segment{Word: "D", Call: true},
+	)
+	assert.NilError(t, err)
+	assert.DeepEqual(
+		t,
+		w3data.Path{{
+			Word:    "D",
+			Index:   0,
+			Call:    true,
+			Iterate: false,
+		}},
+		path,
+		cmpopts.IgnoreUnexported(w3data.Segment{}),
+	)
+	assert.DeepEqual(t, reflect.Func, path[len(path)-1].DataType().Kind())
 }

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	libclog "codeberg.org/bbfh/lib-clog"
+	"codeberg.org/bbfh/lib-w3/w3data"
 	"codeberg.org/bbfh/lib-w3/w3errs"
 	"codeberg.org/bbfh/lib-w3/w3html"
 	"codeberg.org/bbfh/lib-w3/w3utils"
@@ -37,7 +38,6 @@ var TestCases = []TestCase{
 			Contents: `<span>Hello World! from {{ ._filename.base }}</span>`,
 		},
 		Expected: w3html.ParsedPage{
-			AccessPaths: []w3html.AccessPath{},
 			PlacedSlots: map[string]w3html.NodeLocation{},
 			Nodes: []w3html.Node{
 				{
@@ -53,7 +53,6 @@ var TestCases = []TestCase{
 			Contents: `{ this should stay as text }`,
 		},
 		Expected: w3html.ParsedPage{
-			AccessPaths: []w3html.AccessPath{},
 			PlacedSlots: map[string]w3html.NodeLocation{},
 			Nodes: []w3html.Node{
 				{
@@ -69,9 +68,6 @@ var TestCases = []TestCase{
 			Contents: `{{ .Path.To.Value() }}`,
 		},
 		Expected: w3html.ParsedPage{
-			AccessPaths: []w3html.AccessPath{
-				{"Path", "To", "Value()"},
-			},
 			PlacedSlots: map[string]w3html.NodeLocation{},
 			Nodes: []w3html.Node{
 				{
@@ -82,7 +78,26 @@ var TestCases = []TestCase{
 							{
 								Kind: w3html.ArgPath,
 								Key:  "",
-								Data: w3html.AccessPath{"Path", "To", "Value()"},
+								Data: w3data.Path{
+									{
+										Word:    "Path",
+										Index:   0,
+										Call:    false,
+										Iterate: false,
+									},
+									{
+										Word:    "To",
+										Index:   0,
+										Call:    false,
+										Iterate: false,
+									},
+									{
+										Word:    "Value",
+										Index:   1,
+										Call:    true,
+										Iterate: false,
+									},
+								},
 							},
 						},
 					},
@@ -96,7 +111,6 @@ var TestCases = []TestCase{
 			Contents: "<div>\n{{ include 'include.1' }}\n</div>",
 		},
 		Expected: w3html.ParsedPage{
-			AccessPaths: []w3html.AccessPath{},
 			PlacedSlots: map[string]w3html.NodeLocation{},
 			Nodes: []w3html.Node{
 				{
@@ -112,12 +126,6 @@ var TestCases = []TestCase{
 			Contents: "<div>\n{{ include 'include.3' .My.Scope }}\n</div>",
 		},
 		Expected: w3html.ParsedPage{
-			AccessPaths: []w3html.AccessPath{
-				{"My", "Scope"},
-				{"Root"},
-				{"My", "Scope", "Nested"},
-				{"My", "Scope", "Nested", "This()"},
-			},
 			PlacedSlots: map[string]w3html.NodeLocation{},
 			Nodes: []w3html.Node{
 				{
@@ -132,7 +140,14 @@ var TestCases = []TestCase{
 							{
 								Kind: w3html.ArgPath,
 								Key:  "",
-								Data: w3html.AccessPath{"Root"},
+								Data: w3data.Path{
+									{
+										Word:    "Root",
+										Index:   2,
+										Call:    false,
+										Iterate: false,
+									},
+								},
 							},
 						},
 					},
@@ -145,7 +160,32 @@ var TestCases = []TestCase{
 							{
 								Kind: w3html.ArgPath,
 								Key:  "",
-								Data: w3html.AccessPath{"My", "Scope", "Nested", "This()"},
+								Data: w3data.Path{
+									{
+										Word:    "My",
+										Index:   1,
+										Call:    false,
+										Iterate: false,
+									},
+									{
+										Word:    "Scope",
+										Index:   0,
+										Call:    false,
+										Iterate: false,
+									},
+									{
+										Word:    "Nested",
+										Index:   0,
+										Call:    false,
+										Iterate: false,
+									},
+									{
+										Word:    "This",
+										Index:   0,
+										Call:    true,
+										Iterate: false,
+									},
+								},
 							},
 						},
 					},
@@ -163,7 +203,6 @@ var TestCases = []TestCase{
 			Contents: "<div>\n{{ place 'default' }}\n</div>",
 		},
 		Expected: w3html.ParsedPage{
-			AccessPaths: []w3html.AccessPath{},
 			PlacedSlots: map[string]w3html.NodeLocation{
 				"default": {ChildIndex: 1, Line: 2},
 			},
@@ -273,6 +312,35 @@ func (file *MockFile) Read(dest []byte) (int, error) {
 }
 
 type PageData struct {
+	Path PathData
+	My   MyData
+	Root uint
+}
+
+func (data PageData) This() string {
+	return "HI"
+}
+
+type PathData struct {
+	To ToData
+}
+
+type ToData string
+
+func (data ToData) Value() string {
+	return string(data)
+}
+
+func (data ToData) This() string {
+	return data.Value()
+}
+
+type MyData struct {
+	Scope ScopeData
+}
+
+type ScopeData struct {
+	Nested ToData
 }
 
 func TestParser(t *testing.T) {
@@ -327,11 +395,31 @@ func TestParser(t *testing.T) {
 				}
 			}
 
+			// Spent an hour debugging, no fucking idea why I'm forced to do this.
+			// I've tried:
+			// — cmpopts.IgnoreFields(...)
+			// — cmpopts.IgnoreUnexported(...)
+			// — cmp.Comparer(...)
+			// — cmp.Diff()
+			// any time [w3data.Path] is a nested type it tries to compare [w3data.Segment.dataType]. Stupid.
+			for _, node := range result.Nodes {
+				if node.Kind == w3html.NodeTag {
+					data := node.AsTag()
+					for _, arg := range data.Arguments {
+						if arg.Kind == w3html.ArgPath {
+							path := arg.AsPath()
+							for i := range path {
+								path[i].ClearParserMetadata()
+							}
+						}
+					}
+				}
+			}
+
 			assert.DeepEqual(
 				tt,
 				testCase.Expected,
 				result,
-				cmpopts.IgnoreUnexported(w3html.ParsedPage{}),
 				cmpopts.IgnoreFields(w3html.NodeLocation{}, "Parent", "ReaderOffset"),
 			)
 		})
