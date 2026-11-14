@@ -576,6 +576,9 @@ func (parser *Parser) readPath() (w3data.Path, error) {
 				if len(path) == 0 {
 					path = append(path, parser.Scope...)
 					path = append(path, parser.ctx.Scope()...)
+					if len(path) == 0 {
+						continue
+					}
 					dataType = path[len(path)-1].DataType()
 					continue
 				}
