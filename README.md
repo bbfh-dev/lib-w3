@@ -4,8 +4,7 @@
 
 Go library for creating efficient web backends inspired by [Gin](https://gin-gonic.com/) design.
 
-!> [!CAUTION]
-
+> [!CAUTION]
 > This project is still in development. No usable release is available yet.
 
 <!-- vim-markdown-toc GFM -->
