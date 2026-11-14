@@ -13,8 +13,14 @@ import (
 )
 
 var Data = PageData{
-	Path: PathData{},
-	My:   MyData{},
+	Path: PathData{
+		To: "here.html",
+	},
+	My: MyData{
+		Scope: ScopeData{
+			Nested: "<span>Hi!</span>",
+		},
+	},
 	Root: 69,
 }
 
@@ -44,6 +50,11 @@ var RenderTestCases = []RenderTestCase{
 		Name:     "Include",
 		Contents: "<div>\n{{ include 'include.1' }}\n</div>",
 		Expected: "<div>\n<span>\nHello World!\n</span></div>",
+	},
+	{
+		Name:     "IncludeNestedPath",
+		Contents: "<div>\n{{ include 'include.3' .My.Scope }}\n</div>",
+		Expected: "<div>\n69<span>Hi!</span></div>",
 	},
 }
 
