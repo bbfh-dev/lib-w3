@@ -40,13 +40,22 @@ var RenderTestCases = []RenderTestCase{
 		Contents: "Hello {{ .Root }}!",
 		Expected: "Hello 69!",
 	},
+	{
+		Name:     "Include",
+		Contents: "<div>\n{{ include 'include.1' }}\n</div>",
+		Expected: "<div>\n<span>\nHello World!\n</span></div>",
+	},
 }
 
 func TestRender(t *testing.T) {
 	w3utils.Logger.SetLevel(libclog.LogWarning)
+	var buffer bytes.Buffer
 
 	for _, testCase := range RenderTestCases {
 		t.Run(testCase.Name, func(tt *testing.T) {
+			buffer.Reset()
+			buffer.Grow(len(testCase.Expected))
+
 			file := &MockFile{
 				Filename: testCase.Name + ".html",
 				Contents: testCase.Contents,
@@ -61,9 +70,6 @@ func TestRender(t *testing.T) {
 			assert.NilError(t, err)
 			parseDuration := time.Since(start)
 
-			var buffer bytes.Buffer
-			buffer.Grow(len(testCase.Expected))
-
 			start = time.Now()
 			renderer := w3html.Bake(result)
 			bakeDuration := time.Since(start)
@@ -76,19 +82,13 @@ func TestRender(t *testing.T) {
 			renderDuration := time.Since(start)
 			assert.DeepEqual(t, testCase.Expected, buffer.String())
 
-			buffer.Reset()
-			start = time.Now()
-			buffer.Write([]byte(testCase.Expected))
-			overhead := renderDuration - time.Since(start)
-
 			tt.Logf(
-				"%sParse: %-8s | Bake: %-8s | Render: %-8s (overhead: %-8s) | Saved: %-8s%s",
+				"%sParse: %-8s | Bake: %-8s | Render: %-8s | Saved: %-8s%s",
 				libclog.AnsiColor(libclog.ColorBrightBlue),
 				parseDuration,
 				bakeDuration,
 				renderDuration,
-				overhead,
-				parseDuration+bakeDuration-overhead,
+				parseDuration+bakeDuration-renderDuration,
 				libclog.AnsiReset,
 			)
 		})
