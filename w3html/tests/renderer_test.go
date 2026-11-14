@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"reflect"
 	"testing"
+	"time"
 
 	libclog "codeberg.org/bbfh/lib-clog"
 	"codeberg.org/bbfh/lib-w3/w3html"
@@ -51,20 +52,45 @@ func TestRender(t *testing.T) {
 				Contents: testCase.Contents,
 			}
 			file.Init()
+
+			start := time.Now()
 			parser := w3html.NewParser[PageData](file, map[string]string{})
 			parser.WithFileOpener(MockFileOpener)
 
 			result, err := parser.Parse()
 			assert.NilError(t, err)
+			parseDuration := time.Since(start)
 
 			var buffer bytes.Buffer
 			buffer.Grow(len(testCase.Expected))
+
+			start = time.Now()
 			renderer := w3html.Bake(result)
+			bakeDuration := time.Since(start)
+
+			start = time.Now()
 			renderer.Render(w3html.RenderContext{
 				Writer: &buffer,
 				Data:   reflect.ValueOf(Data),
 			})
+			renderDuration := time.Since(start)
 			assert.DeepEqual(t, testCase.Expected, buffer.String())
+
+			buffer.Reset()
+			start = time.Now()
+			buffer.Write([]byte(testCase.Expected))
+			overhead := renderDuration - time.Since(start)
+
+			tt.Logf(
+				"%sParse: %-8s | Bake: %-8s | Render: %-8s (overhead: %-8s) | Saved: %-8s%s",
+				libclog.AnsiColor(libclog.ColorBrightBlue),
+				parseDuration,
+				bakeDuration,
+				renderDuration,
+				overhead,
+				parseDuration+bakeDuration-overhead,
+				libclog.AnsiReset,
+			)
 		})
 	}
 }
