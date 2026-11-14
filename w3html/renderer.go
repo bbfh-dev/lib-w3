@@ -3,6 +3,8 @@ package w3html
 import (
 	"io"
 	"reflect"
+
+	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
 type Renderer []Renderable
@@ -43,8 +45,22 @@ func Bake(page ParsedPage) Renderable {
 			pipeline = append(pipeline, HunkRenderStep(node.AsHunk()))
 
 		case NodeTag:
+			tag := node.AsTag()
+			if tag.Kind.RendererFactory == nil {
+				continue
+			}
+			renderable := tag.Kind.RendererFactory(tag)
+			if renderable == nil {
+				continue
+			}
+			pipeline = append(pipeline, renderable)
 
 		default:
+			w3utils.Logger.Warn(
+				"Skipping %q because it is not renderable: %#v",
+				node.Kind,
+				node.Data,
+			)
 		}
 	}
 

@@ -5,6 +5,8 @@ import (
 	"math"
 	"slices"
 	"strings"
+
+	"codeberg.org/bbfh/lib-w3/w3data"
 )
 
 // TagEnum can be used to define custom tags by appending to [RegisteredTags].
@@ -28,6 +30,10 @@ type TagEnum struct {
 	//
 	// If this [Tag] defines a new [AccessPath] variable scope, provide an argument named [ArgNameScope].
 	Arguments []ArgumentDefinition
+	// RendererFactory is a function that creates a [Renderable] to be added to the [Renderer].
+	//
+	// Set to 'nil' or return 'nil' value to skip this [Tag] during rendering.
+	RendererFactory func(tag Tag) Renderable
 }
 
 func (enum TagEnum) String() string {
@@ -62,6 +68,7 @@ var IdVariable = TagEnum{
 	Id:       "",
 	Arguments: []ArgumentDefinition{
 		{Name: ArgNamePath, Kind: ArgPath, IsOptional: false},
+		{Name: "join", Kind: ArgString, IsOptional: true},
 	},
 	Handler: func(parser ParserApi, node *TreeNode, tag Tag) error {
 		arg, err := tag.FindArgNamed(ArgNamePath)
@@ -80,6 +87,38 @@ var IdVariable = TagEnum{
 		}
 		return nil
 	},
+	RendererFactory: func(tag Tag) Renderable {
+		arg, err := tag.FindArgNamed(ArgNamePath)
+		if err != nil {
+			return nil
+		}
+		path := arg.AsPath()
+
+		var join = ", "
+		arg, err = tag.FindArgNamed("join")
+		if err == nil {
+			join = arg.AsString()
+		}
+		return VariableRenderStep{
+			Path:       path,
+			JoinString: join,
+		}
+	},
+}
+
+type VariableRenderStep struct {
+	Path       w3data.Path
+	JoinString string
+}
+
+func (step VariableRenderStep) Render(ctx RenderContext) {
+	values := w3data.Walk(ctx.Data, step.Path)
+	for i, value := range values {
+		if i != 0 {
+			ctx.Writer.Write([]byte(step.JoinString))
+		}
+		fmt.Fprint(ctx.Writer, value.Interface())
+	}
 }
 
 var RegisteredTags = []TagEnum{}

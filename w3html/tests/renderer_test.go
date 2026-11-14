@@ -5,14 +5,16 @@ import (
 	"reflect"
 	"testing"
 
+	libclog "codeberg.org/bbfh/lib-clog"
 	"codeberg.org/bbfh/lib-w3/w3html"
+	"codeberg.org/bbfh/lib-w3/w3utils"
 	"gotest.tools/assert"
 )
 
 var Data = PageData{
 	Path: PathData{},
 	My:   MyData{},
-	Root: 0,
+	Root: 69,
 }
 
 type RenderTestCase struct {
@@ -27,9 +29,21 @@ var RenderTestCases = []RenderTestCase{
 		Contents: "Hello World!\n",
 		Expected: "Hello World!\n",
 	},
+	{
+		Name:     "CompileTimeVariable",
+		Contents: "Hello {{ ._filename.base }}!",
+		Expected: "Hello CompileTimeVariable.html!",
+	},
+	{
+		Name:     "RootPath",
+		Contents: "Hello {{ .Root }}!",
+		Expected: "Hello 69!",
+	},
 }
 
 func TestRender(t *testing.T) {
+	w3utils.Logger.SetLevel(libclog.LogWarning)
+
 	for _, testCase := range RenderTestCases {
 		t.Run(testCase.Name, func(tt *testing.T) {
 			file := &MockFile{
@@ -50,7 +64,7 @@ func TestRender(t *testing.T) {
 				Writer: &buffer,
 				Data:   reflect.ValueOf(Data),
 			})
-			assert.Equal(t, testCase.Expected, buffer.String())
+			assert.DeepEqual(t, testCase.Expected, buffer.String())
 		})
 	}
 }

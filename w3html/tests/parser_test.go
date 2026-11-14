@@ -384,6 +384,7 @@ func TestParser(t *testing.T) {
 						} else {
 							w3errs.Write(err, os.Stderr, outputMode)
 							tt.FailNow()
+							return
 						}
 					} else {
 						tt.Fatalf("error is not a document error: %s", err.Error())

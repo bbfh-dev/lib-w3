@@ -177,7 +177,6 @@ func TestWalk(t *testing.T) {
 			for i, value := range returned {
 				expected := reflect.ValueOf(testCase.Expected[i])
 				if expected.Kind() == reflect.Slice {
-					tt.Log("ASSERT slice lengths")
 					assert.Equal(tt, expected.Len(), value.Len())
 					for j := range expected.Len() {
 						if debug {
