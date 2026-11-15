@@ -49,12 +49,12 @@ var RenderTestCases = []RenderTestCase{
 	{
 		Name:     "Include",
 		Contents: "<div>\n{{ include 'include.1' }}\n</div>",
-		Expected: "<div>\n<span>\nHello World!\n</span></div>",
+		Expected: "<div>\n<span>\nHello World!\n</span>\n</div>",
 	},
 	{
 		Name:     "IncludeNestedPath",
 		Contents: "<div>\n{{ include 'include.3' .My.Scope }}\n</div>",
-		Expected: "<div>\n69<span>Hi!</span></div>",
+		Expected: "<div>\n69<span>Hi!</span>\n</div>",
 	},
 }
 

@@ -132,8 +132,16 @@ func (parser *Parser) Parse() (ParsedPage, error) {
 	return parser.ToParsedPage(), nil
 }
 
+type swallowSpaceEnum uint8
+
+const (
+	swallowNone swallowSpaceEnum = iota
+	swallowIndent
+	swallowWhitespace
+)
+
 func (parser *Parser) parse() error {
-	swallowSpace := true
+	swallowMode := swallowWhitespace
 	for {
 		char, err := parser.reader.Read()
 		if err != nil {
@@ -144,18 +152,28 @@ func (parser *Parser) parse() error {
 			return err
 		}
 
-		if swallowSpace {
+		switch swallowMode {
+
+		case swallowWhitespace:
 			if unicode.IsSpace(char) {
 				continue
 			}
-			swallowSpace = false
+			swallowMode = swallowNone
+
+		case swallowIndent:
+			switch char {
+			case '\t', '\v', '\f', ' ', 0x85, 0xA0:
+				continue
+			default:
+				swallowMode = swallowNone
+			}
 		}
 
 		if char != '{' {
 			// not a tag
 			parser.writeRune(char)
 			if char == '\n' {
-				swallowSpace = true
+				swallowMode = swallowWhitespace
 			}
 			continue
 		}
@@ -187,7 +205,7 @@ func (parser *Parser) parse() error {
 		if err != nil {
 			return fmt.Errorf("reading tag: %w", err)
 		}
-		swallowSpace = true
+		swallowMode = swallowIndent
 
 		if closing {
 			if !tag.Kind.IsPaired {

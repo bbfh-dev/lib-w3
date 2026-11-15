@@ -115,7 +115,7 @@ var TestCases = []TestCase{
 			Nodes: []w3html.Node{
 				{
 					Kind: w3html.NodeHunk,
-					Data: []byte("<div>\n<span>\nHello World!\n</span></div>"),
+					Data: []byte("<div>\n<span>\nHello World!\n</span>\n</div>"),
 				},
 			},
 		},
@@ -192,7 +192,7 @@ var TestCases = []TestCase{
 				},
 				{
 					Kind: w3html.NodeHunk,
-					Data: []byte("</div>"),
+					Data: []byte("\n</div>"),
 				},
 			},
 		},
@@ -209,7 +209,7 @@ var TestCases = []TestCase{
 			Nodes: []w3html.Node{
 				{
 					Kind: w3html.NodeHunk,
-					Data: []byte("<div>\n</div>"),
+					Data: []byte("<div>\n\n</div>"),
 				},
 			},
 		},
@@ -224,7 +224,7 @@ var TestCases = []TestCase{
 			Nodes: []w3html.Node{
 				{
 					Kind: w3html.NodeHunk,
-					Data: []byte("<section>\nHello World!</section>"),
+					Data: []byte("<section>\nHello World!\n</section>"),
 				},
 			},
 		},
