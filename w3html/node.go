@@ -48,39 +48,9 @@ func (enum NodeEnum) String() string {
 	}
 }
 
-type Node struct {
-	Kind NodeEnum
-	Data any
-}
-
-func (node Node) Write(w io.Writer) {
-	data := node.Data
-	if data == nil {
-		data = "(empty)"
-	}
-	fmt.Fprintf(
-		w,
-		"— %s —%s\n%s%s%s\n",
-		node.Kind,
-		strings.Repeat("—", 30),
-		libclog.AnsiColor(libclog.ColorBrightBlack),
-		data,
-		libclog.AnsiReset,
-	)
-}
-
-// AsHunk casts the [Node.Data] value that is expected when [Node.Kind] == [NodeHunk].
-func (node Node) AsHunk() []byte {
-	return node.Data.([]byte)
-}
-
-// AsTag casts the [Node.Data] value that is expected when [Node.Kind] == [NodeTag].
-func (node Node) AsTag() Tag {
-	return node.Data.(Tag)
-}
-
 type TreeNode struct {
-	Node
+	Kind           NodeEnum
+	Data           any
 	SourceCodeLine uint
 	Children       []TreeNode
 }
@@ -104,6 +74,16 @@ func (node TreeNode) Write(w io.Writer, indent uint) {
 	for _, child := range node.Children {
 		child.Write(w, indent+1)
 	}
+}
+
+// AsHunk casts the [Node.Data] value that is expected when [Node.Kind] == [NodeHunk].
+func (node TreeNode) AsHunk() []byte {
+	return node.Data.([]byte)
+}
+
+// AsTag casts the [Node.Data] value that is expected when [Node.Kind] == [NodeTag].
+func (node TreeNode) AsTag() Tag {
+	return node.Data.(Tag)
 }
 
 type SlotsMap map[string][]TreeNode

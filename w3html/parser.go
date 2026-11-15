@@ -72,10 +72,8 @@ func newParser(
 		line:         1,
 		ctx: &ParserContext{
 			Root: TreeNode{
-				Node: Node{
-					Kind: NodeRoot,
-					Data: nil,
-				},
+				Kind:           NodeRoot,
+				Data:           nil,
 				SourceCodeLine: 1,
 				Children:       []TreeNode{},
 			},
