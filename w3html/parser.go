@@ -297,13 +297,13 @@ func (parser *Parser) ToParsedPage() ParsedPage {
 			}
 		}
 
-		if keepChildren {
-			return
-		}
-		for _, child := range node.Children {
-			visit(&child)
+		if !keepChildren {
+			for _, child := range node.Children {
+				visit(&child)
+			}
 		}
 	}
+
 	for _, child := range parser.ctx.Root.Children {
 		visit(&child)
 	}
