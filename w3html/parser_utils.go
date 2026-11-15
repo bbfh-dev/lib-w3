@@ -30,10 +30,11 @@ func (parser *Parser) AppendHunk(buffer []byte) {
 func (parser *Parser) AppendPlaceholder() {
 	parser.Append(TreeNode{
 		Kind:           NodePlaceholder,
-		Data:           nil,
+		Data:           parser.placeholders,
 		SourceCodeLine: parser.line,
 		Children:       nil,
 	})
+	parser.placeholders++
 }
 
 func (parser *Parser) AppendTag(tag Tag) {
@@ -112,8 +113,4 @@ func (parser *Parser) ParseNested(tag Tag, slots SlotsMap) (ParsedPage, error) {
 	}
 
 	return nestedParser.Parse()
-}
-
-func (parser *Parser) SlotsMap() SlotsMap {
-	return parser.slots
 }

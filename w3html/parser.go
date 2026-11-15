@@ -34,7 +34,6 @@ type ParserApi interface {
 	AppendPlaceholder()
 	AppendTag(tag Tag)
 	Append(node TreeNode)
-	SlotsMap() SlotsMap
 }
 
 type Parser struct {
@@ -47,6 +46,7 @@ type Parser struct {
 	ctx          *ParserContext
 	fileOpener   FileOpener
 	slots        SlotsMap
+	placeholders uint
 }
 
 // NewParser creates a parser. For parsing nested documents refer to [Parser.NewParser].
@@ -248,9 +248,20 @@ type ParsedPage struct {
 }
 
 func (parser *Parser) ToParsedPage() ParsedPage {
-	var visit func(TreeNode)
-	visit = func(treeNode TreeNode) {
-		if treeNode.Node.Data != nil {
+	var visit func(*TreeNode)
+	visit = func(treeNode *TreeNode) {
+		if treeNode.Kind == NodePlaceholder {
+			id := treeNode.Data.(uint)
+			for key, location := range parser.ctx.out.PlacedSlots {
+				if location.Pointer().Data.(uint) == id {
+					for _, node := range parser.slots[key] {
+						parser.ctx.out.Nodes = append(parser.ctx.out.Nodes, node.Node)
+					}
+				}
+			}
+		}
+
+		if treeNode.Node.Data != nil && treeNode.Kind != NodePlaceholder {
 			last := len(parser.ctx.out.Nodes) - 1
 			if last >= 0 && treeNode.Node.Kind == NodeHunk &&
 				parser.ctx.out.Nodes[last].Kind == NodeHunk {
@@ -262,12 +273,13 @@ func (parser *Parser) ToParsedPage() ParsedPage {
 				parser.ctx.out.Nodes = append(parser.ctx.out.Nodes, treeNode.Node)
 			}
 		}
+
 		for _, child := range treeNode.Children {
-			visit(child)
+			visit(&child)
 		}
 	}
 	for _, child := range parser.ctx.Root.Children {
-		visit(child)
+		visit(&child)
 	}
 
 	return parser.ctx.out
