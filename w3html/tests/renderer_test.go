@@ -98,13 +98,18 @@ func TestRender(t *testing.T) {
 			renderDuration := time.Since(start)
 			assert.DeepEqual(t, testCase.Expected, buffer.String())
 
+			renderSteps := 1
+			if renderer, ok := renderer.(w3html.Renderer); ok {
+				renderSteps = len(renderer)
+			}
+
 			tt.Logf(
-				"%sParse: %-8s | Bake: %-8s | Render: %-8s | Saved: %-8s%s",
+				"%sParse: %-8s | Bake: %-8s | Render: %-8s in %d step(s)%s",
 				libclog.AnsiColor(libclog.ColorBrightBlue),
 				parseDuration,
 				bakeDuration,
 				renderDuration,
-				parseDuration+bakeDuration-renderDuration,
+				renderSteps,
 				libclog.AnsiReset,
 			)
 		})
