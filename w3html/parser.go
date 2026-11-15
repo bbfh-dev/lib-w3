@@ -26,7 +26,7 @@ var defaultFileOpener FileOpener = func(absPath string) (w3utils.FileLike, error
 
 // ParserApi is used to provide access to specific [Parser] methods for [TagEnum.Handler].
 type ParserApi interface {
-	ParseNested(tag Tag) (ParsedPage, error)
+	ParseNested(tag Tag, slots SlotsMap) (ParsedPage, error)
 	Param(name string) (string, error)
 	SaveSlot(slotId string, location NodeLocation)
 	LastAddedNode() NodeLocation
@@ -34,6 +34,7 @@ type ParserApi interface {
 	AppendPlaceholder()
 	AppendTag(tag Tag)
 	Append(node TreeNode)
+	SlotsMap() SlotsMap
 }
 
 type Parser struct {
@@ -45,6 +46,7 @@ type Parser struct {
 	line         uint
 	ctx          *ParserContext
 	fileOpener   FileOpener
+	slots        SlotsMap
 }
 
 // NewParser creates a parser. For parsing nested documents refer to [Parser.NewParser].
@@ -86,6 +88,7 @@ func newParser(
 			lastAddedNodeIndex: 0,
 		},
 		fileOpener: defaultFileOpener,
+		slots:      SlotsMap{},
 	}
 }
 

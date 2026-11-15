@@ -84,10 +84,16 @@ func init() {
 				{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
 			},
 			Handler: func(parser ParserApi, node *TreeNode, tag Tag) error {
-				nestedPage, err := parser.ParseNested(tag)
+				slots, err := node.ExtractInjectSlots()
 				if err != nil {
 					return err
 				}
+
+				nestedPage, err := parser.ParseNested(tag, slots)
+				if err != nil {
+					return err
+				}
+
 				node.Kind = NodeRoot
 				node.Data = nil
 				node.Children = nil
@@ -123,7 +129,7 @@ func init() {
 				{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
 			},
 			Handler: func(parser ParserApi, node *TreeNode, tag Tag) error {
-				nestedPage, err := parser.ParseNested(tag)
+				nestedPage, err := parser.ParseNested(tag, SlotsMap{})
 				if err != nil {
 					return err
 				}

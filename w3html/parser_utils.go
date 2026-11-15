@@ -77,7 +77,7 @@ func (parser *Parser) findMatchingOpeningTag(closing TagEnum) (NodeLocation, boo
 	return visit(parser.ctx.breadcrumbs)
 }
 
-func (parser *Parser) ParseNested(tag Tag) (ParsedPage, error) {
+func (parser *Parser) ParseNested(tag Tag, slots SlotsMap) (ParsedPage, error) {
 	pathArg, err := tag.FindArgNamed(ArgNamePath)
 	if err != nil {
 		return ParsedPage{}, err
@@ -104,6 +104,7 @@ func (parser *Parser) ParseNested(tag Tag) (ParsedPage, error) {
 
 	nestedParser := newParser(parser.reader, file, tag.ToParams("path"), parser.PageDataType)
 	nestedParser.fileOpener = parser.fileOpener
+	nestedParser.slots = slots
 
 	scopeArg, err := tag.FindArgNamed(ArgNameScope)
 	if err == nil {
@@ -111,4 +112,8 @@ func (parser *Parser) ParseNested(tag Tag) (ParsedPage, error) {
 	}
 
 	return nestedParser.Parse()
+}
+
+func (parser *Parser) SlotsMap() SlotsMap {
+	return parser.slots
 }

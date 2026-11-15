@@ -106,8 +106,10 @@ func (node TreeNode) Write(w io.Writer, indent uint) {
 	}
 }
 
-func (hunk TreeNode) ExtractInjectSlots() (map[string][]TreeNode, error) {
-	slots := map[string][]TreeNode{}
+type SlotsMap map[string][]TreeNode
+
+func (hunk TreeNode) ExtractInjectSlots() (SlotsMap, error) {
+	slots := SlotsMap{}
 	for _, child := range hunk.Children {
 		switch child.Kind {
 		case NodeTag:
