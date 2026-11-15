@@ -39,10 +39,11 @@ var TestCases = []TestCase{
 		},
 		Expected: w3html.ParsedPage{
 			PlacedSlots: map[string]w3html.NodeLocation{},
-			Nodes: []w3html.Node{
+			Nodes: []w3html.TreeNode{
 				{
-					Kind: w3html.NodeHunk,
-					Data: []byte("<span>Hello World! from AccessPath_CompileTime</span>"),
+					Kind:           w3html.NodeHunk,
+					Data:           []byte("<span>Hello World! from AccessPath_CompileTime</span>"),
+					SourceCodeLine: 1,
 				},
 			},
 		},
@@ -54,10 +55,11 @@ var TestCases = []TestCase{
 		},
 		Expected: w3html.ParsedPage{
 			PlacedSlots: map[string]w3html.NodeLocation{},
-			Nodes: []w3html.Node{
+			Nodes: []w3html.TreeNode{
 				{
-					Kind: w3html.NodeHunk,
-					Data: []byte("{ this should stay as text }"),
+					Kind:           w3html.NodeHunk,
+					Data:           []byte("{ this should stay as text }"),
+					SourceCodeLine: 1,
 				},
 			},
 		},
@@ -69,7 +71,7 @@ var TestCases = []TestCase{
 		},
 		Expected: w3html.ParsedPage{
 			PlacedSlots: map[string]w3html.NodeLocation{},
-			Nodes: []w3html.Node{
+			Nodes: []w3html.TreeNode{
 				{
 					Kind: w3html.NodeTag,
 					Data: w3html.Tag{
@@ -101,6 +103,7 @@ var TestCases = []TestCase{
 							},
 						},
 					},
+					SourceCodeLine: 1,
 				},
 			},
 		},
@@ -112,10 +115,11 @@ var TestCases = []TestCase{
 		},
 		Expected: w3html.ParsedPage{
 			PlacedSlots: map[string]w3html.NodeLocation{},
-			Nodes: []w3html.Node{
+			Nodes: []w3html.TreeNode{
 				{
-					Kind: w3html.NodeHunk,
-					Data: []byte("<div>\n<span>\nHello World!\n</span>\n</div>"),
+					Kind:           w3html.NodeHunk,
+					Data:           []byte("<div>\n<span>\nHello World!\n</span>\n</div>"),
+					SourceCodeLine: 1,
 				},
 			},
 		},
@@ -127,10 +131,11 @@ var TestCases = []TestCase{
 		},
 		Expected: w3html.ParsedPage{
 			PlacedSlots: map[string]w3html.NodeLocation{},
-			Nodes: []w3html.Node{
+			Nodes: []w3html.TreeNode{
 				{
-					Kind: w3html.NodeHunk,
-					Data: []byte("<div>\n"),
+					Kind:           w3html.NodeHunk,
+					Data:           []byte("<div>\n"),
+					SourceCodeLine: 1,
 				},
 				{
 					Kind: w3html.NodeTag,
@@ -151,6 +156,7 @@ var TestCases = []TestCase{
 							},
 						},
 					},
+					SourceCodeLine: 1,
 				},
 				{
 					Kind: w3html.NodeTag,
@@ -189,10 +195,12 @@ var TestCases = []TestCase{
 							},
 						},
 					},
+					SourceCodeLine: 1,
 				},
 				{
-					Kind: w3html.NodeHunk,
-					Data: []byte("\n</div>"),
+					Kind:           w3html.NodeHunk,
+					Data:           []byte("\n</div>"),
+					SourceCodeLine: 2,
 				},
 			},
 		},
@@ -206,10 +214,11 @@ var TestCases = []TestCase{
 			PlacedSlots: map[string]w3html.NodeLocation{
 				"default": {ChildIndex: 1, Line: 2},
 			},
-			Nodes: []w3html.Node{
+			Nodes: []w3html.TreeNode{
 				{
-					Kind: w3html.NodeHunk,
-					Data: []byte("<div>\n\n</div>"),
+					Kind:           w3html.NodeHunk,
+					Data:           []byte("<div>\n\n</div>"),
+					SourceCodeLine: 1,
 				},
 			},
 		},
@@ -221,10 +230,76 @@ var TestCases = []TestCase{
 		},
 		Expected: w3html.ParsedPage{
 			PlacedSlots: map[string]w3html.NodeLocation{},
-			Nodes: []w3html.Node{
+			Nodes: []w3html.TreeNode{
 				{
-					Kind: w3html.NodeHunk,
-					Data: []byte("<section>\nHello World!\n</section>"),
+					Kind:           w3html.NodeHunk,
+					Data:           []byte("<section>\nHello World!\n</section>"),
+					SourceCodeLine: 1,
+				},
+			},
+		},
+	},
+	{
+		File: MockFile{
+			Filename: "Range",
+			Contents: "{{ range .Buttons[] }}Hello {{ .. }}!{{ /range }}",
+		},
+		Expected: w3html.ParsedPage{
+			PlacedSlots: map[string]w3html.NodeLocation{},
+			Nodes: []w3html.TreeNode{
+				{
+					Kind: w3html.NodeTag,
+					Data: w3html.Tag{
+						Kind: w3html.IdRange,
+						Arguments: []w3html.Argument{
+							{
+								Kind: w3html.ArgPath,
+								Key:  "",
+								Data: w3data.Path{
+									{
+										Word:    "Buttons",
+										Index:   3,
+										Call:    false,
+										Iterate: true,
+									},
+								},
+							},
+						},
+					},
+					SourceCodeLine: 1,
+					Children: []w3html.TreeNode{
+						{
+							Kind:           w3html.NodeHunk,
+							Data:           []byte("Hello "),
+							SourceCodeLine: 1,
+						},
+						{
+							Kind: w3html.NodeTag,
+							Data: w3html.Tag{
+								Kind: w3html.IdVariable,
+								Arguments: []w3html.Argument{
+									{
+										Kind: w3html.ArgPath,
+										Key:  "",
+										Data: w3data.Path{
+											{
+												Word:    "Buttons",
+												Index:   3,
+												Call:    false,
+												Iterate: true,
+											},
+										},
+									},
+								},
+							},
+							SourceCodeLine: 1,
+						},
+						{
+							Kind:           w3html.NodeHunk,
+							Data:           []byte("!"),
+							SourceCodeLine: 1,
+						},
+					},
 				},
 			},
 		},
@@ -300,9 +375,10 @@ func (file *MockFile) Read(dest []byte) (int, error) {
 }
 
 type PageData struct {
-	Path PathData
-	My   MyData
-	Root uint
+	Path    PathData
+	My      MyData
+	Root    uint
+	Buttons []string
 }
 
 func (data PageData) This() string {
@@ -382,7 +458,7 @@ func TestParser(t *testing.T) {
 
 			if printResult {
 				for _, node := range result.Nodes {
-					node.Write(tt.Output())
+					node.Write(tt.Output(), 0)
 				}
 			}
 

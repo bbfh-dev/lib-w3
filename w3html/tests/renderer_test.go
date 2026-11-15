@@ -22,6 +22,11 @@ var Data = PageData{
 		},
 	},
 	Root: 69,
+	Buttons: []string{
+		"first",
+		"second",
+		"third",
+	},
 }
 
 type RenderTestCase struct {

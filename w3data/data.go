@@ -214,11 +214,11 @@ func getPath(dataType reflect.Type, segment Segment) (Path, error) {
 	}
 	path := Path{}
 	last := len(field.Index) - 1
-	for _, i := range field.Index {
-		it := dataType.Field(i)
+	for i, idx := range field.Index {
+		it := dataType.Field(idx)
 		path = append(path, Segment{
 			Word:     it.Name,
-			Index:    uint(i),
+			Index:    uint(idx),
 			Call:     false,
 			Iterate:  segment.Iterate && i == last,
 			dataType: it.Type,

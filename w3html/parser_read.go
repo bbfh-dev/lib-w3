@@ -34,7 +34,7 @@ func (parser *Parser) readTag() (tag Tag, closing bool, err error) {
 
 	var enum TagEnum
 	var namespace, id string
-	if firstChar != '.' {
+	if firstChar != '.' && firstChar != '$' {
 		mark = parser.reader.Here()
 		namespace, id, err = parser.readTagName()
 		if err != nil {
@@ -345,6 +345,9 @@ func (parser *Parser) readTagArgs() ([]Argument, error) {
 				Data: path,
 			})
 			key = ""
+
+		default:
+			return args, fmt.Errorf("unexpected character: %q", firstChar)
 		}
 	}
 }

@@ -7,15 +7,17 @@ import (
 )
 
 var IdSlot = TagEnum{
-	IsPaired:  true,
-	Id:        "slot",
-	Arguments: NoArguments,
-	Handler:   nil,
+	IsPaired:     true,
+	KeepChildren: false,
+	Id:           "slot",
+	Arguments:    NoArguments,
+	Handler:      nil,
 }
 
 var IdVariable = TagEnum{
-	IsPaired: false,
-	Id:       "",
+	IsPaired:     false,
+	KeepChildren: false,
+	Id:           "",
 	Arguments: []ArgumentDefinition{
 		{Name: ArgNamePath, Kind: ArgPath, IsOptional: false},
 		{Name: "join", Kind: ArgString, IsOptional: true},
@@ -71,14 +73,35 @@ func (step VariableRenderStep) Render(ctx RenderContext) {
 	}
 }
 
+var IdRange = TagEnum{
+	IsPaired:     true,
+	KeepChildren: true,
+	Id:           "range",
+	Arguments: []ArgumentDefinition{
+		{Name: ArgNameScope, Kind: ArgPath, IsOptional: false},
+	},
+	Handler: func(parser ParserApi, node *TreeNode, tag Tag) error {
+		path := tag.Arguments[0].AsPath()
+		if !path[len(path)-1].Iterate {
+			return fmt.Errorf("'range' tag requires that the 'path' argument ends with '[]'")
+		}
+		return nil
+	},
+	RendererFactory: func(tag Tag) Renderable {
+		return nil
+	},
+}
+
 var RegisteredTags = []TagEnum{}
 
 func init() {
 	RegisteredTags = []TagEnum{
 		IdSlot,
+		IdRange,
 		{
-			IsPaired: true,
-			Id:       "extend",
+			IsPaired:     true,
+			KeepChildren: false,
+			Id:           "extend",
 			Arguments: []ArgumentDefinition{
 				{Name: ArgNamePath, Kind: ArgString, IsOptional: false},
 				{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
@@ -96,34 +119,21 @@ func init() {
 
 				node.Kind = NodeRoot
 				node.Data = nil
-				node.Children = nil
-				for _, child := range nestedPage.Nodes {
-					node.Children = append(node.Children, TreeNode{
-						Node:           child,
-						SourceCodeLine: 1,
-						Children:       nil,
-					})
-				}
+				node.Children = nestedPage.Nodes
 				return nil
 			},
 		},
 		{
-			IsPaired:  true,
-			Id:        "if",
-			Arguments: SkipArgumentCheck,
-			Handler:   nil,
+			IsPaired:     true,
+			KeepChildren: false,
+			Id:           "if",
+			Arguments:    SkipArgumentCheck,
+			Handler:      nil,
 		},
 		{
-			IsPaired: true,
-			Id:       "range",
-			Arguments: []ArgumentDefinition{
-				{Name: ArgNameScope, Kind: ArgPath, IsOptional: false},
-			},
-			Handler: nil,
-		},
-		{
-			IsPaired: false,
-			Id:       "include",
+			IsPaired:     false,
+			KeepChildren: false,
+			Id:           "include",
 			Arguments: []ArgumentDefinition{
 				{Name: ArgNamePath, Kind: ArgString, IsOptional: false},
 				{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
@@ -134,18 +144,15 @@ func init() {
 					return err
 				}
 				for _, child := range nestedPage.Nodes {
-					parser.Append(TreeNode{
-						Node:           child,
-						SourceCodeLine: 1,
-						Children:       nil,
-					})
+					parser.Append(child)
 				}
 				return nil
 			},
 		},
 		{
-			IsPaired: false,
-			Id:       "place",
+			IsPaired:     false,
+			KeepChildren: false,
+			Id:           "place",
 			Arguments: []ArgumentDefinition{
 				{Name: ArgNameSlotId, Kind: ArgString, IsOptional: false},
 			},

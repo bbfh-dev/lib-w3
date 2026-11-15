@@ -262,18 +262,22 @@ func (parser *Parser) parse() error {
 
 type ParsedPage struct {
 	PlacedSlots map[string]NodeLocation
-	Nodes       []Node
+	Nodes       []TreeNode
 }
 
 func (parser *Parser) ToParsedPage() ParsedPage {
 	var visit func(*TreeNode)
 	visit = func(treeNode *TreeNode) {
+		keepChildren := treeNode.Kind == NodeTag && treeNode.AsTag().Kind.KeepChildren
 		if treeNode.Kind == NodePlaceholder {
 			id := treeNode.Data.(uint)
 			for key, location := range parser.ctx.out.PlacedSlots {
 				if location.Pointer().Data.(uint) == id {
 					for _, node := range parser.slots[key] {
-						parser.ctx.out.Nodes = append(parser.ctx.out.Nodes, node.Node)
+						if !keepChildren {
+							node.Children = nil
+						}
+						parser.ctx.out.Nodes = append(parser.ctx.out.Nodes, node)
 					}
 				}
 			}
@@ -288,10 +292,16 @@ func (parser *Parser) ToParsedPage() ParsedPage {
 					treeNode.Data.([]byte)...,
 				)
 			} else {
-				parser.ctx.out.Nodes = append(parser.ctx.out.Nodes, treeNode.Node)
+				if !keepChildren {
+					treeNode.Children = nil
+				}
+				parser.ctx.out.Nodes = append(parser.ctx.out.Nodes, *treeNode)
 			}
 		}
 
+		if keepChildren {
+			return
+		}
 		for _, child := range treeNode.Children {
 			visit(&child)
 		}

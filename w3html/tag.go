@@ -16,6 +16,8 @@ type TagEnum struct {
 	Id string
 	// IsPaired indicates whether tag has a closing counterpart
 	IsPaired bool
+	// KeepChildren sets whether to keep tag's children during conversion to [ParsedPage]
+	KeepChildren bool
 	// Handler gets called by the [Parser] when the tag is encountered.
 	//
 	// [TreeNode] argument is 'nil' for tags with [TagEnum.IsPaired] == false
