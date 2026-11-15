@@ -139,6 +139,10 @@ func (hunk TreeNode) ExtractInjectSlots() (SlotsMap, error) {
 	return slots, nil
 }
 
+func (node TreeNode) IsPseudo() bool {
+	return node.Kind == NodePlaceholder || node.Data == nil
+}
+
 // isWhitespace reports whether the buffer is purely whitespace.
 func isWhitespace(buffer []byte) bool {
 	for _, char := range buffer {

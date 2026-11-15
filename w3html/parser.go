@@ -261,13 +261,13 @@ func (parser *Parser) ToParsedPage() ParsedPage {
 			}
 		}
 
-		if treeNode.Node.Data != nil && treeNode.Kind != NodePlaceholder {
-			last := len(parser.ctx.out.Nodes) - 1
-			if last >= 0 && treeNode.Node.Kind == NodeHunk &&
-				parser.ctx.out.Nodes[last].Kind == NodeHunk {
-				parser.ctx.out.Nodes[last].Data = append(
-					parser.ctx.out.Nodes[last].Data.([]byte),
-					treeNode.Node.Data.([]byte)...,
+		if !treeNode.IsPseudo() {
+			lastIdx := len(parser.ctx.out.Nodes) - 1
+			if lastIdx >= 0 && treeNode.Kind == NodeHunk &&
+				parser.ctx.out.Nodes[lastIdx].Kind == NodeHunk {
+				parser.ctx.out.Nodes[lastIdx].Data = append(
+					parser.ctx.out.Nodes[lastIdx].Data.([]byte),
+					treeNode.Data.([]byte)...,
 				)
 			} else {
 				parser.ctx.out.Nodes = append(parser.ctx.out.Nodes, treeNode.Node)
