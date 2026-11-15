@@ -247,7 +247,18 @@ type ParsedPage struct {
 func (parser *Parser) ToParsedPage() ParsedPage {
 	var visit func(TreeNode)
 	visit = func(treeNode TreeNode) {
-		parser.ctx.out.Nodes = append(parser.ctx.out.Nodes, treeNode.Node)
+		if treeNode.Node.Data != nil {
+			last := len(parser.ctx.out.Nodes) - 1
+			if last >= 0 && treeNode.Node.Kind == NodeHunk &&
+				parser.ctx.out.Nodes[last].Kind == NodeHunk {
+				parser.ctx.out.Nodes[last].Data = append(
+					parser.ctx.out.Nodes[last].Data.([]byte),
+					treeNode.Node.Data.([]byte)...,
+				)
+			} else {
+				parser.ctx.out.Nodes = append(parser.ctx.out.Nodes, treeNode.Node)
+			}
+		}
 		for _, child := range treeNode.Children {
 			visit(child)
 		}

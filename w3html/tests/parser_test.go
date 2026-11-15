@@ -209,38 +209,26 @@ var TestCases = []TestCase{
 			Nodes: []w3html.Node{
 				{
 					Kind: w3html.NodeHunk,
-					Data: []byte("<div>\n"),
-				},
-				{
-					Kind: w3html.NodePlaceholder,
-					Data: nil,
-				},
-				{
-					Kind: w3html.NodeHunk,
-					Data: []byte("</div>"),
+					Data: []byte("<div>\n</div>"),
 				},
 			},
 		},
 	},
-	// {
-	// 	File: MockFile{
-	// 		Filename: "If",
-	// 		Contents: "{{ if .Value == 1 && .Bool }}Hi!{{ /if }}",
-	// 	},
-	// 	Expected: w3html.ParsedPage{
-	// 		AccessPaths: []w3html.AccessPath{
-	// 			{"Value"},
-	// 			{"Bool"},
-	// 		},
-	// 		PlacedSlots: map[string]w3html.NodeLocation{},
-	// 		Nodes: []w3html.Node{
-	// 			{
-	// 				Kind: w3html.NodeHunk,
-	// 				Data: []byte("Hi!"),
-	// 			},
-	// 		},
-	// 	},
-	// },
+	{
+		File: MockFile{
+			Filename: "Extend",
+			Contents: "{{ extend 'extend.1' }}Hello World!{{ /extend }}",
+		},
+		Expected: w3html.ParsedPage{
+			PlacedSlots: map[string]w3html.NodeLocation{},
+			Nodes: []w3html.Node{
+				{
+					Kind: w3html.NodeHunk,
+					Data: []byte("<section>\nHello World!</section>"),
+				},
+			},
+		},
+	},
 	// ————————————————————————————————
 	{
 		File: MockFile{
