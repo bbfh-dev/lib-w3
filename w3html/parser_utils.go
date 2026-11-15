@@ -19,7 +19,7 @@ func (parser *Parser) appendHunkBuffer() {
 }
 
 func (parser *Parser) AppendHunk(buffer []byte) {
-	parser.Append(TreeNode{
+	parser.Append(Node{
 		Kind:           NodeHunk,
 		Data:           buffer,
 		SourceCodeLine: parser.line,
@@ -28,7 +28,7 @@ func (parser *Parser) AppendHunk(buffer []byte) {
 }
 
 func (parser *Parser) AppendPlaceholder() {
-	parser.Append(TreeNode{
+	parser.Append(Node{
 		Kind:           NodePlaceholder,
 		Data:           parser.placeholders,
 		SourceCodeLine: parser.line,
@@ -38,7 +38,7 @@ func (parser *Parser) AppendPlaceholder() {
 }
 
 func (parser *Parser) AppendTag(tag Tag) {
-	parser.Append(TreeNode{
+	parser.Append(Node{
 		Kind:           NodeTag,
 		Data:           tag,
 		SourceCodeLine: parser.line,
@@ -46,7 +46,7 @@ func (parser *Parser) AppendTag(tag Tag) {
 	})
 }
 
-func (parser *Parser) Append(node TreeNode) {
+func (parser *Parser) Append(node Node) {
 	parser.ctx.Append(node)
 }
 

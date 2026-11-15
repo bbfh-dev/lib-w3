@@ -9,10 +9,10 @@ import (
 )
 
 type ParserContext struct {
-	Root               TreeNode
+	Root               Node
 	breadcrumbs        []NodeLocation
 	out                ParsedPage
-	lastAddedNode      *TreeNode
+	lastAddedNode      *Node
 	lastAddedNodeIndex uint
 }
 
@@ -28,7 +28,7 @@ func (ctx ParserContext) Write(w io.Writer) {
 	fmt.Fprint(w, strings.Repeat("—", 80))
 }
 
-func (ctx *ParserContext) Pivot() *TreeNode {
+func (ctx *ParserContext) Pivot() *Node {
 	if len(ctx.breadcrumbs) == 0 {
 		return &ctx.Root
 	} else {
@@ -65,14 +65,14 @@ func (ctx *ParserContext) OnLeaveTagBody(tag Tag) error {
 	return nil
 }
 
-func (ctx *ParserContext) Append(hunk TreeNode) {
+func (ctx *ParserContext) Append(hunk Node) {
 	ctx.append(hunk)
 	pivot := ctx.Pivot()
 	ctx.lastAddedNodeIndex = uint(len(pivot.Children) - 1)
 	ctx.lastAddedNode = &pivot.Children[ctx.lastAddedNodeIndex]
 }
 
-func (ctx *ParserContext) append(hunk TreeNode) {
+func (ctx *ParserContext) append(hunk Node) {
 	pivot := ctx.Pivot()
 
 	// merge [NodeHunk] if they are adjacent.

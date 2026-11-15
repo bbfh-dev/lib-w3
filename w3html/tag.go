@@ -20,10 +20,10 @@ type TagEnum struct {
 	KeepChildren bool
 	// Handler gets called by the [Parser] when the tag is encountered.
 	//
-	// [TreeNode] argument is 'nil' for tags with [TagEnum.IsPaired] == false
+	// [Node] argument is 'nil' for tags with [TagEnum.IsPaired] == false
 	//
 	// For [TagEnum.IsPaired] it is always called on the closing tag.
-	Handler func(parser ParserApi, node *TreeNode, tag Tag) error
+	Handler func(parser ParserApi, node *Node, tag Tag) error
 	// Arguments defines [Argument] that will be validated.
 	//
 	// Set to 'nil' (or [SkipArgumentCheck]) to skip argument validation.

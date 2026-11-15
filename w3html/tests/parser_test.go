@@ -39,7 +39,7 @@ var TestCases = []TestCase{
 		},
 		Expected: w3html.ParsedPage{
 			PlacedSlots: map[string]w3html.NodeLocation{},
-			Nodes: []w3html.TreeNode{
+			Nodes: []w3html.Node{
 				{
 					Kind:           w3html.NodeHunk,
 					Data:           []byte("<span>Hello World! from AccessPath_CompileTime</span>"),
@@ -55,7 +55,7 @@ var TestCases = []TestCase{
 		},
 		Expected: w3html.ParsedPage{
 			PlacedSlots: map[string]w3html.NodeLocation{},
-			Nodes: []w3html.TreeNode{
+			Nodes: []w3html.Node{
 				{
 					Kind:           w3html.NodeHunk,
 					Data:           []byte("{ this should stay as text }"),
@@ -71,7 +71,7 @@ var TestCases = []TestCase{
 		},
 		Expected: w3html.ParsedPage{
 			PlacedSlots: map[string]w3html.NodeLocation{},
-			Nodes: []w3html.TreeNode{
+			Nodes: []w3html.Node{
 				{
 					Kind: w3html.NodeTag,
 					Data: w3html.Tag{
@@ -115,7 +115,7 @@ var TestCases = []TestCase{
 		},
 		Expected: w3html.ParsedPage{
 			PlacedSlots: map[string]w3html.NodeLocation{},
-			Nodes: []w3html.TreeNode{
+			Nodes: []w3html.Node{
 				{
 					Kind:           w3html.NodeHunk,
 					Data:           []byte("<div>\n<span>\nHello World!\n</span>\n</div>"),
@@ -131,7 +131,7 @@ var TestCases = []TestCase{
 		},
 		Expected: w3html.ParsedPage{
 			PlacedSlots: map[string]w3html.NodeLocation{},
-			Nodes: []w3html.TreeNode{
+			Nodes: []w3html.Node{
 				{
 					Kind:           w3html.NodeHunk,
 					Data:           []byte("<div>\n"),
@@ -214,7 +214,7 @@ var TestCases = []TestCase{
 			PlacedSlots: map[string]w3html.NodeLocation{
 				"default": {ChildIndex: 1, Line: 2},
 			},
-			Nodes: []w3html.TreeNode{
+			Nodes: []w3html.Node{
 				{
 					Kind:           w3html.NodeHunk,
 					Data:           []byte("<div>\n\n</div>"),
@@ -230,7 +230,7 @@ var TestCases = []TestCase{
 		},
 		Expected: w3html.ParsedPage{
 			PlacedSlots: map[string]w3html.NodeLocation{},
-			Nodes: []w3html.TreeNode{
+			Nodes: []w3html.Node{
 				{
 					Kind:           w3html.NodeHunk,
 					Data:           []byte("<section>\nHello World!\n</section>"),
@@ -246,7 +246,7 @@ var TestCases = []TestCase{
 		},
 		Expected: w3html.ParsedPage{
 			PlacedSlots: map[string]w3html.NodeLocation{},
-			Nodes: []w3html.TreeNode{
+			Nodes: []w3html.Node{
 				{
 					Kind: w3html.NodeTag,
 					Data: w3html.Tag{
@@ -267,7 +267,7 @@ var TestCases = []TestCase{
 						},
 					},
 					SourceCodeLine: 1,
-					Children: []w3html.TreeNode{
+					Children: []w3html.Node{
 						{
 							Kind:           w3html.NodeHunk,
 							Data:           []byte("Hello "),

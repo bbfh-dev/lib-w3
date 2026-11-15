@@ -33,7 +33,7 @@ type ParserApi interface {
 	AppendHunk(buffer []byte)
 	AppendPlaceholder()
 	AppendTag(tag Tag)
-	Append(node TreeNode)
+	Append(node Node)
 }
 
 type Parser struct {
@@ -71,11 +71,11 @@ func newParser(
 		hunkBuffer:   []byte{},
 		line:         1,
 		ctx: &ParserContext{
-			Root: TreeNode{
+			Root: Node{
 				Kind:           NodeRoot,
 				Data:           nil,
 				SourceCodeLine: 1,
-				Children:       []TreeNode{},
+				Children:       []Node{},
 			},
 			out: ParsedPage{
 				PlacedSlots: map[string]NodeLocation{},
@@ -260,15 +260,15 @@ func (parser *Parser) parse() error {
 
 type ParsedPage struct {
 	PlacedSlots map[string]NodeLocation
-	Nodes       []TreeNode
+	Nodes       []Node
 }
 
 func (parser *Parser) ToParsedPage() ParsedPage {
-	var visit func(*TreeNode)
-	visit = func(treeNode *TreeNode) {
-		keepChildren := treeNode.Kind == NodeTag && treeNode.AsTag().Kind.KeepChildren
-		if treeNode.Kind == NodePlaceholder {
-			id := treeNode.Data.(uint)
+	var visit func(*Node)
+	visit = func(node *Node) {
+		keepChildren := node.Kind == NodeTag && node.AsTag().Kind.KeepChildren
+		if node.Kind == NodePlaceholder {
+			id := node.Data.(uint)
 			for key, location := range parser.ctx.out.PlacedSlots {
 				if location.Pointer().Data.(uint) == id {
 					for _, node := range parser.slots[key] {
@@ -281,26 +281,26 @@ func (parser *Parser) ToParsedPage() ParsedPage {
 			}
 		}
 
-		if !treeNode.IsPseudo() {
+		if !node.IsPseudo() {
 			lastIdx := len(parser.ctx.out.Nodes) - 1
-			if lastIdx >= 0 && treeNode.Kind == NodeHunk &&
+			if lastIdx >= 0 && node.Kind == NodeHunk &&
 				parser.ctx.out.Nodes[lastIdx].Kind == NodeHunk {
 				parser.ctx.out.Nodes[lastIdx].Data = append(
 					parser.ctx.out.Nodes[lastIdx].Data.([]byte),
-					treeNode.Data.([]byte)...,
+					node.Data.([]byte)...,
 				)
 			} else {
 				if !keepChildren {
-					treeNode.Children = nil
+					node.Children = nil
 				}
-				parser.ctx.out.Nodes = append(parser.ctx.out.Nodes, *treeNode)
+				parser.ctx.out.Nodes = append(parser.ctx.out.Nodes, *node)
 			}
 		}
 
 		if keepChildren {
 			return
 		}
-		for _, child := range treeNode.Children {
+		for _, child := range node.Children {
 			visit(&child)
 		}
 	}

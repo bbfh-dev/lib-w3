@@ -25,7 +25,7 @@ func (parser *Parser) handleClosingTag(opening NodeLocation) error {
 	return parser.handleTag(node, tag)
 }
 
-func (parser *Parser) handleTag(node *TreeNode, tag Tag) error {
+func (parser *Parser) handleTag(node *Node, tag Tag) error {
 	handler := tag.Kind.Handler
 	if handler == nil {
 		return nil

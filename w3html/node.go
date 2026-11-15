@@ -11,13 +11,13 @@ import (
 var NoNodeLocation = NodeLocation{Parent: nil}
 
 type NodeLocation struct {
-	Parent       *TreeNode
+	Parent       *Node
 	ChildIndex   uint
 	Line         uint
 	ReaderOffset uint
 }
 
-func (location NodeLocation) Pointer() *TreeNode {
+func (location NodeLocation) Pointer() *Node {
 	return &location.Parent.Children[location.ChildIndex]
 }
 
@@ -48,14 +48,14 @@ func (enum NodeEnum) String() string {
 	}
 }
 
-type TreeNode struct {
+type Node struct {
 	Kind           NodeEnum
 	Data           any
 	SourceCodeLine uint
-	Children       []TreeNode
+	Children       []Node
 }
 
-func (node TreeNode) Write(w io.Writer, indent uint) {
+func (node Node) Write(w io.Writer, indent uint) {
 	indentString := strings.Repeat("    ", int(indent))
 	data := node.Data
 	if data == nil {
@@ -77,18 +77,18 @@ func (node TreeNode) Write(w io.Writer, indent uint) {
 }
 
 // AsHunk casts the [Node.Data] value that is expected when [Node.Kind] == [NodeHunk].
-func (node TreeNode) AsHunk() []byte {
+func (node Node) AsHunk() []byte {
 	return node.Data.([]byte)
 }
 
 // AsTag casts the [Node.Data] value that is expected when [Node.Kind] == [NodeTag].
-func (node TreeNode) AsTag() Tag {
+func (node Node) AsTag() Tag {
 	return node.Data.(Tag)
 }
 
-type SlotsMap map[string][]TreeNode
+type SlotsMap map[string][]Node
 
-func (hunk TreeNode) ExtractInjectSlots() (SlotsMap, error) {
+func (hunk Node) ExtractInjectSlots() (SlotsMap, error) {
 	slots := SlotsMap{}
 	for _, child := range hunk.Children {
 		switch child.Kind {
@@ -119,7 +119,7 @@ func (hunk TreeNode) ExtractInjectSlots() (SlotsMap, error) {
 	return slots, nil
 }
 
-func (node TreeNode) IsPseudo() bool {
+func (node Node) IsPseudo() bool {
 	return node.Kind == NodePlaceholder || node.Data == nil
 }
 

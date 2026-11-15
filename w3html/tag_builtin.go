@@ -22,7 +22,7 @@ var IdVariable = TagEnum{
 		{Name: ArgNamePath, Kind: ArgPath, IsOptional: false},
 		{Name: "join", Kind: ArgString, IsOptional: true},
 	},
-	Handler: func(parser ParserApi, node *TreeNode, tag Tag) error {
+	Handler: func(parser ParserApi, node *Node, tag Tag) error {
 		arg, err := tag.FindArgNamed(ArgNamePath)
 		if err != nil {
 			return err
@@ -80,7 +80,7 @@ var IdRange = TagEnum{
 	Arguments: []ArgumentDefinition{
 		{Name: ArgNameScope, Kind: ArgPath, IsOptional: false},
 	},
-	Handler: func(parser ParserApi, node *TreeNode, tag Tag) error {
+	Handler: func(parser ParserApi, node *Node, tag Tag) error {
 		path := tag.Arguments[0].AsPath()
 		if !path[len(path)-1].Iterate {
 			return fmt.Errorf("'range' tag requires that the 'path' argument ends with '[]'")
@@ -106,7 +106,7 @@ func init() {
 				{Name: ArgNamePath, Kind: ArgString, IsOptional: false},
 				{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
 			},
-			Handler: func(parser ParserApi, node *TreeNode, tag Tag) error {
+			Handler: func(parser ParserApi, node *Node, tag Tag) error {
 				slots, err := node.ExtractInjectSlots()
 				if err != nil {
 					return err
@@ -138,7 +138,7 @@ func init() {
 				{Name: ArgNamePath, Kind: ArgString, IsOptional: false},
 				{Name: ArgNameScope, Kind: ArgPath, IsOptional: true},
 			},
-			Handler: func(parser ParserApi, node *TreeNode, tag Tag) error {
+			Handler: func(parser ParserApi, node *Node, tag Tag) error {
 				nestedPage, err := parser.ParseNested(tag, SlotsMap{})
 				if err != nil {
 					return err
@@ -156,7 +156,7 @@ func init() {
 			Arguments: []ArgumentDefinition{
 				{Name: ArgNameSlotId, Kind: ArgString, IsOptional: false},
 			},
-			Handler: func(parser ParserApi, node *TreeNode, tag Tag) error {
+			Handler: func(parser ParserApi, node *Node, tag Tag) error {
 				slotIdArg, err := tag.FindArgNamed(ArgNameSlotId)
 				if err != nil {
 					return err
