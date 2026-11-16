@@ -138,20 +138,29 @@ func (arg Argument) ToNumber() float64 {
 	}
 }
 
-func (arg Argument) ToBoolean() bool {
+func (arg Argument) Compute(ctx RenderContext) any {
 	switch arg.Kind {
-	case ArgString:
-		return len(arg.AsString()) != 0
-	case ArgFormatString:
-		return len(arg.AsFormatString()) != 0
-	case ArgInt:
-		return arg.AsInt() != 0
-	case ArgFloat:
-		return arg.AsFloat() != 0.0
-	case ArgBool:
-		return arg.AsBool()
 	case ArgPath:
-		return len(arg.AsPath()) != 0
+		return ctx.Query(arg.AsPath())[0].Interface()
+	default:
+		return arg.Data
+	}
+}
+
+func ToBoolean(data any) bool {
+	switch data := data.(type) {
+	case string:
+		return len(data) != 0
+	case FormatString:
+		return len(data) != 0
+	case w3data.Path:
+		return len(data) != 0
+	case int:
+		return data != 0
+	case float64:
+		return data != 0.0
+	case bool:
+		return data
 	default:
 		return false
 	}
@@ -242,7 +251,8 @@ func (fragment formatFragment) String() string {
 
 type Operation struct {
 	Token      string
-	Comparator func(a, b Argument) bool
+	Comparator func(a, b Argument) Predicate
+	Compose    func(a, b Predicate) Predicate
 	Validator  func(a, b Argument) error
 }
 
@@ -252,57 +262,74 @@ func (op Operation) String() string {
 
 var (
 	OpEquals = Operation{
-		Token:      "==",
-		Validator:  nil,
-		Comparator: Argument.Equal,
+		Token:     "==",
+		Validator: nil,
+		Comparator: func(a, b Argument) Predicate {
+			return func(ctx RenderContext) bool {
+				return a.Compute(ctx) == b.Compute(ctx)
+			}
+		},
 	}
 	OpNotEquals = Operation{
 		Token:     "!=",
 		Validator: nil,
-		Comparator: func(a, b Argument) bool {
-			return !a.Equal(b)
+		Comparator: func(a, b Argument) Predicate {
+			return func(ctx RenderContext) bool {
+				return a.Compute(ctx) != b.Compute(ctx)
+			}
 		},
 	}
 	OpMoreThanStrict = Operation{
 		Token:     ">",
 		Validator: argBothAreNumbers,
-		Comparator: func(a, b Argument) bool {
-			return a.ToNumber() > b.ToNumber()
+		Comparator: func(a, b Argument) Predicate {
+			return func(ctx RenderContext) bool {
+				return a.Compute(ctx).(uint) > uint(b.Compute(ctx).(int))
+			}
 		},
 	}
 	OpMoreThan = Operation{
 		Token:     ">=",
 		Validator: argBothAreNumbers,
-		Comparator: func(a, b Argument) bool {
-			return a.ToNumber() >= b.ToNumber()
+		Comparator: func(a, b Argument) Predicate {
+			return func(ctx RenderContext) bool {
+				return a.Compute(ctx).(int) >= b.Compute(ctx).(int)
+			}
 		},
 	}
 	OpLessThanStrict = Operation{
 		Token:     "<",
 		Validator: argBothAreNumbers,
-		Comparator: func(a, b Argument) bool {
-			return a.ToNumber() < b.ToNumber()
+		Comparator: func(a, b Argument) Predicate {
+			return func(ctx RenderContext) bool {
+				return a.Compute(ctx).(int) < b.Compute(ctx).(int)
+			}
 		},
 	}
 	OpLessThan = Operation{
 		Token:     "<=",
 		Validator: argBothAreNumbers,
-		Comparator: func(a, b Argument) bool {
-			return a.ToNumber() <= b.ToNumber()
+		Comparator: func(a, b Argument) Predicate {
+			return func(ctx RenderContext) bool {
+				return a.Compute(ctx).(int) <= b.Compute(ctx).(int)
+			}
 		},
 	}
 	OpLogicAnd = Operation{
-		Token:     "&&",
-		Validator: nil,
-		Comparator: func(a, b Argument) bool {
-			return a.ToBoolean() && b.ToBoolean()
+		Token: "&&",
+		Compose: func(a, b Predicate) Predicate {
+			return func(ctx RenderContext) bool {
+				return a(ctx) && b(ctx)
+			}
 		},
 	}
 	OpLogicOr = Operation{
 		Token:     "||",
 		Validator: nil,
-		Comparator: func(a, b Argument) bool {
-			return a.ToBoolean() || b.ToBoolean()
+		Compose: func(a, b Predicate) Predicate {
+			return func(ctx RenderContext) bool {
+				return a(ctx) || b(ctx)
+			}
 		},
 	}
 )

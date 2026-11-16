@@ -79,6 +79,16 @@ var RenderTestCases = []RenderTestCase{
 		Contents: "{{ range .Buttons[] }}Hello {{ ..Hash() }}!<br>{{ /range }}",
 		Expected: "Hello 929733088!<br>Hello 695742261!<br>Hello 3406644!<br>",
 	},
+	{
+		Name:     "If",
+		Contents: "{{ if .Root > 60 }}Hello World!{{ /if }}",
+		Expected: "Hello World!",
+	},
+	{
+		Name:     "IfNotPass",
+		Contents: "{{ if .Root > 90 }}Hello World!{{ /if }}",
+		Expected: "",
+	},
 }
 
 func TestRender(t *testing.T) {

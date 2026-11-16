@@ -306,6 +306,56 @@ var TestCases = []TestCase{
 			},
 		},
 	},
+	{
+		File: MockFile{
+			Filename: "If",
+			Contents: "{{ if .Root > 60 }}Hello World!{{ /if }}",
+		},
+		Expected: w3html.ParsedPage{
+			PlacedSlots: map[string]w3html.NodeLocation{},
+			Nodes: []w3html.Node{
+				{
+					Kind: w3html.NodeTag,
+					Data: w3html.Tag{
+						Kind: w3html.IdIf,
+						Arguments: []w3html.Argument{
+							{
+								Kind: w3html.ArgPath,
+								Key:  "",
+								Data: w3data.Path{
+									{
+										Word:    "Root",
+										Index:   2,
+										Call:    false,
+										Iterate: false,
+									},
+								},
+							},
+							{
+								Kind: w3html.ArgOperation,
+								Key:  "",
+								Data: w3html.OpMoreThanStrict,
+							},
+							{
+								Kind: w3html.ArgInt,
+								Key:  "",
+								Data: 60,
+							},
+						},
+					},
+					SourceCodeLine: 1,
+					Children: []w3html.Node{
+						{
+							Kind:           w3html.NodeHunk,
+							Data:           []byte("Hello World!"),
+							SourceCodeLine: 1,
+							Children:       nil,
+						},
+					},
+				},
+			},
+		},
+	},
 	// ————————————————————————————————
 	{
 		File: MockFile{

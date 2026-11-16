@@ -111,12 +111,38 @@ func (step RangeRenderStep) Render(ctx RenderContext) {
 	}
 }
 
+var IdIf = TagEnum{
+	IsPaired:     true,
+	KeepChildren: true,
+	Id:           "if",
+	Arguments:    SkipArgumentCheck,
+	Handler:      nil,
+	RendererFactory: func(node *Node, tag Tag) Renderable {
+		return IfRenderStep{
+			Predicate: ParsePredicate(tag.Arguments),
+			Contents:  Bake(node.Children),
+		}
+	},
+}
+
+type IfRenderStep struct {
+	Predicate Predicate
+	Contents  Renderable
+}
+
+func (step IfRenderStep) Render(ctx RenderContext) {
+	if step.Predicate(ctx) {
+		step.Contents.Render(ctx)
+	}
+}
+
 var RegisteredTags = []TagEnum{}
 
 func init() {
 	RegisteredTags = []TagEnum{
 		IdSlot,
 		IdRange,
+		IdIf,
 		{
 			IsPaired:     true,
 			KeepChildren: false,
@@ -141,13 +167,6 @@ func init() {
 				node.Children = nestedPage.Nodes
 				return nil
 			},
-		},
-		{
-			IsPaired:     true,
-			KeepChildren: false,
-			Id:           "if",
-			Arguments:    SkipArgumentCheck,
-			Handler:      nil,
 		},
 		{
 			IsPaired:     false,
