@@ -61,6 +61,11 @@ var RenderTestCases = []RenderTestCase{
 		Contents: "<div>\n{{ include 'include.3' .My.Scope }}\n</div>",
 		Expected: "<div>\n69<span>Hi!</span>\n</div>",
 	},
+	{
+		Name:     "Extend",
+		Contents: "{{ extend 'extend.1' }}Hello World!{{ /extend }}",
+		Expected: "<section>\nHello World!\n</section>",
+	},
 }
 
 func TestRender(t *testing.T) {
