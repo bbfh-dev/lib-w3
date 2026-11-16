@@ -64,7 +64,7 @@ type VariableRenderStep struct {
 }
 
 func (step VariableRenderStep) Render(ctx RenderContext) {
-	values := w3data.Walk(ctx.Data, step.Path)
+	values := ctx.Query(step.Path)
 	for i, value := range values {
 		if i != 0 {
 			ctx.Writer.Write([]byte(step.JoinString))
