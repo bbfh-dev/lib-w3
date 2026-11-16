@@ -33,7 +33,7 @@ type TagEnum struct {
 	// RendererFactory is a function that creates a [Renderable] to be added to the [Renderer].
 	//
 	// Set to 'nil' or return 'nil' value to skip this [Tag] during rendering.
-	RendererFactory func(tag Tag) Renderable
+	RendererFactory func(node *Node, tag Tag) Renderable
 }
 
 func (enum TagEnum) String() string {

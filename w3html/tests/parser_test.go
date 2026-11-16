@@ -1,6 +1,8 @@
 package w3html_test
 
 import (
+	"crypto/sha1"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"os"
@@ -242,7 +244,7 @@ var TestCases = []TestCase{
 	{
 		File: MockFile{
 			Filename: "Range",
-			Contents: "{{ range .Buttons[] }}Hello {{ .. }}!{{ /range }}",
+			Contents: "{{ range .Buttons[] }}Hello {{ .. }}!<br>{{ /range }}",
 		},
 		Expected: w3html.ParsedPage{
 			PlacedSlots: map[string]w3html.NodeLocation{},
@@ -296,7 +298,7 @@ var TestCases = []TestCase{
 						},
 						{
 							Kind:           w3html.NodeHunk,
-							Data:           []byte("!"),
+							Data:           []byte("!<br>"),
 							SourceCodeLine: 1,
 						},
 					},
@@ -378,7 +380,14 @@ type PageData struct {
 	Path    PathData
 	My      MyData
 	Root    uint
-	Buttons []string
+	Buttons []Hashable
+}
+
+type Hashable string
+
+func (str Hashable) Hash() int {
+	hash := sha1.Sum([]byte(str))
+	return int(binary.LittleEndian.Uint32(hash[:]))
 }
 
 func (data PageData) This() string {

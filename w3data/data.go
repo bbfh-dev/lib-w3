@@ -35,6 +35,13 @@ func (path Path) IsCompileTime() bool {
 		strings.ToLower(path[0].Word) == path[0].Word
 }
 
+func (path Path) TrimScope(scope Path) Path {
+	if len(path) < len(scope) {
+		return Path{}
+	}
+	return path[len(scope):]
+}
+
 type Segment struct {
 	// Used for debugging only
 	Word string
@@ -155,6 +162,10 @@ func GetPath(dataType reflect.Type, segment Segment) (Path, error) {
 func getPath(dataType reflect.Type, segment Segment) (Path, error) {
 	if strings.ToLower(string(segment.Word[0])) == string(segment.Word[0]) {
 		return Path{segment}, nil
+	}
+
+	if dataType.Kind() == reflect.Array || dataType.Kind() == reflect.Slice {
+		dataType = dataType.Elem()
 	}
 
 	if segment.Call {

@@ -2,11 +2,14 @@ package w3html_test
 
 import (
 	"bytes"
+	"fmt"
+	"os"
 	"reflect"
 	"testing"
 	"time"
 
 	libclog "codeberg.org/bbfh/lib-clog"
+	"codeberg.org/bbfh/lib-w3/w3data"
 	"codeberg.org/bbfh/lib-w3/w3html"
 	"codeberg.org/bbfh/lib-w3/w3utils"
 	"gotest.tools/assert"
@@ -22,10 +25,10 @@ var Data = PageData{
 		},
 	},
 	Root: 69,
-	Buttons: []string{
-		"first",
-		"second",
-		"third",
+	Buttons: []Hashable{
+		Hashable("first"),
+		Hashable("second"),
+		Hashable("third"),
 	},
 }
 
@@ -66,9 +69,20 @@ var RenderTestCases = []RenderTestCase{
 		Contents: "{{ extend 'extend.1' }}Hello World!{{ /extend }}",
 		Expected: "<section>\nHello World!\n</section>",
 	},
+	{
+		Name:     "Range",
+		Contents: "{{ range .Buttons[] }}Hello {{ .. }}!<br>{{ /range }}",
+		Expected: "Hello first!<br>Hello second!<br>Hello third!<br>",
+	},
+	{
+		Name:     "RangeMethod",
+		Contents: "{{ range .Buttons[] }}Hello {{ ..Hash() }}!<br>{{ /range }}",
+		Expected: "Hello 929733088!<br>Hello 695742261!<br>Hello 3406644!<br>",
+	},
 }
 
 func TestRender(t *testing.T) {
+	printResult := os.Getenv("DEBUG") == "1"
 	w3utils.Logger.SetLevel(libclog.LogWarning)
 	var buffer bytes.Buffer
 
@@ -92,13 +106,16 @@ func TestRender(t *testing.T) {
 			parseDuration := time.Since(start)
 
 			start = time.Now()
-			renderer := w3html.Bake(result)
+			renderer := w3html.Bake(result.Nodes)
 			bakeDuration := time.Since(start)
 
 			start = time.Now()
+			value := reflect.ValueOf(Data)
 			renderer.Render(w3html.RenderContext{
-				Writer: &buffer,
-				Data:   reflect.ValueOf(Data),
+				Writer:     &buffer,
+				GlobalData: value,
+				LocalData:  value,
+				Scope:      w3data.Path{},
 			})
 			renderDuration := time.Since(start)
 			assert.DeepEqual(t, testCase.Expected, buffer.String())
@@ -117,6 +134,16 @@ func TestRender(t *testing.T) {
 				renderSteps,
 				libclog.AnsiReset,
 			)
+			if printResult {
+				fmt.Printf(
+					"%s```html\n%s%s%s\n```\n%s",
+					libclog.AnsiColor(libclog.ColorBrightYellow),
+					libclog.AnsiColor(libclog.ColorBrightBlack),
+					buffer.String(),
+					libclog.AnsiColor(libclog.ColorBrightYellow),
+					libclog.AnsiReset,
+				)
+			}
 		})
 	}
 }

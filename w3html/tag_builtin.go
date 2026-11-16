@@ -39,7 +39,7 @@ var IdVariable = TagEnum{
 		}
 		return nil
 	},
-	RendererFactory: func(tag Tag) Renderable {
+	RendererFactory: func(node *Node, tag Tag) Renderable {
 		arg, err := tag.FindArgNamed(ArgNamePath)
 		if err != nil {
 			return nil
@@ -87,9 +87,28 @@ var IdRange = TagEnum{
 		}
 		return nil
 	},
-	RendererFactory: func(tag Tag) Renderable {
-		return nil
+	RendererFactory: func(node *Node, tag Tag) Renderable {
+		arg, _ := tag.FindArg(0)
+		path := arg.AsPath()
+		return RangeRenderStep{
+			Path:     path,
+			Contents: Bake(node.Children),
+		}
 	},
+}
+
+type RangeRenderStep struct {
+	Path     w3data.Path
+	Contents Renderable
+}
+
+func (step RangeRenderStep) Render(ctx RenderContext) {
+	values := ctx.Query(step.Path)
+	for _, value := range values {
+		ctx.LocalData = value
+		ctx.Scope = step.Path
+		step.Contents.Render(ctx)
+	}
 }
 
 var RegisteredTags = []TagEnum{}
