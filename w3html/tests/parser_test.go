@@ -372,6 +372,90 @@ var TestCases = []TestCase{
 			},
 		},
 	},
+	{
+		File: MockFile{
+			Filename: "Complex",
+			Contents: `
+				{{ extend "extend.1" title="Hello World!" }}
+				{{ slot "default" }}
+				<main>
+					{{ range .Buttons[] }}
+					<span>{{ .. }}</span>
+					{{ /range }}
+				</main>
+				{{ /slot }}
+				{{ /extend }}`,
+		},
+		Expected: w3html.ParsedPage{
+			PlacedSlots: map[string]w3html.NodeLocation{},
+			Nodes: []w3html.Node{
+				{
+					Kind:           w3html.NodeHunk,
+					Data:           []byte("<section>\n\n<main>\n"),
+					SourceCodeLine: 1,
+				},
+				{
+					Kind: w3html.NodeTag,
+					Data: w3html.Tag{
+						Kind: w3html.IdRange,
+						Arguments: []w3html.Argument{
+							{
+								Kind: w3html.ArgPath,
+								Key:  "",
+								Data: w3data.Path{
+									{
+										Word:    "Buttons",
+										Index:   3,
+										Call:    false,
+										Iterate: true,
+									},
+								},
+							},
+						},
+					},
+					SourceCodeLine: 5,
+					Children: []w3html.Node{
+						{
+							Kind:           w3html.NodeHunk,
+							Data:           []byte("\n<span>"),
+							SourceCodeLine: 5,
+						},
+						{
+							Kind: w3html.NodeTag,
+							Data: w3html.Tag{
+								Kind: w3html.IdVariable,
+								Arguments: []w3html.Argument{
+									{
+										Kind: w3html.ArgPath,
+										Key:  "",
+										Data: w3data.Path{
+											{
+												Word:    "Buttons",
+												Index:   3,
+												Call:    false,
+												Iterate: true,
+											},
+										},
+									},
+								},
+							},
+							SourceCodeLine: 6,
+						},
+						{
+							Kind:           w3html.NodeHunk,
+							Data:           []byte("</span>\n"),
+							SourceCodeLine: 6,
+						},
+					},
+				},
+				{
+					Kind:           w3html.NodeHunk,
+					Data:           []byte("\n</main>\n\n</section>"),
+					SourceCodeLine: 7,
+				},
+			},
+		},
+	},
 	// ————————————————————————————————
 	{
 		File: MockFile{

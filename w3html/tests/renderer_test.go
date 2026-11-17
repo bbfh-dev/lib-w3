@@ -104,6 +104,20 @@ var RenderTestCases = []RenderTestCase{
 		Contents: "{{ if .Root }}Hello World!{{ /if }}",
 		Expected: "Hello World!",
 	},
+	{
+		Name: "Complex",
+		Contents: `
+				{{ extend "extend.1" title="Hello World!" }}
+				{{ slot "default" }}
+				<main>
+					{{ range .Buttons[] }}
+					<span>{{ .. }}</span>
+					{{ /range }}
+				</main>
+				{{ /slot }}
+				{{ /extend }}`,
+		Expected: "<section>\n\n<main>\n\n<span>first</span>\n\n<span>second</span>\n\n<span>third</span>\n\n</main>\n\n</section>",
+	},
 }
 
 func TestRender(t *testing.T) {

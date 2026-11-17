@@ -272,6 +272,7 @@ func (parser *Parser) ToParsedPage() ParsedPage {
 			for key, location := range parser.ctx.out.PlacedSlots {
 				if location.Pointer().Data.(uint) == id {
 					for _, node := range parser.slots[key] {
+						keepChildren = node.Kind == NodeTag && node.AsTag().Kind.KeepChildren
 						if !keepChildren {
 							node.Children = nil
 						}
