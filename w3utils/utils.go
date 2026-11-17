@@ -89,3 +89,58 @@ func SafeUint(value int) uint {
 	}
 	return uint(value)
 }
+
+func LooseEqual(a, b any) bool {
+	av := reflect.ValueOf(a)
+	bv := reflect.ValueOf(b)
+
+	if !av.IsValid() || !bv.IsValid() {
+		return !av.IsValid() && !bv.IsValid()
+	}
+
+	if isNumeric(av.Kind()) && isNumeric(bv.Kind()) {
+		return toFloat64(av) == toFloat64(bv)
+	}
+
+	if av.Type() == bv.Type() {
+		if av.Type().Comparable() {
+			return av.Interface() == bv.Interface()
+		}
+
+		return reflect.DeepEqual(a, b)
+	}
+
+	return false
+}
+
+func isNumeric(kind reflect.Kind) bool {
+	switch kind {
+	case reflect.Int, reflect.Int8, reflect.Int16,
+		reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16,
+		reflect.Uint32, reflect.Uint64,
+		reflect.Uintptr,
+		reflect.Float32, reflect.Float64:
+		return true
+	default:
+		return false
+	}
+}
+
+func toFloat64(v reflect.Value) float64 {
+	switch v.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16,
+		reflect.Int32, reflect.Int64:
+		return float64(v.Int())
+
+	case reflect.Uint, reflect.Uint8, reflect.Uint16,
+		reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return float64(v.Uint())
+
+	case reflect.Float32, reflect.Float64:
+		return v.Float()
+
+	default:
+		return 0
+	}
+}

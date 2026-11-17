@@ -45,12 +45,12 @@ var RenderTestCases = []RenderTestCase{
 		Expected: "Hello World!\n",
 	},
 	{
-		Name:     "CompileTimeVariable",
+		Name:     "Variable_CompileTime",
 		Contents: "Hello {{ ._filename.base }}!",
-		Expected: "Hello CompileTimeVariable.html!",
+		Expected: "Hello Variable_CompileTime.html!",
 	},
 	{
-		Name:     "RootPath",
+		Name:     "Variable_RootPath",
 		Contents: "Hello {{ .Root }}!",
 		Expected: "Hello 69!",
 	},
@@ -60,7 +60,7 @@ var RenderTestCases = []RenderTestCase{
 		Expected: "<div>\n<span>\nHello World!\n</span>\n</div>",
 	},
 	{
-		Name:     "IncludeNestedPath",
+		Name:     "Include_NestedPath",
 		Contents: "<div>\n{{ include 'include.3' .My.Scope }}\n</div>",
 		Expected: "<div>\n69<span>Hi!</span>\n</div>",
 	},
@@ -75,7 +75,7 @@ var RenderTestCases = []RenderTestCase{
 		Expected: "Hello first!<br>Hello second!<br>Hello third!<br>",
 	},
 	{
-		Name:     "RangeMethod",
+		Name:     "Range_Method",
 		Contents: "{{ range .Buttons[] }}Hello {{ ..Hash() }}!<br>{{ /range }}",
 		Expected: "Hello 929733088!<br>Hello 695742261!<br>Hello 3406644!<br>",
 	},
@@ -85,9 +85,24 @@ var RenderTestCases = []RenderTestCase{
 		Expected: "Hello World!",
 	},
 	{
-		Name:     "IfNotPass",
+		Name:     "If_Fail",
 		Contents: "{{ if .Root > 90 }}Hello World!{{ /if }}",
 		Expected: "",
+	},
+	{
+		Name:     "If_Composed",
+		Contents: "{{ if .Root > 60 && .Root == 69 }}Hello World!{{ /if }}",
+		Expected: "Hello World!",
+	},
+	{
+		Name:     "If_ComposedMulti",
+		Contents: "{{ if .Root > 60 && .Root == 69 && .Path.To }}Hello World!{{ /if }}",
+		Expected: "Hello World!",
+	},
+	{
+		Name:     "If_Simple",
+		Contents: "{{ if .Root }}Hello World!{{ /if }}",
+		Expected: "Hello World!",
 	},
 }
 

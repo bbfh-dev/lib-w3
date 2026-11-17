@@ -97,7 +97,7 @@ var TestCases = []TestCase{
 									},
 									{
 										Word:    "Value",
-										Index:   1,
+										Index:   2,
 										Call:    true,
 										Iterate: false,
 									},
@@ -189,7 +189,7 @@ var TestCases = []TestCase{
 									},
 									{
 										Word:    "This",
-										Index:   0,
+										Index:   1,
 										Call:    true,
 										Iterate: false,
 									},
@@ -455,6 +455,10 @@ func (data ToData) Value() string {
 }
 
 func (data ToData) This() string {
+	return data.Value()
+}
+
+func (data ToData) String() string {
 	return data.Value()
 }
 

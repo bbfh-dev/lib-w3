@@ -116,10 +116,17 @@ var IdIf = TagEnum{
 	KeepChildren: true,
 	Id:           "if",
 	Arguments:    SkipArgumentCheck,
-	Handler:      nil,
+	Handler: func(parser ParserApi, node *Node, tag Tag) error {
+		_, err := ParsePredicate(tag.Arguments)
+		if err != nil {
+			return err
+		}
+		return nil
+	},
 	RendererFactory: func(node *Node, tag Tag) Renderable {
+		predicate, _ := ParsePredicate(tag.Arguments)
 		return IfRenderStep{
-			Predicate: ParsePredicate(tag.Arguments),
+			Predicate: predicate,
 			Contents:  Bake(node.Children),
 		}
 	},

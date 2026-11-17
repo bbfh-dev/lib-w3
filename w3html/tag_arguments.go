@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"codeberg.org/bbfh/lib-w3/w3data"
+	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
 // read-only
@@ -17,6 +18,7 @@ const (
 	ArgString ArgumentEnum = iota
 	ArgFormatString
 	ArgOperation
+	ArgLogicOperation
 	ArgInt
 	ArgFloat
 	ArgBool
@@ -33,6 +35,8 @@ func (enum ArgumentEnum) String() string {
 		return "FormatString"
 	case ArgOperation:
 		return "Operation"
+	case ArgLogicOperation:
+		return "LogicOperation"
 	case ArgInt:
 		return "Integer"
 	case ArgFloat:
@@ -53,7 +57,7 @@ func (enum ArgumentEnum) String() string {
 // IsNumeric returns whether the argument type can be meaningfully converted into a number
 func (enum ArgumentEnum) IsNumeric() bool {
 	switch enum {
-	case ArgInt, ArgFloat, ArgBool:
+	case ArgInt, ArgFloat, ArgBool, ArgPath:
 		return true
 	default:
 		return false
@@ -122,22 +126,6 @@ func (arg Argument) ToString() string {
 	}
 }
 
-func (arg Argument) ToNumber() float64 {
-	switch arg.Kind {
-	case ArgFloat:
-		return arg.AsFloat()
-	case ArgInt:
-		return float64(arg.AsInt())
-	case ArgBool:
-		if arg.AsBool() {
-			return 1.0
-		}
-		return 0.0
-	default:
-		return 0.0
-	}
-}
-
 func (arg Argument) Compute(ctx RenderContext) any {
 	switch arg.Kind {
 	case ArgPath:
@@ -147,22 +135,44 @@ func (arg Argument) Compute(ctx RenderContext) any {
 	}
 }
 
+type Stringable interface {
+	String() string
+}
+
 func ToBoolean(data any) bool {
 	switch data := data.(type) {
 	case string:
 		return len(data) != 0
 	case FormatString:
 		return len(data) != 0
-	case w3data.Path:
-		return len(data) != 0
-	case int:
+	case Stringable:
+		return len(data.String()) != 0
+	case int8, int16, int32, int64, int, uint, uint16, uint32, uint64:
 		return data != 0
-	case float64:
+	case float32, float64:
 		return data != 0.0
 	case bool:
 		return data
 	default:
 		return false
+	}
+}
+
+func ToNumber(data any) float64 {
+	switch data := data.(type) {
+	case float64:
+		return data
+	case int:
+		return float64(data)
+	case uint:
+		return float64(data)
+	case bool:
+		if data {
+			return 1.0
+		}
+		return 0.0
+	default:
+		return 0.0
 	}
 }
 
@@ -194,6 +204,10 @@ func (arg Argument) AsOperation() Operation {
 	return arg.Data.(Operation)
 }
 
+func (arg Argument) AsLogicOperation() LogicOperation {
+	return arg.Data.(LogicOperation)
+}
+
 func (arg Argument) Equal(other Argument) bool {
 	if arg.Kind != other.Kind {
 		return false
@@ -204,6 +218,8 @@ func (arg Argument) Equal(other Argument) bool {
 		return slices.Equal(arg.AsFormatString(), other.AsFormatString())
 	case ArgOperation:
 		return arg.AsOperation().Token == other.AsOperation().Token
+	case ArgLogicOperation:
+		return arg.AsLogicOperation().Token == other.AsLogicOperation().Token
 	case ArgPath:
 		return slices.EqualFunc(arg.AsPath(), other.AsPath(), w3data.Segment.Equal)
 	default:
@@ -252,7 +268,6 @@ func (fragment formatFragment) String() string {
 type Operation struct {
 	Token      string
 	Comparator func(a, b Argument) Predicate
-	Compose    func(a, b Predicate) Predicate
 	Validator  func(a, b Argument) error
 }
 
@@ -266,7 +281,10 @@ var (
 		Validator: nil,
 		Comparator: func(a, b Argument) Predicate {
 			return func(ctx RenderContext) bool {
-				return a.Compute(ctx) == b.Compute(ctx)
+				return w3utils.LooseEqual(
+					a.Compute(ctx),
+					b.Compute(ctx),
+				)
 			}
 		},
 	}
@@ -275,7 +293,10 @@ var (
 		Validator: nil,
 		Comparator: func(a, b Argument) Predicate {
 			return func(ctx RenderContext) bool {
-				return a.Compute(ctx) != b.Compute(ctx)
+				return !w3utils.LooseEqual(
+					a.Compute(ctx),
+					b.Compute(ctx),
+				)
 			}
 		},
 	}
@@ -284,7 +305,7 @@ var (
 		Validator: argBothAreNumbers,
 		Comparator: func(a, b Argument) Predicate {
 			return func(ctx RenderContext) bool {
-				return a.Compute(ctx).(uint) > uint(b.Compute(ctx).(int))
+				return ToNumber(a.Compute(ctx)) > ToNumber(b.Compute(ctx))
 			}
 		},
 	}
@@ -293,7 +314,7 @@ var (
 		Validator: argBothAreNumbers,
 		Comparator: func(a, b Argument) Predicate {
 			return func(ctx RenderContext) bool {
-				return a.Compute(ctx).(int) >= b.Compute(ctx).(int)
+				return ToNumber(a.Compute(ctx)) >= ToNumber(b.Compute(ctx))
 			}
 		},
 	}
@@ -302,7 +323,7 @@ var (
 		Validator: argBothAreNumbers,
 		Comparator: func(a, b Argument) Predicate {
 			return func(ctx RenderContext) bool {
-				return a.Compute(ctx).(int) < b.Compute(ctx).(int)
+				return ToNumber(a.Compute(ctx)) < ToNumber(b.Compute(ctx))
 			}
 		},
 	}
@@ -311,11 +332,25 @@ var (
 		Validator: argBothAreNumbers,
 		Comparator: func(a, b Argument) Predicate {
 			return func(ctx RenderContext) bool {
-				return a.Compute(ctx).(int) <= b.Compute(ctx).(int)
+				return ToNumber(a.Compute(ctx)) <= ToNumber(b.Compute(ctx))
 			}
 		},
 	}
-	OpLogicAnd = Operation{
+)
+
+// ————————————————————————————————
+
+type LogicOperation struct {
+	Token   string
+	Compose func(a, b Predicate) Predicate
+}
+
+func (op LogicOperation) String() string {
+	return op.Token
+}
+
+var (
+	OpLogicAnd = LogicOperation{
 		Token: "&&",
 		Compose: func(a, b Predicate) Predicate {
 			return func(ctx RenderContext) bool {
@@ -323,9 +358,8 @@ var (
 			}
 		},
 	}
-	OpLogicOr = Operation{
-		Token:     "||",
-		Validator: nil,
+	OpLogicOr = LogicOperation{
+		Token: "||",
 		Compose: func(a, b Predicate) Predicate {
 			return func(ctx RenderContext) bool {
 				return a(ctx) || b(ctx)

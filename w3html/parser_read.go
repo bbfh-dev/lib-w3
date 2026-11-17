@@ -250,7 +250,7 @@ func (parser *Parser) readTagArgs() ([]Argument, error) {
 				return args, fmt.Errorf("reading keyword: %w", err)
 			}
 			args = append(args, Argument{
-				Kind: ArgOperation,
+				Kind: ArgLogicOperation,
 				Key:  key,
 				Data: OpLogicAnd,
 			})
@@ -262,7 +262,7 @@ func (parser *Parser) readTagArgs() ([]Argument, error) {
 				return args, fmt.Errorf("reading keyword: %w", err)
 			}
 			args = append(args, Argument{
-				Kind: ArgOperation,
+				Kind: ArgLogicOperation,
 				Key:  key,
 				Data: OpLogicOr,
 			})
