@@ -243,6 +243,22 @@ var TestCases = []TestCase{
 	},
 	{
 		File: MockFile{
+			Filename: "Extend_Slot",
+			Contents: "{{ extend 'extend.1' }}{{ slot 'default' }}Hello World!{{ /slot }}{{ /extend }}",
+		},
+		Expected: w3html.ParsedPage{
+			PlacedSlots: map[string]w3html.NodeLocation{},
+			Nodes: []w3html.Node{
+				{
+					Kind:           w3html.NodeHunk,
+					Data:           []byte("<section>\nHello World!\n</section>"),
+					SourceCodeLine: 1,
+				},
+			},
+		},
+	},
+	{
+		File: MockFile{
 			Filename: "Range",
 			Contents: "{{ range .Buttons[] }}Hello {{ .. }}!<br>{{ /range }}",
 		},

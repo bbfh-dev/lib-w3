@@ -10,8 +10,10 @@ var IdSlot = TagEnum{
 	IsPaired:     true,
 	KeepChildren: false,
 	Id:           "slot",
-	Arguments:    NoArguments,
-	Handler:      nil,
+	Arguments: []ArgumentDefinition{
+		{Name: ArgNameSlotId, Kind: ArgString, IsOptional: false},
+	},
+	Handler: nil,
 }
 
 var IdVariable = TagEnum{
