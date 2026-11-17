@@ -6,7 +6,6 @@ import (
 	"codeberg.org/bbfh/lib-w3/internal"
 	"codeberg.org/bbfh/lib-w3/w3errs"
 	"codeberg.org/bbfh/lib-w3/w3html"
-	"codeberg.org/bbfh/lib-w3/w3store"
 	"codeberg.org/bbfh/lib-w3/w3utils"
 	"github.com/julienschmidt/httprouter"
 )
@@ -28,7 +27,7 @@ func (engine *Engine) ListenAndServe(addr string) error {
 
 func (engine *Engine) newContext() Context {
 	return Context{
-		store:        make([]any, w3store.ContextStoreHolders()),
+		store:        make([]any, w3utils.ContextStoreHolders()),
 		errorHandler: engine.errorHandler,
 		engine:       engine,
 	}

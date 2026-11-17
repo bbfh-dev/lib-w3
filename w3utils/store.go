@@ -1,4 +1,4 @@
-package w3store
+package w3utils
 
 // Holder to a slice element (slice index where the held data is stored).
 // One should always be obtained from somewhere, rather than set manually.

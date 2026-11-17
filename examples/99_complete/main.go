@@ -9,7 +9,6 @@ import (
 	libclog "codeberg.org/bbfh/lib-clog"
 	libw3 "codeberg.org/bbfh/lib-w3"
 	"codeberg.org/bbfh/lib-w3/w3errs"
-	"codeberg.org/bbfh/lib-w3/w3store"
 	"codeberg.org/bbfh/lib-w3/w3utils"
 	"codeberg.org/bbfh/lib-w3/w3ware"
 )
@@ -19,7 +18,7 @@ type Session struct {
 	CsrfToken string
 }
 
-var ContextAuth w3store.Holder[Session]
+var ContextAuth w3utils.Holder[Session]
 
 type IndexPageData struct {
 	Buttons []ButtonData
@@ -31,7 +30,7 @@ type ButtonData struct {
 	Hidden bool
 }
 
-var IndexPage w3store.Holder[IndexPageData]
+var IndexPage w3utils.Holder[IndexPageData]
 
 func init() {
 	w3utils.Logger.SetLevel(libclog.LogDebug)

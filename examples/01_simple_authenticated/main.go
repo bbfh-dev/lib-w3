@@ -5,11 +5,11 @@ import (
 	"os"
 
 	libw3 "codeberg.org/bbfh/lib-w3"
-	"codeberg.org/bbfh/lib-w3/w3store"
+	"codeberg.org/bbfh/lib-w3/w3utils"
 	"codeberg.org/bbfh/lib-w3/w3ware"
 )
 
-var ContextAuth w3store.Holder[int]
+var ContextAuth w3utils.Holder[int]
 
 func main() {
 	engine := libw3.NewBuilder().

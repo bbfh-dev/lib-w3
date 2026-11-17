@@ -6,12 +6,12 @@ import (
 
 	libw3 "codeberg.org/bbfh/lib-w3"
 	"codeberg.org/bbfh/lib-w3/w3errs"
-	"codeberg.org/bbfh/lib-w3/w3store"
+	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
 var (
-	ContextSessionError       = w3store.AllocateContextStoreHolder[w3errs.HttpError]()
-	contextSessionPlaceholder = w3store.AllocateContextStoreHolder[any]()
+	ContextSessionError       = w3utils.AllocateContextStoreHolder[w3errs.HttpError]()
+	contextSessionPlaceholder = w3utils.AllocateContextStoreHolder[any]()
 	errUnauthorized           = w3errs.NewSimple(http.StatusUnauthorized)
 	errInvalidSession         = w3errs.NewPublic(
 		http.StatusUnauthorized,
@@ -32,7 +32,7 @@ type SessionAuth[T any] struct {
 	//	w3ware.SessionAuth{ContextSession: &ContextExample}
 	// Then query it from the [libw3.Context] using:
 	//	userSession, ok := ctx.Get(ContextExample)
-	ContextSession *w3store.Holder[T]
+	ContextSession *w3utils.Holder[T]
 	// Function that validates the token and returns session data to pass down to other handlers.
 	Authenticator authenticator[T]
 	// Whether the user must be authenticated (aborts on errors).
@@ -100,7 +100,7 @@ func (middleware *SessionAuth[T]) ShouldInject(method, path string) bool {
 }
 
 func (middleware *SessionAuth[T]) Init() (keep bool) {
-	*middleware.ContextSession = w3store.Holder[T](contextSessionPlaceholder)
+	*middleware.ContextSession = w3utils.Holder[T](contextSessionPlaceholder)
 	return true
 }
 
