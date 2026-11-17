@@ -49,6 +49,12 @@ curl -i -X PUT -H 'Authorization: Bearer abc' 'http://localhost:8081/upload?csrf
 cat /tmp/demo
 echo ""
 
+echo -e "\n\x1b[97m==> GET /:"
+printf '\033[94m' >/tmp/demo
+curl -i -H 'Authorization: Bearer abc' 'http://localhost:8081/' >>/tmp/demo 2>/dev/null
+cat /tmp/demo
+echo ""
+
 echo -e "\x1b[90m==> Stopping the server process"
 kill $PID
 

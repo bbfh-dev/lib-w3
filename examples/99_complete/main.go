@@ -21,6 +21,18 @@ type Session struct {
 
 var ContextAuth w3store.Holder[Session]
 
+type IndexPageData struct {
+	Buttons []ButtonData
+}
+
+type ButtonData struct {
+	Icon   string
+	Label  string
+	Hidden bool
+}
+
+var IndexPage w3store.Holder[IndexPageData]
+
 func init() {
 	w3utils.Logger.SetLevel(libclog.LogDebug)
 }
@@ -51,6 +63,7 @@ func main() {
 			Required:          false,
 			IgnoreStaticFiles: true,
 		}).
+		LoadPage(filepath.Join(workdir, "www", "index.html"), &IndexPage).
 		WithStaticHandler(libw3.StaticConfig{
 			FileSystem:       os.DirFS(filepath.Join(workdir, "www", "static")),
 			Middleware:       libw3.MiddlewareChain{},
@@ -69,6 +82,28 @@ func main() {
 	engine.PUT("/upload", func(ctx *libw3.Context) {
 		value := ctx.Request.FormValue("key")
 		ctx.SendTextf(http.StatusOK, "Received %q", value)
+	})
+
+	engine.GET("/", func(ctx *libw3.Context) {
+		ctx.SendPage(http.StatusOK, IndexPage, IndexPageData{
+			Buttons: []ButtonData{
+				{
+					Icon:   "gear.svg",
+					Label:  "Settings",
+					Hidden: false,
+				},
+				{
+					Icon:   "user.svg",
+					Label:  "Profile",
+					Hidden: false,
+				},
+				{
+					Icon:   "user.svg",
+					Label:  "Log out",
+					Hidden: true,
+				},
+			},
+		})
 	})
 
 	err := engine.ListenAndServe(":8081")
