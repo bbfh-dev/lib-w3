@@ -1,12 +1,14 @@
 package libw3
 
 import (
-	"errors"
 	"net/http"
 	"os"
 
+	libclog "codeberg.org/bbfh/lib-clog"
 	"codeberg.org/bbfh/lib-w3/internal"
 	"codeberg.org/bbfh/lib-w3/w3errs"
+	"codeberg.org/bbfh/lib-w3/w3html"
+	"codeberg.org/bbfh/lib-w3/w3store"
 	"codeberg.org/bbfh/lib-w3/w3utils"
 	"github.com/julienschmidt/httprouter"
 )
@@ -15,6 +17,7 @@ import (
 type Builder struct {
 	maxConcurrentRequests uint16
 	middleware            MiddlewareChain
+	pages                 []w3html.Renderable
 	errs                  []error
 	staticConfig          *StaticConfig
 	errorHandler          ErrorHandler
@@ -25,6 +28,7 @@ func NewBuilder() *Builder {
 	return &Builder{
 		maxConcurrentRequests: 200,
 		middleware:            MiddlewareChain{},
+		pages:                 []w3html.Renderable{},
 		errs:                  []error{},
 		staticConfig:          nil,
 		errorHandler:          defaultErrorHandler,
@@ -42,6 +46,29 @@ func (builder *Builder) LimitConcurrentRequests(limit uint16) *Builder {
 // Can be called multiple times.
 func (builder *Builder) Use(middleware Middleware) *Builder {
 	builder.middleware = builder.middleware.ProperAppend(middleware)
+	return builder
+}
+
+// LoadPage parses, bakes, and stores the provided HTML document.
+// The [w3html.Renderable] can be accessed using the provided [w3store.Holder] key in [Context.SendPage].
+func (builder *Builder) LoadPage[T any](filename string, holder *w3store.Holder[T]) *Builder {
+	file, err := os.OpenFile(filename, os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		builder.errs = append(builder.errs, err)
+		return builder
+	}
+	defer file.Close()
+
+	parser := w3html.NewParser[T](file, map[string]string{})
+	page, err := parser.Parse()
+	if err != nil {
+		builder.errs = append(builder.errs, err)
+		return builder
+	}
+
+	*holder = w3store.Holder[T](len(builder.pages))
+	builder.pages = append(builder.pages, w3html.Bake(page.Nodes))
+
 	return builder
 }
 
@@ -63,12 +90,13 @@ func (builder *Builder) WithErrorHandler(handler ErrorHandler) *Builder {
 // Use [Builder.MustBuild] to exit on error instead of handling it manually.
 func (builder *Builder) Build() (*Engine, error) {
 	if len(builder.errs) != 0 {
-		return nil, errors.Join(builder.errs...)
+		return nil, builder.errs[0]
 	}
 	engine := &Engine{
 		router:       httprouter.New(),
 		pool:         nil,
 		middleware:   builder.middleware,
+		pages:        builder.pages,
 		errorHandler: builder.errorHandler,
 	}
 	engine.endpointBuilder = newEndpointBuilder(engine)
@@ -103,6 +131,9 @@ func (builder *Builder) Build() (*Engine, error) {
 func (builder *Builder) MustBuild() *Engine {
 	engine, err := builder.Build()
 	if err != nil {
+		if derr, ok := err.(w3errs.WritableError); ok {
+			derr.Write(os.Stderr, libclog.OutputAuto)
+		}
 		w3utils.Logger.Fatal("%s", err.Error())
 		os.Exit(1)
 	}

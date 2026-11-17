@@ -5,8 +5,11 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"reflect"
 
+	"codeberg.org/bbfh/lib-w3/w3data"
 	"codeberg.org/bbfh/lib-w3/w3errs"
+	"codeberg.org/bbfh/lib-w3/w3html"
 	"codeberg.org/bbfh/lib-w3/w3store"
 	"codeberg.org/bbfh/lib-w3/w3utils"
 	"github.com/julienschmidt/httprouter"
@@ -28,7 +31,8 @@ type Context struct {
 	handlers []Handler // Middleware + endpoint
 	cursor   uint      // handler that is being currently executed in the chain. May be set to [abortCursor]
 
-	store        []any        // arbitrary data passed between middleware. Refer to [w3store.Holder].
+	store        []any // arbitrary data passed between middleware. Refer to [w3store.Holder].
+	engine       *Engine
 	errorHandler ErrorHandler // refer to [ErrorHandler] documentation.
 }
 
@@ -169,6 +173,19 @@ func (ctx *Context) SendJson(statusCode int, data []byte) {
 	ctx.SetContentType("application/json; charset=utf-8")
 	ctx.Writer.WriteHeader(statusCode)
 	ctx.Writer.Write(data)
+}
+
+func (ctx *Context) SendPage[T any](statusCode int, page w3store.Holder[T], data T) {
+	ctx.SetContentType("text/html; charset=utf-8")
+	ctx.Writer.WriteHeader(statusCode)
+	renderable := ctx.engine.pages[page]
+	value := reflect.ValueOf(data)
+	renderable.Render(w3html.RenderContext{
+		Writer:     ctx.Writer,
+		GlobalData: value,
+		LocalData:  value,
+		Scope:      w3data.Path{},
+	})
 }
 
 // SetContentType is sugar code for setting specific content type.
