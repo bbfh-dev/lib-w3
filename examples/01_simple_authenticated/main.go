@@ -9,7 +9,7 @@ import (
 	"codeberg.org/bbfh/lib-w3/w3ware"
 )
 
-var ContextAuth w3utils.Holder[int]
+var ContextAuth w3utils.ContextHolder[int]
 
 func main() {
 	engine := libw3.NewBuilder().

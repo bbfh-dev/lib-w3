@@ -18,7 +18,7 @@ type Session struct {
 	CsrfToken string
 }
 
-var ContextAuth w3utils.Holder[Session]
+var ContextAuth w3utils.ContextHolder[Session]
 
 type IndexPageData struct {
 	Buttons []ButtonData
@@ -30,7 +30,7 @@ type ButtonData struct {
 	Hidden bool
 }
 
-var IndexPage w3utils.Holder[IndexPageData]
+var IndexPage w3utils.PageHolder[IndexPageData]
 
 func init() {
 	w3utils.Logger.SetLevel(libclog.LogDebug)

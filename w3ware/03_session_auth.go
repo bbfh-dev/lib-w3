@@ -32,7 +32,7 @@ type SessionAuth[T any] struct {
 	//	w3ware.SessionAuth{ContextSession: &ContextExample}
 	// Then query it from the [libw3.Context] using:
 	//	userSession, ok := ctx.Get(ContextExample)
-	ContextSession *w3utils.Holder[T]
+	ContextSession *w3utils.ContextHolder[T]
 	// Function that validates the token and returns session data to pass down to other handlers.
 	Authenticator authenticator[T]
 	// Whether the user must be authenticated (aborts on errors).
@@ -100,7 +100,7 @@ func (middleware *SessionAuth[T]) ShouldInject(method, path string) bool {
 }
 
 func (middleware *SessionAuth[T]) Init() (keep bool) {
-	*middleware.ContextSession = w3utils.Holder[T](contextSessionPlaceholder)
+	*middleware.ContextSession = w3utils.ContextHolder[T](contextSessionPlaceholder)
 	return true
 }
 

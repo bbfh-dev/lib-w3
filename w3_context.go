@@ -88,14 +88,14 @@ func (ctx *Context) executeHandlers() {
 // Set stores a value in the context for later use.
 // Use the holder returned by [w3store.AllocateContextStoreHolder] during creation.
 // Any middleware should expose those at the top-level.
-func (ctx *Context) Set[T any](holder w3utils.Holder[T], value T) {
+func (ctx *Context) Set[T any](holder w3utils.ContextHolder[T], value T) {
 	ctx.store[holder] = value
 }
 
 // Retrieves the stored value from context.
 // Use the holder returned by [w3store.AllocateContextStoreHolder] during creation.
 // Any middleware should expose those at the top-level.
-func (ctx *Context) Get[T any](holder w3utils.Holder[T]) (T, bool) {
+func (ctx *Context) Get[T any](holder w3utils.ContextHolder[T]) (T, bool) {
 	if int(holder) >= len(ctx.store) {
 		w3utils.Logger.Error("Context.Get(): Trying to access out-of-bounds store")
 		goto return_empty
@@ -174,7 +174,7 @@ func (ctx *Context) SendJson(statusCode int, data []byte) {
 	ctx.Writer.Write(data)
 }
 
-func (ctx *Context) SendPage[T any](statusCode int, page w3utils.Holder[T], data T) {
+func (ctx *Context) SendPage[T any](statusCode int, page w3utils.PageHolder[T], data T) {
 	ctx.SetContentType("text/html; charset=utf-8")
 	ctx.Writer.WriteHeader(statusCode)
 	renderable := ctx.engine.pages[page]

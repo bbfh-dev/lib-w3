@@ -50,7 +50,10 @@ func (builder *Builder) Use(middleware Middleware) *Builder {
 
 // LoadPage parses, bakes, and stores the provided HTML document.
 // The [w3html.Renderable] can be accessed using the provided [w3store.Holder] key in [Context.SendPage].
-func (builder *Builder) LoadPage[T any](filename string, holder *w3utils.Holder[T]) *Builder {
+func (builder *Builder) LoadPage[T any](
+	filename string,
+	holder *w3utils.PageHolder[T],
+) *Builder {
 	file, err := os.OpenFile(filename, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		builder.errs = append(builder.errs, err)
@@ -65,7 +68,7 @@ func (builder *Builder) LoadPage[T any](filename string, holder *w3utils.Holder[
 		return builder
 	}
 
-	*holder = w3utils.Holder[T](len(builder.pages))
+	*holder = w3utils.PageHolder[T](len(builder.pages))
 	builder.pages = append(builder.pages, w3html.Bake(page.Nodes))
 
 	return builder
