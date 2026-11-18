@@ -12,6 +12,7 @@ Check out the [📁 **examples**](./examples/) directory for working project exa
 <!-- vim-markdown-toc GFM -->
 
 * [1 🏅 Features](#1--features)
+    * [1.1 Roadmap](#11-roadmap)
 * [2 📃 Templates](#2--templates)
     * [2.1 Introduction](#21-introduction)
     * [2.2 Tag arguments](#22-tag-arguments)
@@ -36,6 +37,16 @@ Check out the [📁 **examples**](./examples/) directory for working project exa
 - High-performance request handling using object pools & pre-parsed documents.
 - Type-safe template parsing to minimize rendering errors during requests.
 - Automatic checksums and serving for static files.
+
+## 1.1 Roadmap
+
+Version 0.0.1:
+
+- [ ] Improve error reporting: the highlighting is often incorrect, the error messages are WAY too long.
+- More tests:
+    - [ ] Test FormatString.
+    - [ ] Test deeply nested tags.
+    - [ ] Test errors.
 
 # 2 📃 Templates
 
