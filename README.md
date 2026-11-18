@@ -90,19 +90,18 @@ Built-in parameters include:
 
 ### 2.3.1 Include
 
-```html
-{{ include <relative path to file> [key=value parameters...] }}</relative>
+```
+{{ include <relative path to file> [key=value parameters...] }}
 ```
 
 Provided path can ommit `.html` extension. HTML files are parsed and included by replacing the tag with nested document's contents. Provided `key=value` pairs can be accessed by using [Compile-time Paths](#223-compile-time-paths) inside of the nested document.
 
 ### 2.3.2 Extend
 
-```html
-{{ extend
-<relative path to file>
-	[key=value parameters...] }} ... {{ /extend }}</relative
->
+```
+{{ extend <relative path to file> [key=value parameters...] }}
+    ...
+{{ /extend }}
 ```
 
 Similar to [Include tag](#231-include), but injects HTML inside of the nested document.
@@ -111,7 +110,7 @@ Refer to [Slot](#234-slot) and [Place](#233-place) tags for injection documentat
 
 ### 2.3.3 Place
 
-```html
+```
 {{ place [slot id] }}
 ```
 
@@ -120,15 +119,17 @@ Use `{{ place "default" }}` to allow for unnamed slot injection.
 
 ### 2.3.4 Slot
 
-```html
-{{ slot [slot_id] }} ... {{ /slot }}
+```
+{{ slot [slot_id] }}
+    ...
+{{ /slot }}
 ```
 
 Place inside of an [Extend](#232-extend) tag to specify a hunk of HTML to be injected in place of a [Place tag](#233-place).
 
 ### 2.3.5 Variable
 
-```html
+```
 {{ .Path.To[].Here() }}
 ```
 
@@ -136,17 +137,17 @@ Compute the path and replace the tag with the contents.
 
 ### 2.3.6 Range
 
-```html
+```
 {{ range .Values[] }}
-<span>{{ ..ItemValue }}</span>
+    <span>{{ ..ItemValue }}</span>
 {{ /range }}
 ```
 
 ### 2.3.7 If
 
-```html
+```
 {{ if .Value == 123 }}
-<div>Hello World!</div>
+    <div>Hello World!</div>
 {{ /if }}
 ```
 
