@@ -130,6 +130,8 @@ func (arg Argument) Compute(ctx RenderContext) any {
 	switch arg.Kind {
 	case ArgPath:
 		return ctx.Query(arg.AsPath())[0].Interface()
+	case ArgFormatString:
+		return arg.Data.(FormatString).Compute(ctx)
 	default:
 		return arg.Data
 	}
@@ -214,8 +216,7 @@ func (arg Argument) Equal(other Argument) bool {
 	}
 	switch arg.Kind {
 	case ArgFormatString:
-		// TODO: Use EqualFunc()
-		return slices.Equal(arg.AsFormatString(), other.AsFormatString())
+		return slices.EqualFunc(arg.AsFormatString(), other.AsFormatString(), FormatFragment.Equal)
 	case ArgOperation:
 		return arg.AsOperation().Token == other.AsOperation().Token
 	case ArgLogicOperation:
@@ -230,12 +231,28 @@ func (arg Argument) Equal(other Argument) bool {
 // ————————————————————————————————
 
 // read-only
-type FormatString []formatFragment
+type FormatString []FormatFragment
 
 func (str FormatString) String() string {
 	var builder strings.Builder
 	for _, fragment := range str {
 		builder.WriteString(fragment.String())
+	}
+	return builder.String()
+}
+
+func (str FormatString) Compute(ctx RenderContext) string {
+	var builder strings.Builder
+	for _, fragment := range str {
+		switch fragment.Kind {
+		case FragmentString:
+			builder.WriteString(fragment.Data.(string))
+		case FragmentPath:
+			fmt.Fprint(
+				&builder,
+				ctx.Query(fragment.Data.(w3data.Path))[0].Interface(),
+			)
+		}
 	}
 	return builder.String()
 }
@@ -247,12 +264,12 @@ const (
 	FragmentPath
 )
 
-type formatFragment struct {
+type FormatFragment struct {
 	Kind formatFragmentEnum
 	Data any
 }
 
-func (fragment formatFragment) String() string {
+func (fragment FormatFragment) String() string {
 	switch fragment.Kind {
 	case FragmentString:
 		return fragment.Data.(string)
@@ -261,6 +278,18 @@ func (fragment formatFragment) String() string {
 	default:
 		return "{<?>}"
 	}
+}
+
+func (fragment FormatFragment) Equal(other FormatFragment) bool {
+	if fragment.Kind != other.Kind {
+		return false
+	}
+	if fragment.Kind == FragmentString {
+		return fragment.Data == other.Data
+	}
+	a := fragment.Data.(w3data.Path)
+	b := other.Data.(w3data.Path)
+	return slices.EqualFunc(a, b, w3data.Segment.Equal)
 }
 
 // ————————————————————————————————

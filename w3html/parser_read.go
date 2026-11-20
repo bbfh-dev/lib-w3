@@ -408,10 +408,10 @@ func (parser *Parser) readFormatString() (FormatString, error) {
 
 		case '`':
 			if len(buffer) != 0 {
-				if len(out) != 0 && out[0].Kind == FragmentString {
+				if len(out) != 0 && out[len(out)-1].Kind == FragmentString {
 					out[len(out)-1].Data = out[len(out)-1].Data.(string) + string(buffer)
 				} else {
-					out = append(out, formatFragment{
+					out = append(out, FormatFragment{
 						Kind: FragmentString,
 						Data: string(buffer),
 					})
@@ -420,6 +420,17 @@ func (parser *Parser) readFormatString() (FormatString, error) {
 			return out, nil
 
 		case '{':
+			if len(buffer) != 0 {
+				if len(out) != 0 && out[0].Kind == FragmentString {
+					out[len(out)-1].Data = out[len(out)-1].Data.(string) + string(buffer)
+				} else {
+					out = append(out, FormatFragment{
+						Kind: FragmentString,
+						Data: string(buffer),
+					})
+				}
+				buffer = []rune{}
+			}
 			path, err := parser.readPath()
 			if err != nil {
 				return nil, fmt.Errorf("reading path: %w", err)
@@ -439,13 +450,13 @@ func (parser *Parser) readFormatString() (FormatString, error) {
 				if len(out) != 0 && out[0].Kind == FragmentString {
 					out[len(out)-1].Data = out[len(out)-1].Data.(string) + value
 				} else {
-					out = append(out, formatFragment{
+					out = append(out, FormatFragment{
 						Kind: FragmentString,
 						Data: value,
 					})
 				}
 			} else {
-				out = append(out, formatFragment{
+				out = append(out, FormatFragment{
 					Kind: FragmentPath,
 					Data: path,
 				})

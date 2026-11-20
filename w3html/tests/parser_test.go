@@ -456,6 +456,53 @@ var TestCases = []TestCase{
 			},
 		},
 	},
+	{
+		File: MockFile{
+			Filename: "FormatString",
+			Contents: "{{ if .Root != `Hello {Root}` }}{{ /if }}",
+		},
+		Expected: w3html.ParsedPage{
+			PlacedSlots: map[string]w3html.NodeLocation{},
+			Nodes: []w3html.Node{
+				{
+					Kind: w3html.NodeTag,
+					Data: w3html.Tag{
+						Kind: w3html.IdIf,
+						Arguments: []w3html.Argument{
+							{
+								Kind: w3html.ArgPath,
+								Data: w3data.Path{{
+									Word:  "Root",
+									Index: 2,
+								}},
+							},
+							{
+								Kind: w3html.ArgOperation,
+								Data: w3html.OpNotEquals,
+							},
+							{
+								Kind: w3html.ArgFormatString,
+								Data: w3html.FormatString{
+									{
+										Kind: w3html.FragmentString,
+										Data: "Hello ",
+									},
+									{
+										Kind: w3html.FragmentPath,
+										Data: w3data.Path{{
+											Word:  "Root",
+											Index: 2,
+										}},
+									},
+								},
+							},
+						},
+					},
+					SourceCodeLine: 1,
+				},
+			},
+		},
+	},
 	// ————————————————————————————————
 	{
 		File: MockFile{

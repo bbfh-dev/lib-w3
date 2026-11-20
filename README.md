@@ -44,9 +44,10 @@ Version 0.0.1:
 
 - [ ] Improve error reporting: the highlighting is often incorrect, the error messages are WAY too long.
 - More tests:
-    - [ ] Test FormatString.
+    - [x] Test FormatString.
     - [ ] Test deeply nested tags.
     - [ ] Test errors.
+- [ ] Ensure paired tags are closed.
 
 # 2 📃 Templates
 

@@ -118,6 +118,11 @@ var RenderTestCases = []RenderTestCase{
 				{{ /extend }}`,
 		Expected: "<section>\n\n<main>\n\n<span>first</span>\n\n<span>second</span>\n\n<span>third</span>\n\n</main>\n\n</section>",
 	},
+	{
+		Name:     "FormatString",
+		Contents: "{{ if `Hello {Root}!` == 'Hello 69!' }}Hello World!{{ /if }}",
+		Expected: "Hello World!",
+	},
 }
 
 func TestRender(t *testing.T) {
