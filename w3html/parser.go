@@ -127,6 +127,12 @@ func (parser *Parser) Parse() (ParsedPage, error) {
 	if err != nil {
 		return ParsedPage{}, parser.reader.WrapError(err)
 	}
+	if len(parser.ctx.breadcrumbs) != 0 {
+		return ParsedPage{}, parser.reader.WrapError(fmt.Errorf(
+			"paired tag %q was never closed",
+			parser.ctx.breadcrumbs[len(parser.ctx.breadcrumbs)-1].Pointer().AsTag().Kind,
+		))
+	}
 	return parser.ToParsedPage(), nil
 }
 

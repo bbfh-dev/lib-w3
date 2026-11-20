@@ -549,6 +549,18 @@ var TestCases = []TestCase{
 			)
 		},
 	},
+	{
+		File: MockFile{
+			Filename: "Fail_PairedTagNotClosed",
+			Contents: "{{ if 10 == 10 }}",
+		},
+		ExpectError: func(err w3errs.DocumentError) bool {
+			return strings.Contains(
+				err.Message,
+				"paired tag \"if\" was never closed",
+			)
+		},
+	},
 }
 
 type MockFile struct {

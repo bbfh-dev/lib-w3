@@ -47,7 +47,7 @@ Version 0.0.1:
     - [x] Test FormatString.
     - [ ] Test deeply nested tags.
     - [ ] Test errors.
-- [ ] Ensure paired tags are closed.
+- [x] Ensure paired tags are closed.
 
 # 2 📃 Templates
 
