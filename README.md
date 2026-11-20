@@ -13,6 +13,8 @@ Check out the [📁 **examples**](./examples/) directory for working project exa
 
 * [1 🏅 Features](#1--features)
     * [1.1 Roadmap](#11-roadmap)
+        * [Templates](#templates)
+        * [Core](#core)
 * [2 📃 Templates](#2--templates)
     * [2.1 Introduction](#21-introduction)
     * [2.2 Tag arguments](#22-tag-arguments)
@@ -40,7 +42,9 @@ Check out the [📁 **examples**](./examples/) directory for working project exa
 
 ## 1.1 Roadmap
 
-Version 0.0.1:
+Version 0.0.2:
+
+### Templates
 
 - [ ] Improve error reporting: the highlighting is often incorrect, the error messages are WAY too long.
 - More tests:
@@ -48,6 +52,12 @@ Version 0.0.1:
     - [ ] Test deeply nested tags.
     - [ ] Test errors.
 - [x] Ensure paired tags are closed.
+
+### Core
+
+- [ ] Print all exported `/static` endpoints.
+- [ ] Middleware for basic bot mitigation.
+    - Drop suspisious requests such as `GET /.env`.
 
 # 2 📃 Templates
 
