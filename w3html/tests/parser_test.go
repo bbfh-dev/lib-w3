@@ -659,6 +659,15 @@ func TestParser(t *testing.T) {
 
 			result, err := parser.Parse()
 			if err != nil {
+				if printResult {
+					fmt.Fprintf(
+						tt.Output(),
+						"%s%s%s\n",
+						libclog.AnsiColor(libclog.ColorBrightBlack),
+						err.Error(),
+						libclog.AnsiReset,
+					)
+				}
 				if testCase.ExpectError == nil {
 					w3errs.Write(err, os.Stderr, outputMode)
 					tt.FailNow()
