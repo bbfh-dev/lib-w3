@@ -15,13 +15,12 @@ import (
 	"codeberg.org/bbfh/lib-w3/internal"
 	"codeberg.org/bbfh/lib-w3/w3data"
 	"codeberg.org/bbfh/lib-w3/w3errs"
-	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
 // FileOpener is called whenever [Parser] tries to open another file.
-type FileOpener func(absPath string) (w3utils.FileLike, error)
+type FileOpener func(absPath string) (fs.File, error)
 
-var defaultFileOpener FileOpener = func(absPath string) (w3utils.FileLike, error) {
+var defaultFileOpener FileOpener = func(absPath string) (fs.File, error) {
 	return os.OpenFile(absPath, os.O_RDONLY, os.ModePerm)
 }
 
@@ -35,7 +34,7 @@ type ParserApi interface {
 	AppendPlaceholder()
 	AppendTag(tag Tag)
 	Append(node Node)
-	OpenFile(filename string) (w3utils.FileLike, error)
+	OpenFile(filename string) (fs.File, error)
 	StaticFS() fs.FS
 }
 
@@ -54,20 +53,21 @@ type Parser struct {
 }
 
 // NewParser creates a parser. For parsing nested documents refer to [Parser.NewParser].
-func NewParser[T any](file w3utils.FileLike, params map[string]string, staticFS fs.FS) *Parser {
+func NewParser[T any](file fs.File, params map[string]string, staticFS fs.FS) *Parser {
 	return newParser(nil, file, params, staticFS, reflect.TypeOf(*new(T)))
 }
 
 func newParser(
 	parent *internal.DocumentReader,
-	file w3utils.FileLike,
+	file fs.File,
 	params map[string]string,
 	staticFS fs.FS,
 	data reflect.Type,
 ) *Parser {
 	reader := internal.NewDocumentReader(parent, file)
-	params["_filename"] = file.Name()
-	params["_filename.base"] = filepath.Base(file.Name())
+	stat, _ := file.Stat()
+	params["_filename"] = stat.Name()
+	params["_filename.base"] = filepath.Base(stat.Name())
 	return &Parser{
 		Scope:        w3data.Path{},
 		Params:       params,

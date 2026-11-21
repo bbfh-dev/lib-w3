@@ -2,11 +2,11 @@ package internal
 
 import (
 	"bufio"
+	"io/fs"
 	"slices"
 	"strings"
 
 	"codeberg.org/bbfh/lib-w3/w3errs"
-	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
 type DocumentReader struct {
@@ -21,11 +21,12 @@ type DocumentReader struct {
 	showArrow      bool
 }
 
-func NewDocumentReader(parent *DocumentReader, file w3utils.FileLike) *DocumentReader {
+func NewDocumentReader(parent *DocumentReader, file fs.File) *DocumentReader {
+	stat, _ := file.Stat()
 	return &DocumentReader{
 		Line:           1,
 		parent:         parent,
-		filename:       file.Name(),
+		filename:       stat.Name(),
 		internal:       bufio.NewReader(file),
 		document:       NewRingBuffer1024[rune](),
 		head:           0,

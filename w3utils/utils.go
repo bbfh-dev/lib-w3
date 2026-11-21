@@ -1,7 +1,6 @@
 package w3utils
 
 import (
-	"io"
 	"net/http"
 	"reflect"
 	"runtime"
@@ -18,12 +17,6 @@ func IsStateModifyingMethod(method string) bool {
 	default:
 		return false
 	}
-}
-
-type FileLike interface {
-	io.Reader
-	Name() string
-	Close() error
 }
 
 // HasName represents types whose name are known without reflection.

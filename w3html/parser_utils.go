@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"unicode/utf8"
-
-	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
 func (parser *Parser) flushHunkBuffer() {
@@ -125,7 +123,7 @@ func (parser *Parser) ParseNested(tag Tag, slots SlotsMap) (ParsedPage, error) {
 }
 
 // OpenFile using configured [FileOpener].
-func (parser *Parser) OpenFile(filename string) (w3utils.FileLike, error) {
+func (parser *Parser) OpenFile(filename string) (fs.File, error) {
 	return parser.fileOpener(filename)
 }
 
