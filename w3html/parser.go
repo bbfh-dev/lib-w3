@@ -276,20 +276,24 @@ type ParsedPage struct {
 }
 
 func (parser *Parser) ToParsedPage() ParsedPage {
+	placedSlotsLookup := map[uint]string{}
+	for key, location := range parser.ctx.out.PlacedSlots {
+		k := location.Pointer().Data.(uint)
+		placedSlotsLookup[k] = key
+	}
+
 	var visit func(*Node)
 	visit = func(node *Node) {
 		keepChildren := node.Kind == NodeTag && node.AsTag().Kind.KeepChildren
 		if node.Kind == NodePlaceholder {
 			id := node.Data.(uint)
-			for key, location := range parser.ctx.out.PlacedSlots {
-				if location.Pointer().Data.(uint) == id {
-					for _, node := range parser.slots[key] {
-						keepChildren = node.Kind == NodeTag && node.AsTag().Kind.KeepChildren
-						if !keepChildren {
-							node.Children = nil
-						}
-						parser.ctx.out.Nodes = append(parser.ctx.out.Nodes, node)
+			if key, ok := placedSlotsLookup[id]; ok {
+				for _, node := range parser.slots[key] {
+					keepChildren = node.Kind == NodeTag && node.AsTag().Kind.KeepChildren
+					if !keepChildren {
+						node.Children = nil
 					}
+					parser.ctx.out.Nodes = append(parser.ctx.out.Nodes, node)
 				}
 			}
 		}
