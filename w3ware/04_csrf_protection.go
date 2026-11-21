@@ -38,6 +38,10 @@ func (middleware *CsrfProtection) Handle(ctx *libw3.Context) {
 
 	requestCsrf := ctx.Request.FormValue("csrf_token")
 	if requestCsrf == "" {
+		requestCsrf = ctx.Request.Header.Get("csrf_token")
+		if requestCsrf != "" {
+			goto compare
+		}
 		ctx.AbortWithError(w3errs.NewPublic(
 			http.StatusBadRequest,
 			"Missing 'csrf_token' field in the request",
@@ -45,6 +49,7 @@ func (middleware *CsrfProtection) Handle(ctx *libw3.Context) {
 		return
 	}
 
+compare:
 	if subtle.ConstantTimeCompare([]byte(requestCsrf), []byte(expectedCsrf)) != 1 {
 		ctx.AbortWithError(w3errs.NewPublic(
 			http.StatusBadRequest,
