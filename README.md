@@ -42,7 +42,7 @@ Check out the [📁 **examples**](./examples/) directory for working project exa
 
 ## 1.1 Roadmap
 
-Version 0.0.2:
+Version 0.0.3:
 
 ### Templates
 
