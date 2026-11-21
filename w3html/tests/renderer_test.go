@@ -142,7 +142,7 @@ func TestRender(t *testing.T) {
 			file.Init()
 
 			start := time.Now()
-			parser := w3html.NewParser[PageData](file, map[string]string{})
+			parser := w3html.NewParser[PageData](file, map[string]string{}, nil)
 			parser.WithFileOpener(MockFileOpener)
 
 			result, err := parser.Parse()

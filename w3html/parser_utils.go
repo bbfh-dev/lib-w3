@@ -2,6 +2,7 @@ package w3html
 
 import (
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"unicode/utf8"
@@ -105,7 +106,13 @@ func (parser *Parser) ParseNested(tag Tag, slots SlotsMap) (ParsedPage, error) {
 	}
 	defer file.Close()
 
-	nestedParser := newParser(parser.reader, file, tag.ToParams("path"), parser.PageDataType)
+	nestedParser := newParser(
+		parser.reader,
+		file,
+		tag.ToParams("path"),
+		parser.staticFS,
+		parser.PageDataType,
+	)
 	nestedParser.fileOpener = parser.fileOpener
 	nestedParser.slots = slots
 
@@ -120,4 +127,10 @@ func (parser *Parser) ParseNested(tag Tag, slots SlotsMap) (ParsedPage, error) {
 // OpenFile using configured [FileOpener].
 func (parser *Parser) OpenFile(filename string) (w3utils.FileLike, error) {
 	return parser.fileOpener(filename)
+}
+
+// StaticFS returns [fs.FS] used for hosting static files if configured.
+// May return `nil`.
+func (parser *Parser) StaticFS() fs.FS {
+	return parser.staticFS
 }

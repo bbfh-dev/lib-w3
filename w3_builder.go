@@ -1,6 +1,7 @@
 package libw3
 
 import (
+	"io/fs"
 	"net/http"
 	"os"
 
@@ -61,7 +62,11 @@ func (builder *Builder) LoadPage[T any](
 	}
 	defer file.Close()
 
-	parser := w3html.NewParser[T](file, map[string]string{})
+	var fsys fs.FS
+	if builder.staticConfig != nil {
+		fsys = builder.staticConfig.FileSystem
+	}
+	parser := w3html.NewParser[T](file, map[string]string{}, fsys)
 	page, err := parser.Parse()
 	if err != nil {
 		builder.errs = append(builder.errs, err)

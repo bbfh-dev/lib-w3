@@ -47,11 +47,13 @@ Version 0.0.2:
 ### Templates
 
 - [ ] Improve error reporting: the highlighting is often incorrect, the error messages are WAY too long.
+    - [ ] Print tags syntax on errors
 - More tests:
     - [x] Test FormatString.
     - [ ] Test deeply nested tags.
     - [ ] Test errors.
 - [x] Ensure paired tags are closed.
+- [x] Create 'static' tag.
 
 ### Core
 

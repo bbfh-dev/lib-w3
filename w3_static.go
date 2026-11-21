@@ -24,6 +24,7 @@ type StaticConfig struct {
 	// 'max-age' parameter of Cache-Control header.
 	// You might find [MaxCacheAge] helpful.
 	CacheMaxAge time.Duration
+	dir         string
 }
 
 func (config StaticConfig) CreateHandler() Handler {

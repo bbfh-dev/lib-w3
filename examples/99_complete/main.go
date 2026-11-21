@@ -62,13 +62,13 @@ func main() {
 			Required:          false,
 			IgnoreStaticFiles: true,
 		}).
-		LoadPage(filepath.Join(workdir, "www", "index.html"), &IndexPage).
 		WithStaticHandler(libw3.StaticConfig{
 			FileSystem:       os.DirFS(filepath.Join(workdir, "www", "static")),
 			Middleware:       libw3.MiddlewareChain{},
 			AllowListingDirs: true,
 			CacheMaxAge:      libw3.MaxCacheAge,
 		}).
+		LoadPage(filepath.Join(workdir, "www", "index.html"), &IndexPage).
 		WithErrorHandler(CustomErrorHandler).
 		MustBuild()
 

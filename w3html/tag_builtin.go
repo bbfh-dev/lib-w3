@@ -1,7 +1,10 @@
 package w3html
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
+	"io"
 
 	"codeberg.org/bbfh/lib-w3/w3data"
 )
@@ -215,5 +218,47 @@ func init() {
 			},
 		},
 		IdVariable,
+		{
+			IsPaired:     false,
+			KeepChildren: false,
+			Id:           "static",
+			Handler: func(parser ParserApi, node *Node, tag Tag) error {
+				arg, err := tag.FindArgNamed(ArgNamePath)
+				if err != nil {
+					return err
+				}
+				path := arg.AsString()
+
+				fsys := parser.StaticFS()
+				if fsys == nil {
+					return fmt.Errorf(
+						"static filesystem is not configured. Make sure the EngineBuilder.WithStaticConfig() is called before EngineBuilder.LoadPage()",
+					)
+				}
+
+				file, err := fsys.Open(path)
+				if err != nil {
+					return err
+				}
+
+				data, err := io.ReadAll(file)
+				if err != nil {
+					return err
+				}
+
+				sum := md5.Sum(data)
+				checksum := hex.EncodeToString(sum[:])
+				parser.AppendHunk([]byte("/static/" + path + "?checksum=" + checksum))
+				return nil
+			},
+			Arguments: []ArgumentDefinition{
+				{
+					Name:       ArgNamePath,
+					Kind:       ArgString,
+					IsOptional: false,
+				},
+			},
+			RendererFactory: nil,
+		},
 	}
 }

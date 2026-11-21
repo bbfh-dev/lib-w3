@@ -3,6 +3,7 @@ package w3html
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"maps"
 	"os"
 	"path/filepath"
@@ -35,6 +36,7 @@ type ParserApi interface {
 	AppendTag(tag Tag)
 	Append(node Node)
 	OpenFile(filename string) (w3utils.FileLike, error)
+	StaticFS() fs.FS
 }
 
 type Parser struct {
@@ -48,17 +50,19 @@ type Parser struct {
 	fileOpener   FileOpener
 	slots        SlotsMap
 	placeholders uint
+	staticFS     fs.FS
 }
 
 // NewParser creates a parser. For parsing nested documents refer to [Parser.NewParser].
-func NewParser[T any](file w3utils.FileLike, params map[string]string) *Parser {
-	return newParser(nil, file, params, reflect.TypeOf(*new(T)))
+func NewParser[T any](file w3utils.FileLike, params map[string]string, staticFS fs.FS) *Parser {
+	return newParser(nil, file, params, staticFS, reflect.TypeOf(*new(T)))
 }
 
 func newParser(
 	parent *internal.DocumentReader,
 	file w3utils.FileLike,
 	params map[string]string,
+	staticFS fs.FS,
 	data reflect.Type,
 ) *Parser {
 	reader := internal.NewDocumentReader(parent, file)
@@ -88,6 +92,7 @@ func newParser(
 		},
 		fileOpener: defaultFileOpener,
 		slots:      SlotsMap{},
+		staticFS:   staticFS,
 	}
 }
 

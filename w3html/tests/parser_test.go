@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,11 +27,16 @@ type TestCase struct {
 }
 
 var Files = map[string]string{
-	"include.1": "<span>\n\tHello World!\n</span>",
-	"include.2": "{{ include 'include.2' }}",
-	"include.3": "{{ .Root }}{{ include 'include.4' ..Nested }}",
-	"include.4": "{{ ..This() }}",
-	"extend.1":  "<section>\n\t{{ place 'default' }}\n</section>",
+	"include.1":   "<span>\n\tHello World!\n</span>",
+	"include.2":   "{{ include 'include.2' }}",
+	"include.3":   "{{ .Root }}{{ include 'include.4' ..Nested }}",
+	"include.4":   "{{ ..This() }}",
+	"extend.1":    "<section>\n\t{{ place 'default' }}\n</section>",
+	"favicon.svg": "<svg></svg>",
+}
+
+var FS = MockFS{
+	StaticFiles: Files,
 }
 
 var TestCases = []TestCase{
@@ -503,6 +509,24 @@ var TestCases = []TestCase{
 			},
 		},
 	},
+	{
+		File: MockFile{
+			Filename: "Static",
+			Contents: "<link href='{{ static 'favicon.svg' }}'>",
+		},
+		Expected: w3html.ParsedPage{
+			PlacedSlots: map[string]w3html.NodeLocation{},
+			Nodes: []w3html.Node{
+				{
+					Kind: w3html.NodeHunk,
+					Data: []byte(
+						"<link href='/static/favicon.svg?checksum=7b56e1eab00ec8000da9331a4888cb35'>",
+					),
+					SourceCodeLine: 1,
+				},
+			},
+		},
+	},
 	// ————————————————————————————————
 	{
 		File: MockFile{
@@ -563,6 +587,23 @@ var TestCases = []TestCase{
 	},
 }
 
+type MockFS struct {
+	StaticFiles map[string]string
+}
+
+func (fsys MockFS) Open(filename string) (fs.File, error) {
+	contents, ok := fsys.StaticFiles[filename]
+	if !ok {
+		return nil, fmt.Errorf("%q not declared in the test file", filename)
+	}
+	file := &MockFile{
+		Filename: filename,
+		Contents: contents,
+	}
+	file.Init()
+	return file, nil
+}
+
 type MockFile struct {
 	Filename string
 	Contents string
@@ -579,6 +620,10 @@ func (file *MockFile) Name() string {
 
 func (file *MockFile) Close() error {
 	return nil
+}
+
+func (file *MockFile) Stat() (fs.FileInfo, error) {
+	return nil, nil
 }
 
 func (file *MockFile) Read(dest []byte) (int, error) {
@@ -654,7 +699,7 @@ func TestParser(t *testing.T) {
 	for _, testCase := range TestCases {
 		testCase.File.Init()
 		t.Run(testCase.File.Name(), func(tt *testing.T) {
-			parser := w3html.NewParser[PageData](&testCase.File, map[string]string{})
+			parser := w3html.NewParser[PageData](&testCase.File, map[string]string{}, FS)
 			parser.WithFileOpener(MockFileOpener)
 
 			result, err := parser.Parse()
