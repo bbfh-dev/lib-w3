@@ -33,6 +33,7 @@ var Files = map[string]string{
 	"include.4":   "{{ ..This() }}",
 	"extend.1":    "<section>\n\t{{ place 'default' }}\n</section>",
 	"favicon.svg": "<svg></svg>",
+	"favicon.ico": "different checksum",
 }
 
 var FS = MockFS{
@@ -521,6 +522,24 @@ var TestCases = []TestCase{
 					Kind: w3html.NodeHunk,
 					Data: []byte(
 						"<link href='/static/favicon.svg?checksum=7b56e1eab00ec8000da9331a4888cb35'>",
+					),
+					SourceCodeLine: 1,
+				},
+			},
+		},
+	},
+	{
+		File: MockFile{
+			Filename: "Static_2",
+			Contents: "<link href='{{ static 'favicon.ico' }}'>",
+		},
+		Expected: w3html.ParsedPage{
+			PlacedSlots: map[string]w3html.NodeLocation{},
+			Nodes: []w3html.Node{
+				{
+					Kind: w3html.NodeHunk,
+					Data: []byte(
+						"<link href='/static/favicon.ico?checksum=427958d483994ae5923c42ca875061ac'>",
 					),
 					SourceCodeLine: 1,
 				},
