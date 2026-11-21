@@ -155,12 +155,13 @@ func TestRender(t *testing.T) {
 
 			start = time.Now()
 			value := reflect.ValueOf(Data)
-			renderer.Render(w3html.RenderContext{
+			_, err = renderer.Render(w3html.RenderContext{
 				Writer:     &buffer,
 				GlobalData: value,
 				LocalData:  value,
 				Scope:      w3data.Path{},
 			})
+			assert.NilError(t, err)
 			renderDuration := time.Since(start)
 			assert.DeepEqual(t, testCase.Expected, buffer.String())
 

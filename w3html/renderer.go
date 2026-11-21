@@ -10,14 +10,20 @@ import (
 
 type Renderer []Renderable
 
-func (renderer Renderer) Render(ctx RenderContext) {
+func (renderer Renderer) Render(ctx RenderContext) (int, error) {
+	written := 0
 	for _, step := range renderer {
-		step.Render(ctx)
+		n, err := step.Render(ctx)
+		written += n
+		if err != nil {
+			return written, err
+		}
 	}
+	return written, nil
 }
 
 type Renderable interface {
-	Render(ctx RenderContext)
+	Render(ctx RenderContext) (written int, err error)
 }
 
 type RenderContext struct {
@@ -36,8 +42,8 @@ func (context RenderContext) Query(path w3data.Path) []reflect.Value {
 
 type HunkRenderStep []byte
 
-func (step HunkRenderStep) Render(ctx RenderContext) {
-	ctx.Writer.Write(step)
+func (step HunkRenderStep) Render(ctx RenderContext) (int, error) {
+	return ctx.Writer.Write(step)
 }
 
 func Bake(page []Node) Renderable {

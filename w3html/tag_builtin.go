@@ -68,14 +68,24 @@ type VariableRenderStep struct {
 	JoinString string
 }
 
-func (step VariableRenderStep) Render(ctx RenderContext) {
+func (step VariableRenderStep) Render(ctx RenderContext) (int, error) {
+	written := 0
 	values := ctx.Query(step.Path)
 	for i, value := range values {
 		if i != 0 {
-			ctx.Writer.Write([]byte(step.JoinString))
+			n, err := ctx.Writer.Write([]byte(step.JoinString))
+			written += n
+			if err != nil {
+				return written, err
+			}
 		}
-		fmt.Fprint(ctx.Writer, value.Interface())
+		n, err := fmt.Fprint(ctx.Writer, value.Interface())
+		written += n
+		if err != nil {
+			return written, err
+		}
 	}
+	return written, nil
 }
 
 var IdRange = TagEnum{
@@ -107,13 +117,19 @@ type RangeRenderStep struct {
 	Contents Renderable
 }
 
-func (step RangeRenderStep) Render(ctx RenderContext) {
+func (step RangeRenderStep) Render(ctx RenderContext) (int, error) {
+	written := 0
 	values := ctx.Query(step.Path)
 	for _, value := range values {
 		ctx.LocalData = value
 		ctx.Scope = step.Path
-		step.Contents.Render(ctx)
+		n, err := step.Contents.Render(ctx)
+		written += n
+		if err != nil {
+			return written, err
+		}
 	}
+	return written, nil
 }
 
 var IdIf = TagEnum{
@@ -142,10 +158,16 @@ type IfRenderStep struct {
 	Contents  Renderable
 }
 
-func (step IfRenderStep) Render(ctx RenderContext) {
+func (step IfRenderStep) Render(ctx RenderContext) (int, error) {
+	written := 0
 	if step.Predicate(ctx) {
-		step.Contents.Render(ctx)
+		n, err := step.Contents.Render(ctx)
+		written += n
+		if err != nil {
+			return written, err
+		}
 	}
+	return written, nil
 }
 
 var RegisteredTags = []TagEnum{}
