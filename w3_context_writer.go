@@ -11,8 +11,8 @@ type ResponseWriter struct {
 func (writer *ResponseWriter) WriteHeader(code int) {
 	if writer.StatusCode == 0 {
 		writer.StatusCode = code
+		writer.ResponseWriter.WriteHeader(code)
 	}
-	writer.ResponseWriter.WriteHeader(code)
 }
 
 func (writer *ResponseWriter) Write(p []byte) (int, error) {

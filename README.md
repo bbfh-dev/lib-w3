@@ -13,8 +13,8 @@ Check out the [📁 **examples**](./examples/) directory for working project exa
 
 * [1 🏅 Features](#1--features)
     * [1.1 Roadmap](#11-roadmap)
-        * [Templates](#templates)
         * [Core](#core)
+        * [Templates](#templates)
 * [2 📃 Templates](#2--templates)
     * [2.1 Introduction](#21-introduction)
     * [2.2 Tag arguments](#22-tag-arguments)
@@ -44,6 +44,12 @@ Check out the [📁 **examples**](./examples/) directory for working project exa
 
 Version 0.0.3:
 
+### Core
+
+- [ ] Print all exported `/static` endpoints.
+- [ ] Middleware for basic bot mitigation.
+    - Drop suspisious requests such as `GET /.env`.
+
 ### Templates
 
 - [ ] Improve error reporting: the highlighting is often incorrect, the error messages are WAY too long.
@@ -55,12 +61,6 @@ Version 0.0.3:
 - [x] Ensure paired tags are closed.
 - [x] Create 'static' tag.
     - [ ] Preferably 'static' tag is declared by the core, and not part of w3html
-
-### Core
-
-- [ ] Print all exported `/static` endpoints.
-- [ ] Middleware for basic bot mitigation.
-    - Drop suspisious requests such as `GET /.env`.
 
 # 2 📃 Templates
 
