@@ -10,12 +10,12 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	libclog "codeberg.org/bbfh/lib-clog"
 	"codeberg.org/bbfh/lib-w3/w3data"
 	"codeberg.org/bbfh/lib-w3/w3errs"
 	"codeberg.org/bbfh/lib-w3/w3html"
+	"codeberg.org/bbfh/lib-w3/w3utils"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/assert"
 )
@@ -623,31 +623,11 @@ func (file *MockFile) Close() error {
 }
 
 func (file *MockFile) Stat() (fs.FileInfo, error) {
-	return file, nil
+	return nil, nil
 }
 
 func (file *MockFile) Read(dest []byte) (int, error) {
 	return file.reader.Read(dest)
-}
-
-func (file *MockFile) Size() int64 {
-	return int64(len(file.Contents))
-}
-
-func (file *MockFile) Mode() fs.FileMode {
-	return fs.ModePerm
-}
-
-func (file *MockFile) ModTime() time.Time {
-	return time.Now()
-}
-
-func (file *MockFile) IsDir() bool {
-	return false
-}
-
-func (file *MockFile) Sys() any {
-	return nil
 }
 
 type PageData struct {
@@ -694,7 +674,7 @@ type ScopeData struct {
 	Nested ToData
 }
 
-func MockFileOpener(absPath string) (fs.File, error) {
+func MockFileOpener(absPath string) (w3utils.FileLike, error) {
 	path := filepath.Base(absPath)
 	contents, ok := Files[path]
 	if !ok {
