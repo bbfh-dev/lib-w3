@@ -116,8 +116,9 @@ func (builder *Builder) Build() (*Engine, error) {
 		)
 	})
 	engine.router.MethodNotAllowed = engine.wrapErrorHandler(func(ctx *Context) w3errs.HttpError {
+		// TODO: Add Accept header listing allowed methods
 		return w3errs.NewPublic(
-			http.StatusNotFound,
+			http.StatusMethodNotAllowed,
 			"Method Not Allowed: "+ctx.Request.Method,
 		)
 	})
