@@ -27,7 +27,8 @@ type StaticConfig struct {
 }
 
 func (config StaticConfig) CreateHandler() Handler {
-	fileServer := http.FileServer(http.FS(config.FileSystem))
+	immutable := config
+	fileServer := http.FileServer(http.FS(immutable.FileSystem))
 	return func(ctx *Context) {
 		originalPath := ctx.Request.URL.Path
 		defer func() {
@@ -36,12 +37,12 @@ func (config StaticConfig) CreateHandler() Handler {
 		}()
 		ctx.Request.URL.Path = ctx.Params.ByName("filepath")
 
-		if !config.AllowListingDirs && strings.HasSuffix(ctx.Request.URL.Path, "/") {
+		if !immutable.AllowListingDirs && strings.HasSuffix(ctx.Request.URL.Path, "/") {
 			ctx.AbortWithError(w3errs.NewSimple(http.StatusForbidden))
 			return
 		}
 
-		seconds := config.CacheMaxAge.Seconds()
+		seconds := immutable.CacheMaxAge.Seconds()
 		if seconds > 0 {
 			ctx.Writer.Header().Set(
 				"Cache-Control",
