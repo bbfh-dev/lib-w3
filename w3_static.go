@@ -29,9 +29,13 @@ type StaticConfig struct {
 func (config StaticConfig) CreateHandler() Handler {
 	fileServer := http.FileServer(http.FS(config.FileSystem))
 	return func(ctx *Context) {
-		path := ctx.Request.URL.Path // recover the actual path for middleware
-
+		originalPath := ctx.Request.URL.Path
+		defer func() {
+			// recover the actual path for middleware
+			ctx.Request.URL.Path = originalPath
+		}()
 		ctx.Request.URL.Path = ctx.Params.ByName("filepath")
+
 		if !config.AllowListingDirs && strings.HasSuffix(ctx.Request.URL.Path, "/") {
 			ctx.AbortWithError(w3errs.NewSimple(http.StatusForbidden))
 			return
@@ -47,7 +51,5 @@ func (config StaticConfig) CreateHandler() Handler {
 			ctx.Writer.Header().Set("Cache-Control", "public, no-cache")
 		}
 		fileServer.ServeHTTP(ctx.Writer, ctx.Request)
-
-		ctx.Request.URL.Path = path
 	}
 }
