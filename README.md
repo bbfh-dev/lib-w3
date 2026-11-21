@@ -54,6 +54,7 @@ Version 0.0.2:
     - [ ] Test errors.
 - [x] Ensure paired tags are closed.
 - [x] Create 'static' tag.
+    - [ ] Preferably 'static' tag is declared by the core, and not part of w3html
 
 ### Core
 
