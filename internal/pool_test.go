@@ -13,7 +13,7 @@ func TestPool_AcquireRelease(t *testing.T) {
 	const n = 10
 
 	pool := internal.NewPool[int](n, nil)
-	seen := make(map[uint16]bool, n)
+	seen := make(map[uint]bool, n)
 
 	for range n {
 		index := pool.Acquire()
@@ -32,7 +32,7 @@ func TestPool_AcquireRelease(t *testing.T) {
 	}
 
 	// All objects are now checked out. The next Acquire must block.
-	acquired := make(chan uint16, 1)
+	acquired := make(chan uint, 1)
 
 	go func() {
 		acquired <- pool.Acquire()
@@ -126,7 +126,7 @@ func TestPool_Concurrent20(t *testing.T) {
 		active atomic.Int32
 		max    atomic.Int32
 
-		acquired = make(chan uint16, goroutineNum)
+		acquired = make(chan uint, goroutineNum)
 	)
 
 	wg.Add(goroutineNum)
@@ -167,7 +167,7 @@ func TestPool_Concurrent20(t *testing.T) {
 	// Collect all acquired indexes. Because the pool has only 10 slots,
 	// eventually all 20 goroutines should acquire a slot, but never
 	// more than 10 at the same time.
-	seen := make(map[uint16]int, poolSize)
+	seen := make(map[uint]int, poolSize)
 
 	for range goroutineNum {
 		index := <-acquired

@@ -15,7 +15,7 @@ import (
 
 // Refer to [NewBuilder].
 type Builder struct {
-	maxConcurrentRequests uint16
+	maxConcurrentRequests uint
 	middleware            MiddlewareChain
 	pages                 []w3html.Renderable
 	errs                  []error
@@ -37,7 +37,7 @@ func NewBuilder() *Builder {
 
 // LimitConcurrentRequests sets the pool of concurrent requests.
 // Any additional requests will have to wait for another request to finish before being served.
-func (builder *Builder) LimitConcurrentRequests(limit uint16) *Builder {
+func (builder *Builder) LimitConcurrentRequests(limit uint) *Builder {
 	builder.maxConcurrentRequests = limit
 	return builder
 }

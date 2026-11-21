@@ -8,21 +8,21 @@ import (
 // Refer to [NewPool].
 type Pool[T any] struct {
 	objects []T
-	free    []uint16
-	top     uint16
+	free    []uint
+	top     uint
 
 	mu        sync.Mutex
 	available chan struct{}
 }
 
 // Create a new [Pool] with specified size and object factory.
-func NewPool[T any](n uint16, factory func() T) *Pool[T] {
+func NewPool[T any](n uint, factory func() T) *Pool[T] {
 	if n == 0 {
 		panic("pool size must be greater than zero")
 	}
 
 	objects := make([]T, int(n))
-	free := make([]uint16, int(n))
+	free := make([]uint, int(n))
 
 	var useFactory = factory != nil
 	for i := range n {
@@ -48,7 +48,7 @@ func NewPool[T any](n uint16, factory func() T) *Pool[T] {
 
 // Acquire an index to an available object.
 // Waits when no object is available.
-func (pool *Pool[T]) Acquire() (index uint16) {
+func (pool *Pool[T]) Acquire() (index uint) {
 	<-pool.available
 
 	pool.mu.Lock()
@@ -61,13 +61,13 @@ func (pool *Pool[T]) Acquire() (index uint16) {
 }
 
 // AcquireObject is sugar code for calling [Pool.Acquire] and [Pool.Get].
-func (pool *Pool[T]) AcquireObject() (index uint16, object *T) {
+func (pool *Pool[T]) AcquireObject() (index uint, object *T) {
 	index = pool.Acquire()
 	return index, pool.Get(index)
 }
 
 // Release an object back into the pool.
-func (pool *Pool[T]) Release(index uint16) {
+func (pool *Pool[T]) Release(index uint) {
 	pool.mu.Lock()
 
 	pool.free[pool.top] = index
@@ -80,6 +80,6 @@ func (pool *Pool[T]) Release(index uint16) {
 
 // Get the reference to an object.
 // Not to be mistaken with [Pool.Acquire].
-func (pool *Pool[T]) Get(index uint16) *T {
+func (pool *Pool[T]) Get(index uint) *T {
 	return &pool.objects[index]
 }
