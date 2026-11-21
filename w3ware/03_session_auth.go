@@ -67,7 +67,7 @@ func (middleware *SessionAuth[T]) Handle(ctx *libw3.Context) {
 		}
 
 		authType, authCredentials := parts[0], parts[1]
-		if authType != "Bearer" {
+		if !strings.EqualFold(authType, "Bearer") {
 			err = w3errs.NewPublic(
 				http.StatusUnauthorized,
 				"Authorization header must be a Bearer token, got: "+authType,
