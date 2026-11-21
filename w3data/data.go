@@ -173,19 +173,18 @@ func getPath(dataType reflect.Type, segment Segment) (Path, error) {
 		if err != nil {
 			return Path{}, err
 		}
-		if inputs := slices.Collect(method.Type.Ins()); len(inputs) == 0 {
+		if count := method.Type.NumIn(); count == 0 {
 			return Path{}, fmt.Errorf(
 				"method must have no arguments, but found %d (%s)",
-				len(inputs),
-				inputs,
+				count,
+				slices.Collect(method.Type.Ins()),
 			)
 		}
-		outputs := slices.Collect(method.Type.Outs())
-		if len(outputs) == 0 {
+		if method.Type.NumOut() == 0 {
 			return Path{}, errors.New("method must return at least one value")
 		}
 		if segment.Iterate {
-			kind := outputs[0].Kind()
+			kind := method.Type.Out(0).Kind()
 			if kind != reflect.Slice && kind != reflect.Array {
 				return Path{}, fmt.Errorf(
 					"method doesn't return a slice or array to iterate over (got %q)",
