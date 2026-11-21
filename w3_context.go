@@ -188,6 +188,16 @@ func (ctx *Context) SendPage[T any](statusCode int, page w3utils.PageHolder[T], 
 	})
 }
 
+func (ctx *Context) SendRedirect(code int, url string) {
+	boundMin := http.StatusMultipleChoices
+	boundMax := http.StatusPermanentRedirect
+	if code < boundMin || code > boundMax {
+		panic(fmt.Sprintf("cannot redirect with status code %d", code))
+	}
+
+	http.Redirect(ctx.Writer, ctx.Request, url, code)
+}
+
 // SetContentType is sugar code for setting specific content type.
 func (ctx *Context) SetContentType(contentType string) {
 	ctx.Writer.Header().Set("Content-Type", contentType)
