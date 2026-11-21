@@ -66,6 +66,7 @@ func (engine *Engine) newEndpoint(
 		method,
 		path,
 		func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+			// FIXME: this might hang indefinitely, should add a timeout mechanism
 			objectIndex, ctx := engine.pool.AcquireObject()
 			defer engine.pool.Release(objectIndex)
 

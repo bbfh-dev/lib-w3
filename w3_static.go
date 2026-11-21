@@ -37,10 +37,15 @@ func (config StaticConfig) CreateHandler() Handler {
 			return
 		}
 
-		ctx.Writer.Header().Set(
-			"Cache-Control",
-			fmt.Sprintf("public, max-age=%.f, immutable", config.CacheMaxAge.Seconds()),
-		)
+		seconds := config.CacheMaxAge.Seconds()
+		if seconds > 0 {
+			ctx.Writer.Header().Set(
+				"Cache-Control",
+				fmt.Sprintf("public, max-age=%.f, immutable", seconds),
+			)
+		} else {
+			ctx.Writer.Header().Set("Cache-Control", "public, no-cache")
+		}
 		fileServer.ServeHTTP(ctx.Writer, ctx.Request)
 
 		ctx.Request.URL.Path = path
