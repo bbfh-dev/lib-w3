@@ -34,6 +34,7 @@ type ParserApi interface {
 	AppendPlaceholder()
 	AppendTag(tag Tag)
 	Append(node Node)
+	OpenFile(filename string) (w3utils.FileLike, error)
 }
 
 type Parser struct {

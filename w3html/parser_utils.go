@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"unicode/utf8"
+
+	"codeberg.org/bbfh/lib-w3/w3utils"
 )
 
 func (parser *Parser) flushHunkBuffer() {
@@ -90,10 +92,10 @@ func (parser *Parser) ParseNested(tag Tag, slots SlotsMap) (ParsedPage, error) {
 		return ParsedPage{}, errors.New("trying to parse the same document recursively")
 	}
 
-	file, err := parser.fileOpener(path)
+	file, err := parser.OpenFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			file, err = parser.fileOpener(path + ".html")
+			file, err = parser.OpenFile(path + ".html")
 			if err != nil {
 				return ParsedPage{}, err
 			}
@@ -113,4 +115,9 @@ func (parser *Parser) ParseNested(tag Tag, slots SlotsMap) (ParsedPage, error) {
 	}
 
 	return nestedParser.Parse()
+}
+
+// OpenFile using configured [FileOpener].
+func (parser *Parser) OpenFile(filename string) (w3utils.FileLike, error) {
+	return parser.fileOpener(filename)
 }
