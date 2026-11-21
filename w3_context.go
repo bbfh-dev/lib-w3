@@ -115,13 +115,14 @@ return_empty:
 }
 
 // Cookie retrieves a named cookie from the request.
-func (ctx *Context) Cookie(name string) (string, bool) {
+// If `value != "" && !valid`, then the cookie exists but is malformed.
+func (ctx *Context) Cookie(name string) (value string, valid bool) {
 	cookie, err := ctx.Request.Cookie(name)
 	if err != nil {
 		return "", false
 	}
-	value, _ := url.QueryUnescape(cookie.Value)
-	return value, true
+	value, err = url.QueryUnescape(cookie.Value)
+	return value, err == nil
 }
 
 // ClearCookie will remove the cookie from the client.
