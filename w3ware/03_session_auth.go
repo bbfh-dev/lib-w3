@@ -2,6 +2,7 @@ package w3ware
 
 import (
 	"net/http"
+	"reflect"
 	"strings"
 
 	libw3 "codeberg.org/bbfh/lib-w3"
@@ -100,6 +101,20 @@ func (middleware *SessionAuth[T]) ShouldInject(method, path string) bool {
 }
 
 func (middleware *SessionAuth[T]) Init() (keep bool) {
+	if middleware.ContextSession == nil {
+		w3utils.Logger.Error(
+			"%s.ContextSession is nil. Fix the configuration or the middleware will not be injected",
+			reflect.TypeOf(middleware),
+		)
+		return false
+	}
+	if middleware.Authenticator == nil {
+		w3utils.Logger.Error(
+			"%s.Authenticator is nil. Fix the configuration or the middleware will not be injected",
+			reflect.TypeOf(middleware),
+		)
+		return false
+	}
 	*middleware.ContextSession = w3utils.ContextHolder[T](contextSessionPlaceholder)
 	return true
 }
